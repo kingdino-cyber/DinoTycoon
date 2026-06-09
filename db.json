@@ -1,0 +1,83 @@
+{
+  "users": [
+    {
+      "id": "1780550791457",
+      "username": "TestPlayer",
+      "password": "$2a$10$uKsY.7EIJsWD0LSt39ciiuCT79L72fHFG55yDr31nZl8THIldnYUO"
+    },
+    {
+      "id": "1780550986053",
+      "username": "KingDinosaurrrr",
+      "password": "$2a$10$aKPd22I.6nWq/OLpxnl52e85GLtaB71Y/dkOjlguNdI2DxDb.mGHS"
+    },
+    {
+      "id": "1780639367827",
+      "username": "DinoKing",
+      "password": "$2a$10$/amMzFYsWz153fW0zhSQuO3frECOHRSjrsPLpNrNarJ0GZOsxaNpu"
+    },
+    {
+      "id": "1780639450435",
+      "username": "KingDinosaurr",
+      "password": "$2a$10$nC5TQUkTZKLKoXvl7PZYOuxB6NAT0.KGzCFwAeww7RUTBkcxcF5Nu"
+    },
+    {
+      "id": "mq0kewxgjz8jhedf7vc",
+      "username": "KingDinosa",
+      "password": "$2a$10$TDS..o1gHkl07NwybEGZ/.uLQXjab2wXHIU6QKsNqR3et.OOUN1ey"
+    }
+  ],
+  "saves": {
+    "1780550986053": {
+      "money": 2754,
+      "total_earned": 3774,
+      "level": 2,
+      "xp": 80,
+      "upgrades": [
+        "bonePile1",
+        "dinoBlood"
+      ],
+      "kills": 2,
+      "deaths": 0,
+      "prestige": 0,
+      "savedGames": [
+        {
+          "id": 1780987315236,
+          "name": "67 test",
+          "money": 2752,
+          "upgrades": [
+            "bonePile1",
+            "dinoBlood"
+          ],
+          "buildings": [],
+          "savedAt": "2026-06-09T06:41:55.236Z",
+          "difficulty": "easy",
+          "kills": 2,
+          "level": 2
+        }
+      ]
+    },
+    "1780639450435": {
+      "money": 99,
+      "total_earned": 99,
+      "level": 1,
+      "xp": 0,
+      "upgrades": [],
+      "kills": 0,
+      "deaths": 0,
+      "prestige": 0
+    },
+    "mq0kewxgjz8jhedf7vc": {
+      "money": 672,
+      "total_earned": 1253,
+      "level": 1,
+      "xp": 0,
+      "upgrades": [
+        "bonePile1",
+        "raptorClaw"
+      ],
+      "kills": 0,
+      "deaths": 1,
+      "prestige": 0
+    }
+  }
+}

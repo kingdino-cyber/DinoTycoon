@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🦕 Dino Tycoon</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+:root{
+  --green:#1a3a1a;--jungle:#2d5a27;--lava:#ff4757;--bone:#f0e6c8;
+  --gold:#ffd700;--dark:#0d1f0d;--text:#e8f5e9;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pulse{0%,100%{opacity:.7}50%{opacity:1}}
+@keyframes roar{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes kfIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── SHARED ── */
+body{background:#0d1f0d;color:#e8f5e9;overflow:hidden;}
+.hidden{display:none!important;}
+canvas{display:block;}
+
+/* ── AUTH SCREEN ── */
+#authScreen{
+  position:fixed;inset:0;z-index:2000;
+  background:radial-gradient(ellipse at 60% 40%,#1a4a1a 0%,#0d1f0d 70%);
+  display:flex;align-items:center;justify-content:center;
+}
+.auth-dinos{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.auth-dino{position:absolute;font-size:4rem;animation:float 3s ease-in-out infinite;}
+.auth-dino:nth-child(1){left:5%;top:20%;animation-delay:0s;}
+.auth-dino:nth-child(2){right:8%;top:15%;animation-delay:1s;font-size:5rem;}
+.auth-dino:nth-child(3){left:10%;bottom:20%;animation-delay:.5s;font-size:3rem;}
+.auth-dino:nth-child(4){right:5%;bottom:25%;animation-delay:1.5s;}
+.auth-dino:nth-child(5){left:40%;bottom:8%;animation-delay:.8s;font-size:2.5rem;}
+
+.auth-box{
+  background:rgba(10,30,10,.85);border:2px solid rgba(100,200,80,.25);
+  border-radius:24px;padding:44px 40px;width:400px;
+  backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(50,200,50,.1);
+  text-align:center;position:relative;z-index:1;
+}
+.auth-logo{font-size:3.5rem;margin-bottom:6px;}
+.auth-title{font-size:2rem;font-weight:900;color:#7fff6a;
+  text-shadow:0 0 20px rgba(100,255,80,.5);letter-spacing:2px;}
+.auth-sub{color:#88aa88;font-size:.85rem;margin-bottom:28px;margin-top:4px;}
+.auth-tabs{display:flex;gap:8px;margin-bottom:22px;}
+.auth-tab{flex:1;padding:10px;border:none;border-radius:10px;cursor:pointer;
+  background:rgba(255,255,255,.05);color:#88aa88;font-size:.95rem;transition:all .2s;}
+.auth-tab.active{background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;}
+.auth-input{width:100%;padding:13px 16px;margin-bottom:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(100,200,80,.2);
+  border-radius:12px;color:#e8f5e9;font-size:1rem;outline:none;transition:border-color .2s;}
+.auth-input:focus{border-color:#4caf50;}
+.auth-input::placeholder{color:#557755;}
+.auth-btn{width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;
+  font-size:1.05rem;font-weight:bold;transition:all .2s;margin-top:4px;}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(76,175,80,.4);}
+.auth-err{color:#ff6b6b;font-size:.82rem;margin-top:10px;min-height:18px;}
+
+/* ── LOBBY ── */
+#lobbyScreen{
+  position:fixed;inset:0;z-index:1500;
+  background:radial-gradient(ellipse at 30% 60%,#1a3a0a 0%,#0d1f0d 80%);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.lobby-header{
+  display:flex;align-items:center;gap:16px;padding:16px 24px;
+  background:rgba(0,0,0,.4);border-bottom:1px solid rgba(100,200,80,.15);
+  flex-shrink:0;
+}
+.lobby-logo{font-size:2rem;}
+.lobby-title{font-size:1.4rem;font-weight:900;color:#7fff6a;letter-spacing:1px;}
+.lobby-online{color:#88aa88;font-size:.82rem;background:rgba(76,175,80,.1);
+  border:1px solid rgba(76,175,80,.2);border-radius:8px;padding:4px 10px;margin-left:auto;}
+.lobby-username{color:#b8f5b0;font-weight:bold;font-size:.9rem;}
+.logout-btn{padding:6px 14px;border:1px solid rgba(255,100,100,.3);border-radius:8px;
+  background:transparent;color:#ff8888;cursor:pointer;font-size:.8rem;}
+.logout-btn:hover{background:rgba(255,100,100,.1);}
+
+.lobby-body{display:flex;flex:1;overflow:hidden;gap:0;}
+
+/* Room list */
+.lobby-rooms{flex:1;padding:20px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;}
+.lobby-rooms h2{color:#b8f5b0;font-size:1rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;}
+.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.room-card{
+  background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.15);border-radius:16px;
+  padding:18px;cursor:pointer;transition:all .2s;animation:slideIn .3s ease;
+}
+.room-card:hover{border-color:rgba(100,200,80,.4);transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(50,150,30,.2);}
+.room-name{font-size:1rem;font-weight:bold;color:#e8f5e9;margin-bottom:6px;}
+.room-host{color:#88aa88;font-size:.78rem;margin-bottom:10px;}
+.room-meta{display:flex;gap:8px;flex-wrap:wrap;}
+.room-badge{font-size:.72rem;padding:3px 10px;border-radius:99px;font-weight:bold;}
+.badge-mode{background:rgba(76,175,80,.15);color:#7fff6a;border:1px solid rgba(76,175,80,.25);}
+.badge-players{background:rgba(255,180,50,.1);color:#ffd700;border:1px solid rgba(255,180,50,.2);}
+.badge-status{background:rgba(100,180,255,.1);color:#90caf9;border:1px solid rgba(100,180,255,.2);}
+.room-join-btn{width:100%;margin-top:12px;padding:9px;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;font-size:.85rem;}
+.no-rooms{text-align:center;color:#557755;padding:60px 20px;font-size:1rem;}
+.no-rooms-icon{font-size:3rem;display:block;margin-bottom:12px;}
+
+/* Sidebar */
+.lobby-sidebar{width:280px;padding:20px;border-left:1px solid rgba(100,200,80,.1);
+  display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.sidebar-btn{width:100%;padding:14px 16px;border:none;border-radius:14px;cursor:pointer;
+  font-size:.95rem;font-weight:bold;display:flex;align-items:center;gap:10px;
+  transition:all .2s;text-align:left;}
+.btn-create{background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;}
+.btn-create:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(76,175,80,.35);}
+.btn-solo{background:linear-gradient(135deg,#7a4a00,#ff9800);color:#fff;}
+.btn-solo:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,152,0,.35);}
+.btn-join-code{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ccc;}
+.btn-join-code:hover{background:rgba(255,255,255,.08);}
+.sidebar-divider{height:1px;background:rgba(100,200,80,.1);margin:4px 0;}
+.sidebar-title{color:#557755;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;padding:4px 0;}
+.invite-list{flex:1;min-height:80px;}
+.invite-card{
+  background:rgba(50,120,30,.2);border:1px solid rgba(76,175,80,.3);border-radius:12px;
+  padding:12px;margin-bottom:8px;animation:slideIn .3s ease;
+}
+.invite-from{color:#7fff6a;font-weight:bold;font-size:.85rem;margin-bottom:4px;}
+.invite-room{color:#88aa88;font-size:.78rem;margin-bottom:10px;}
+.invite-btns{display:flex;gap:6px;}
+.invite-accept{flex:1;padding:7px;border:none;border-radius:8px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.8rem;font-weight:bold;}
+.invite-decline{flex:1;padding:7px;border:1px solid rgba(255,100,100,.3);border-radius:8px;
+  cursor:pointer;background:transparent;color:#ff8888;font-size:.8rem;}
+
+/* ── CREATE ROOM MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
+}
+.modal{
+  background:#0f2b0f;border:1px solid rgba(100,200,80,.25);border-radius:20px;
+  padding:32px;width:440px;max-height:90vh;overflow-y:auto;
+}
+.modal h2{color:#7fff6a;font-size:1.2rem;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+.modal-label{color:#88aa88;font-size:.8rem;margin-bottom:6px;margin-top:14px;display:block;}
+.modal-input{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(100,200,80,.2);border-radius:10px;color:#e8f5e9;font-size:.95rem;outline:none;}
+.modal-input:focus{border-color:#4caf50;}
+.modal-select{width:100%;padding:11px 14px;background:#0f2b0f;
+  border:1px solid rgba(100,200,80,.2);border-radius:10px;color:#e8f5e9;font-size:.95rem;outline:none;}
+.modal-toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.modal-toggle-label{color:#b8f5b0;font-size:.9rem;}
+.toggle{width:44px;height:24px;border-radius:12px;position:relative;cursor:pointer;
+  background:rgba(255,255,255,.1);transition:background .2s;border:none;flex-shrink:0;}
+.toggle.on{background:#4caf50;}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:left .2s;}
+.toggle.on::after{left:23px;}
+.modal-footer{display:flex;gap:10px;margin-top:24px;}
+.modal-cancel{flex:1;padding:12px;border:1px solid rgba(255,255,255,.15);border-radius:10px;
+  background:transparent;color:#888;cursor:pointer;font-size:.9rem;}
+.modal-confirm{flex:2;padding:12px;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;font-size:.9rem;font-weight:bold;}
+.slider-row{display:flex;align-items:center;gap:12px;}
+.modal-slider{flex:1;accent-color:#4caf50;}
+.slider-val{color:#7fff6a;font-weight:bold;min-width:20px;text-align:center;}
+
+/* ── WAITING ROOM ── */
+#waitingRoom{
+  position:fixed;inset:0;z-index:2000;
+  background:radial-gradient(ellipse at 50% 50%,#1a3a0a 0%,#0d1f0d 80%);
+  display:flex;flex-direction:column;
+}
+.waiting-header{padding:16px 24px;background:rgba(0,0,0,.4);
+  border-bottom:1px solid rgba(100,200,80,.15);display:flex;align-items:center;gap:12px;}
+.waiting-title{font-size:1.2rem;font-weight:bold;color:#7fff6a;}
+.waiting-code{font-size:.8rem;background:rgba(76,175,80,.1);border:1px solid rgba(76,175,80,.2);
+  border-radius:8px;padding:4px 12px;color:#88aa88;cursor:pointer;}
+.waiting-code:hover{border-color:rgba(76,175,80,.5);color:#b8f5b0;}
+.waiting-body{display:flex;flex:1;overflow:hidden;}
+.waiting-players{flex:1;padding:24px;overflow-y:auto;}
+.waiting-players h3{color:#88aa88;font-size:.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;}
+.player-slot{
+  display:flex;align-items:center;gap:14px;padding:14px 16px;
+  background:rgba(20,50,15,.6);border:1px solid rgba(100,200,80,.1);border-radius:14px;margin-bottom:8px;
+  animation:slideIn .25s ease;
+}
+.player-slot-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.player-slot-name{flex:1;font-weight:bold;color:#e8f5e9;}
+.player-slot-badge{font-size:.72rem;padding:3px 10px;border-radius:99px;}
+.badge-host{background:rgba(255,215,0,.15);color:#ffd700;border:1px solid rgba(255,215,0,.3);}
+.badge-bot{background:rgba(160,155,254,.15);color:#a29bfe;border:1px solid rgba(160,155,254,.3);}
+.badge-easy{color:#2ed573;border-color:rgba(46,213,115,.3);}
+.badge-medium{color:#ffa502;border-color:rgba(255,165,2,.3);}
+.badge-hard{color:#ff4757;border-color:rgba(255,71,87,.3);}
+.slot-kick{padding:4px 10px;border:1px solid rgba(255,100,100,.3);border-radius:6px;
+  background:transparent;color:#ff8888;cursor:pointer;font-size:.72rem;}
+.slot-kick:hover{background:rgba(255,100,100,.1);}
+
+.waiting-sidebar{width:300px;padding:24px;border-left:1px solid rgba(100,200,80,.1);
+  display:flex;flex-direction:column;gap:12px;}
+.waiting-sidebar h3{color:#88aa88;font-size:.8rem;text-transform:uppercase;letter-spacing:1px;}
+.settings-row{display:flex;align-items:center;gap:10px;padding:8px 0;}
+.settings-label{flex:1;color:#b8f5b0;font-size:.88rem;}
+.settings-val{color:#7fff6a;font-weight:bold;font-size:.88rem;}
+.settings-btn{padding:5px 10px;background:rgba(100,200,80,.1);border:1px solid rgba(100,200,80,.2);
+  border-radius:6px;color:#7fff6a;cursor:pointer;font-size:.78rem;}
+.settings-btn:hover{background:rgba(100,200,80,.2);}
+.bot-controls{display:flex;gap:6px;flex-wrap:wrap;}
+.bot-btn{padding:7px 12px;border:none;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:bold;}
+.bot-easy{background:rgba(46,213,115,.2);color:#2ed573;border:1px solid rgba(46,213,115,.3);}
+.bot-medium{background:rgba(255,165,2,.2);color:#ffa502;border:1px solid rgba(255,165,2,.3);}
+.bot-hard{background:rgba(255,71,87,.2);color:#ff4757;border:1px solid rgba(255,71,87,.3);}
+
+.invite-input-row{display:flex;gap:6px;}
+.invite-input{flex:1;padding:8px 12px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(100,200,80,.2);border-radius:8px;color:#e8f5e9;font-size:.85rem;outline:none;}
+.invite-send-btn{padding:8px 14px;border:none;border-radius:8px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.8rem;font-weight:bold;}
+
+.start-btn{
+  width:100%;padding:16px;border:none;border-radius:14px;cursor:pointer;
+  background:linear-gradient(135deg,#7a4a00,#ff9800);color:#fff;
+  font-size:1.1rem;font-weight:900;letter-spacing:1px;
+  transition:all .2s;animation:roar 2s ease-in-out infinite;margin-top:auto;
+}
+.start-btn:hover{transform:scale(1.03);box-shadow:0 8px 25px rgba(255,152,0,.4);}
+.start-btn:disabled{background:#333;color:#666;cursor:not-allowed;animation:none;transform:none;box-shadow:none;}
+.leave-room-btn{width:100%;padding:10px;border:1px solid rgba(255,100,100,.25);border-radius:10px;
+  background:transparent;color:#ff8888;cursor:pointer;font-size:.85rem;}
+.leave-room-btn:hover{background:rgba(255,100,100,.08);}
+.chat-section{margin-top:auto;}
+.wait-chat-log{max-height:120px;overflow-y:auto;scrollbar-width:thin;
+  scrollbar-color:#333 transparent;padding:6px 0;margin-bottom:8px;}
+.wait-chat-row{font-size:.78rem;padding:2px 0;}
+.wait-chat-name{font-weight:bold;}
+.wait-chat-row .msg{color:#ccc;}
+.wait-chat-input-row{display:flex;gap:6px;}
+.wait-chat-input{flex:1;padding:7px 10px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.8rem;outline:none;}
+.wait-chat-send{padding:7px 12px;background:#2d7a1e;border:none;border-radius:8px;
+  color:#fff;cursor:pointer;font-size:.78rem;}
+
+/* ── HUD ── */
+#hud{position:fixed;top:0;left:0;right:0;z-index:100;pointer-events:none;}
+#topBar{
+  display:flex;align-items:center;gap:10px;padding:8px 14px;
+  background:rgba(0,20,0,.75);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(100,200,80,.12);
+}
+.hud-card{background:rgba(20,60,10,.6);border:1px solid rgba(100,200,80,.15);
+  border-radius:10px;padding:6px 12px;color:#e8f5e9;font-size:.82rem;white-space:nowrap;}
+.hud-label{color:#557755;font-size:.68rem;display:block;margin-bottom:2px;}
+.bar-bg{background:rgba(255,255,255,.08);border-radius:99px;height:7px;margin-top:3px;overflow:hidden;width:160px;}
+.bar-fill{height:100%;border-radius:99px;transition:width .3s;}
+#hpFill{background:linear-gradient(90deg,#2d7a1e,#66bb6a);}
+#xpFill{background:linear-gradient(90deg,#7b1fa2,#e040fb);}
+.hud-spacer{flex:1;}
+
+/* ── SHOP ── */
+#shopPanel{
+  position:fixed;top:0;right:0;bottom:0;width:320px;z-index:200;
+  background:rgba(5,20,5,.96);border-left:1px solid rgba(100,200,80,.12);
+  backdrop-filter:blur(20px);transform:translateX(100%);
+  transition:transform .3s ease;display:flex;flex-direction:column;
+  pointer-events:none;
+}
+#shopPanel.open{transform:translateX(0);pointer-events:all;}
+#shopPanel h2{padding:18px 16px;color:#7fff6a;font-size:1rem;
+  border-bottom:1px solid rgba(100,200,80,.1);display:flex;align-items:center;gap:8px;}
+.shop-tabs{display:flex;padding:8px 12px;gap:4px;border-bottom:1px solid rgba(100,200,80,.08);}
+.shop-tab{flex:1;padding:6px 4px;border:none;border-radius:8px;cursor:pointer;
+  background:transparent;color:#557755;font-size:.7rem;font-weight:bold;transition:all .2s;}
+.shop-tab.active{background:rgba(76,175,80,.15);color:#7fff6a;}
+#shopList{flex:1;overflow-y:auto;padding:10px;scrollbar-width:thin;scrollbar-color:#224422 transparent;}
+.shop-item{
+  background:rgba(20,60,15,.5);border:1px solid rgba(100,200,80,.1);border-radius:12px;
+  padding:11px 12px;margin-bottom:7px;display:flex;align-items:center;gap:10px;
+}
+.shop-item.owned{border-color:rgba(76,175,80,.35);background:rgba(76,175,80,.07);}
+.shop-item.locked{opacity:.4;}
+.shop-icon{font-size:1.6rem;width:36px;text-align:center;}
+.shop-info{flex:1;}
+.shop-name{color:#e8f5e9;font-size:.85rem;font-weight:bold;}
+.shop-desc{color:#557755;font-size:.72rem;}
+.shop-cost{color:#ffd700;font-size:.75rem;font-weight:bold;margin-top:2px;}
+.shop-req{color:#ff8888;font-size:.68rem;}
+.buy-btn{padding:7px 12px;border:none;border-radius:8px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.78rem;
+  font-weight:bold;pointer-events:all;transition:all .15s;white-space:nowrap;}
+.buy-btn:hover{transform:scale(1.05);}
+.buy-btn:disabled{background:#222;color:#555;cursor:not-allowed;transform:none;}
+.prestige-btn{margin:10px;padding:13px;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,#7a5200,#ffd700);color:#000;font-size:.9rem;font-weight:bold;pointer-events:all;}
+.prestige-btn:hover{box-shadow:0 0 20px rgba(255,215,0,.4);}
+
+/* ── LEADERBOARD ── */
+#lbPanel{
+  position:fixed;top:68px;left:14px;z-index:200;
+  background:rgba(0,15,0,.75);backdrop-filter:blur(10px);
+  border:1px solid rgba(100,200,80,.12);border-radius:14px;padding:12px 14px;min-width:210px;
+}
+#lbPanel h3{color:#ffd700;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;}
+.lb-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:.77rem;}
+.lb-rank{color:#557755;width:16px;text-align:right;flex-shrink:0;}
+.lb-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.lb-name{color:#e8f5e9;flex:1;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-money{color:#ffd700;white-space:nowrap;font-size:.72rem;}
+.lb-bot{opacity:.65;}
+
+/* ── CHAT ── */
+#chatPanel{position:fixed;bottom:0;left:14px;z-index:200;width:300px;}
+#chatLog{max-height:140px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#224422 transparent;padding:6px 0;}
+.chat-msg{font-size:.76rem;padding:2px 0;}
+.chat-name{font-weight:bold;}
+.chat-text{color:#aabbaa;}
+#chatInputRow{display:flex;gap:5px;padding:7px;
+  background:rgba(0,15,0,.8);backdrop-filter:blur(10px);
+  border:1px solid rgba(100,200,80,.1);border-radius:10px;pointer-events:all;}
+#chatInput{flex:1;background:transparent;border:none;color:#e8f5e9;font-size:.8rem;outline:none;}
+#chatInput::placeholder{color:#334433;}
+#chatSend{padding:4px 10px;background:#2d7a1e;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:.75rem;}
+
+/* ── SHOP TOGGLE ── */
+#shopToggle{
+  position:fixed;top:68px;right:14px;z-index:300;
+  background:linear-gradient(135deg,#2d7a1e,#66bb6a);
+  border:none;border-radius:12px;color:#fff;padding:9px 16px;
+  font-size:.85rem;font-weight:bold;cursor:pointer;pointer-events:all;
+  box-shadow:0 4px 15px rgba(76,175,80,.35);transition:all .2s;
+}
+#shopToggle:hover{transform:translateY(-2px);}
+
+/* ── KILLFEED ── */
+#killfeed{position:fixed;top:68px;right:360px;z-index:200;pointer-events:none;}
+.kf-item{background:rgba(0,10,0,.8);border:1px solid rgba(100,200,80,.15);
+  border-radius:8px;padding:5px 11px;margin-bottom:5px;font-size:.76rem;
+  color:#e8f5e9;animation:kfIn .25s ease;white-space:nowrap;}
+
+/* ── DEATH ── */
+#deathScreen{
+  position:fixed;inset:0;z-index:500;pointer-events:none;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0);
+  transition:background .4s ease;
+}
+#deathScreen.active{
+  display:flex;
+  background:rgba(0,0,0,.72);  /* heavy dim */
+  pointer-events:all;           /* block all clicks while dead */
+}
+.death-msg{text-align:center;color:#fff;animation:slideIn .3s ease;}
+.death-msg h2{
+  font-size:3rem;color:#ff4757;
+  text-shadow:0 0 40px #ff4757, 0 0 80px rgba(255,71,87,.4);
+  letter-spacing:3px;
+}
+.death-msg p{font-size:1.1rem;color:#aaa;margin-top:10px;}
+/* bone icon above text */
+.death-msg .death-icon{font-size:4rem;display:block;margin-bottom:8px;animation:float 1.5s ease-in-out infinite;}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;}
+.toast-item{background:rgba(5,20,5,.92);border:1px solid rgba(100,200,80,.2);
+  border-radius:10px;padding:9px 18px;color:#e8f5e9;font-size:.85rem;
+  text-align:center;margin-bottom:5px;animation:slideIn .25s ease;}
+
+/* ── COUNTDOWN ── */
+#countdownOverlay{
+  position:fixed;inset:0;z-index:45000;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);
+}
+#countdownOverlay.hidden{display:none;}
+.countdown-num{
+  font-size:10rem;font-weight:900;letter-spacing:-4px;
+  text-shadow:0 0 60px currentColor, 0 0 120px currentColor;
+  animation:cdPop .35s cubic-bezier(.2,1.6,.4,1) forwards;
+}
+.countdown-go{font-size:5rem;color:#7fff6a;letter-spacing:4px;}
+@keyframes cdPop{
+  from{transform:scale(2.5);opacity:0;}
+  to  {transform:scale(1);  opacity:1;}
+}
+
+/* ── MATCH TIMER ── */
+#matchTimer{
+  position:fixed;top:12px;left:50%;transform:translateX(-50%);
+  z-index:500;background:rgba(5,20,5,.9);border:1px solid rgba(100,200,80,.25);
+  border-radius:12px;padding:6px 20px;color:#7fff6a;font-size:1.1rem;font-weight:900;
+  letter-spacing:2px;pointer-events:none;display:none;
+  text-shadow:0 0 12px rgba(100,255,80,.5);
+}
+#matchTimer.urgent{color:#ff4757;border-color:rgba(255,71,87,.4);animation:pulse .5s ease infinite;}
+
+/* ── MATCH OVER SCREEN ── */
+#matchOver{
+  position:fixed;inset:0;z-index:60000;background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);
+}
+.matchover-box{
+  background:#0f2b0f;border:1px solid rgba(255,215,0,.3);border-radius:24px;
+  padding:36px 40px;text-align:center;min-width:700px;max-width:860px;
+  box-shadow:0 0 80px rgba(255,215,0,.15);
+}
+.matchover-boards{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;}
+.matchover-board{background:rgba(0,0,0,.3);border-radius:14px;padding:14px;}
+.matchover-board-title{font-size:.85rem;font-weight:900;text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.08);}
+.matchover-board-title.wealth{color:#ffd700;}
+.matchover-board-title.kills {color:#ff4757;}
+.matchover-title{font-size:2rem;font-weight:900;color:#ffd700;margin-bottom:6px;}
+.matchover-sub{color:#88aa88;font-size:.85rem;margin-bottom:24px;}
+.matchover-row{display:flex;align-items:center;gap:12px;padding:10px 12px;
+  border-radius:10px;margin-bottom:6px;background:rgba(255,255,255,.04);}
+.matchover-rank{font-size:1.2rem;width:32px;text-align:center;}
+.matchover-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.matchover-name{flex:1;font-weight:bold;font-size:.9rem;text-align:left;}
+.matchover-stat{color:#ffd700;font-size:.85rem;font-weight:bold;}
+
+/* ── BUTTON FEEDBACK ── */
+button:active{opacity:.75;transform:scale(.97)!important;}
+.sidebar-btn:active,.modal-confirm:active,.modal-cancel:active,.auth-btn:active{
+  filter:brightness(1.2);
+}
+
+/* ── CONTROLS HINT ── */
+#controls{position:fixed;bottom:58px;right:14px;z-index:200;
+  background:rgba(0,10,0,.65);border-radius:10px;padding:9px 13px;
+  font-size:.72rem;color:#557755;backdrop-filter:blur(10px);line-height:1.8;}
+.key{color:#b8f5b0;background:rgba(100,200,80,.1);border-radius:4px;padding:1px 5px;font-size:.68rem;}
+
+/* ── JOIN CODE MODAL ── */
+#joinCodeModal .modal-input{font-size:1.2rem;text-align:center;letter-spacing:4px;text-transform:uppercase;}
+
+/* ── DIFFICULTY PICKER ── */
+.diff-btn{padding:10px 6px;border:2px solid rgba(255,255,255,.1);border-radius:10px;
+  cursor:pointer;background:rgba(255,255,255,.04);color:#888;font-size:.85rem;font-weight:bold;transition:all .2s;}
+.diff-btn.diff-active{color:#fff;}
+.diff-easy.diff-active  {background:rgba(46,213,115,.15);border-color:#2ed573;color:#2ed573;}
+.diff-medium.diff-active{background:rgba(255,165,2,.15); border-color:#ffa502;color:#ffa502;}
+.diff-hard.diff-active  {background:rgba(255,71,87,.15);  border-color:#ff4757;color:#ff4757;}
+
+/* ── STATS MODAL ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(100,200,80,.12);
+  border-radius:12px;padding:14px 16px;text-align:center;}
+.stat-card-val{font-size:1.6rem;font-weight:900;color:#7fff6a;line-height:1;}
+.stat-card-lbl{font-size:.72rem;color:#557755;margin-top:4px;text-transform:uppercase;letter-spacing:.5px;}
+.stat-upgrades{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.stat-upg-chip{background:rgba(76,175,80,.12);border:1px solid rgba(76,175,80,.25);
+  border-radius:20px;padding:4px 10px;font-size:.75rem;color:#b8f5b0;}
+.btn-stats{background:linear-gradient(135deg,#0a3a5a,#1e90ff);color:#fff;}
+.btn-stats:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(30,144,255,.35);}
+
+/* scrollbars */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#224422;border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
+<div id="authScreen">
+  <div class="auth-dinos">
+    <span class="auth-dino">🦕</span><span class="auth-dino">🦖</span>
+    <span class="auth-dino">🦴</span><span class="auth-dino">🌿</span>
+    <span class="auth-dino">⛰️</span>
+  </div>
+  <div class="auth-box">
+    <div class="auth-logo">🦕</div>
+    <div class="auth-title">DINO TYCOON</div>
+    <div class="auth-sub">Build your prehistoric empire. Dominate the Jurassic.</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchTab('register')">Register</button>
+    </div>
+    <input class="auth-input" id="authUser" placeholder="Username" maxlength="20" autocomplete="off">
+    <input class="auth-input" id="authPass" type="password" placeholder="Password" maxlength="64">
+    <button class="auth-btn" id="authBtn" onclick="doAuth()">Enter the Jungle</button>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<!-- ══ LOBBY ══════════════════════════════════════════════════════════════════ -->
+<div id="lobbyScreen" class="hidden">
+  <div class="lobby-header">
+    <span class="lobby-logo">🦕</span>
+    <span class="lobby-title">DINO TYCOON</span>
+    <span class="lobby-online" id="lobbyOnline">🟢 0 online</span>
+    <span class="lobby-username" id="lobbyUsername"></span>
+    <button class="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+  <div class="lobby-body">
+    <!-- Room list -->
+    <div class="lobby-rooms">
+      <h2>🌿 Public Rooms <span style="color:#557755;font-weight:normal;font-size:.8rem;margin-left:4px;" id="roomCount"></span></h2>
+      <div class="room-grid" id="roomGrid">
+        <div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>
+      </div>
+    </div>
+    <!-- Sidebar -->
+    <div class="lobby-sidebar">
+      <button class="sidebar-btn btn-solo" onclick="openPlayNowModal()" style="font-size:1.05rem;padding:16px;background:linear-gradient(135deg,#1a6b00,#4cde1e);box-shadow:0 4px 20px rgba(76,220,30,.3);">🦖 PLAY NOW!</button>
+      <button class="sidebar-btn btn-join-code" onclick="openJoinCodeModal()">🔑 Join by Code</button>
+      <button class="sidebar-btn btn-stats" onclick="openStatsModal()">📊 My Stats</button>
+      <button class="sidebar-btn" onclick="openSavedGamesModal()" style="background:linear-gradient(135deg,#1a3a5a,#0a6a9a);color:#7ff;font-size:.9rem;">💾 Saved Games</button>
+      <button class="sidebar-btn" onclick="openSettingsModal()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#ccc;font-size:.9rem;">⚙️ Settings</button>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">📨 Invites</div>
+      <div class="invite-list" id="inviteList"><div style="color:#334433;font-size:.8rem;text-align:center;padding:20px 0;">No invites yet</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLAY NOW MODAL ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="playNowModal">
+  <div class="modal" style="width:520px;">
+    <h2 style="font-size:1.5rem;letter-spacing:1px;">🦖 PLAY NOW!</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <label class="modal-label">Room Name</label>
+        <input class="modal-input" id="roomName" placeholder="My Dino Lair" maxlength="40">
+      </div>
+      <div>
+        <label class="modal-label">Game Mode</label>
+        <select class="modal-select" id="roomMode">
+          <option value="classic">🦕 Classic Tycoon</option>
+          <option value="rumble">⚔️ Dino Rumble</option>
+          <option value="survival">☄️ Survival</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="modal-label" style="margin-top:12px;">⚙️ Difficulty</label>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;" id="difficultyPicker">
+      <button onclick="setDifficulty('easy')"   id="diff_easy"   class="diff-btn diff-easy   diff-active">🌿 Easy</button>
+      <button onclick="setDifficulty('medium')" id="diff_medium" class="diff-btn diff-medium">⚔️ Medium</button>
+      <button onclick="setDifficulty('hard')"   id="diff_hard"   class="diff-btn diff-hard">☄️ Hard</button>
+    </div>
+    <div id="difficultyDesc" style="color:#557755;font-size:.72rem;margin-bottom:4px;">
+      🌿 Easy — all upgrades cost <b style="color:#2ed573;">70% cheaper</b>. Great for learning the game!
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+      <div>
+        <label class="modal-label">Max Players</label>
+        <div class="slider-row">
+          <input class="modal-slider" type="range" min="1" max="8" value="8" id="maxPlayers"
+            oninput="document.getElementById('maxPlayersVal').textContent=this.value">
+          <span class="slider-val" id="maxPlayersVal">8</span>
+        </div>
+      </div>
+      <div>
+        <label class="modal-label">⏱ Match Duration</label>
+        <select class="modal-select" id="matchDuration" style="padding:8px 10px;">
+          <option value="0">♾ Unlimited</option>
+          <option value="180">3 minutes</option>
+          <option value="300">5 minutes</option>
+          <option value="600">10 minutes</option>
+          <option value="900">15 minutes</option>
+          <option value="1800">30 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="modal-label" style="margin-top:14px;">🤖 Bots</label>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+      <div style="text-align:center;">
+        <div style="color:#2ed573;font-size:.72rem;font-weight:bold;margin-bottom:5px;">Easy</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
+          <button onclick="changeBotCount('easy',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <span id="botCount_easy" style="color:#2ed573;font-weight:bold;min-width:18px;text-align:center;">0</span>
+          <button onclick="changeBotCount('easy',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#2d7a1e;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color:#ffa502;font-size:.72rem;font-weight:bold;margin-bottom:5px;">Medium</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
+          <button onclick="changeBotCount('medium',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <span id="botCount_medium" style="color:#ffa502;font-weight:bold;min-width:18px;text-align:center;">0</span>
+          <button onclick="changeBotCount('medium',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#7a4a00;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color:#ff4757;font-size:.72rem;font-weight:bold;margin-bottom:5px;">Hard</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
+          <button onclick="changeBotCount('hard',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <span id="botCount_hard" style="color:#ff4757;font-weight:bold;min-width:18px;text-align:center;">0</span>
+          <button onclick="changeBotCount('hard',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#7a0000;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color:#ff2222;font-size:.72rem;font-weight:bold;margin-bottom:5px;">💀 Hardcore</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
+          <button onclick="changeBotCount('hardcore',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <span id="botCount_hardcore" style="color:#ff2222;font-weight:bold;min-width:18px;text-align:center;">0</span>
+          <button onclick="changeBotCount('hardcore',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#ff2222;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+      <div class="modal-toggle-row" style="border:none;padding:6px 0;">
+        <span class="modal-toggle-label">🌐 Public Room</span>
+        <button class="toggle on" id="publicToggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="modal-toggle-row" style="border:none;padding:6px 0;">
+        <span class="modal-toggle-label" title="Everyone starts $0, no upgrades">🔄 Fresh Start</span>
+        <button class="toggle" id="freshStartToggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+    <div id="savedGameRow" class="modal-toggle-row" style="border:1px solid rgba(100,200,80,.2);border-radius:10px;padding:10px 14px;margin-top:8px;background:rgba(100,200,80,.05);display:none;">
+      <div>
+        <span class="modal-toggle-label">💾 Continue Saved Game</span>
+        <div style="color:#557755;font-size:.7rem;" id="savedGameInfo">Loading...</div>
+      </div>
+      <button class="toggle" id="loadSavedToggle" onclick="this.classList.toggle('on')"></button>
+    </div>
+    <div style="color:#446644;font-size:.7rem;margin-bottom:10px;margin-top:4px;">
+      Fresh Start = everyone begins with $0 and no upgrades for this match only
+    </div>
+
+    <label class="modal-label">Custom Invite Code <span style="color:#446644;font-weight:normal;">(optional, 4–8 chars)</span></label>
+    <input class="modal-input" id="customCode" placeholder="e.g. DINO42 — leave blank for random" maxlength="8" autocomplete="off"
+      style="text-transform:uppercase;letter-spacing:3px;"
+      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="modal-cancel" onclick="closeModal('playNowModal')">Cancel</button>
+      <button class="modal-confirm" style="font-size:1rem;font-weight:900;letter-spacing:1px;" onclick="submitCreateRoom()">🦖 LET'S GO!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS MODAL ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal" style="width:420px;">
+    <h2>⚙️ Settings</h2>
+    <div id="settingsContent"></div>
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="modal-cancel" onclick="closeModal('settingsModal')">Close</button>
+      <button class="modal-confirm" onclick="saveSettings()">✅ Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SAVED GAMES MODAL ════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="savedGamesModal">
+  <div class="modal" style="width:480px;">
+    <h2>💾 Saved Games</h2>
+    <div id="savedGamesList" style="min-height:80px;">
+      <div style="color:#557755;text-align:center;padding:20px;">Loading...</div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="modal-cancel" onclick="closeModal('savedGamesModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATS MODAL ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="statsModal">
+  <div class="modal" style="width:460px;">
+    <h2>📊 My Stats</h2>
+    <div id="statsContent">
+      <div style="text-align:center;color:#557755;padding:20px;">Loading...</div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="modal-confirm" onclick="closeModal('statsModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ JOIN CODE MODAL ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="joinCodeModal">
+  <div class="modal" style="width:320px;">
+    <h2>🔑 Join by Invite Code</h2>
+    <label class="modal-label">Enter 6-digit code</label>
+    <input class="modal-input" id="joinCodeInput" placeholder="ABC123" maxlength="6" autocomplete="off">
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal('joinCodeModal')">Cancel</button>
+      <button class="modal-confirm" onclick="submitJoinCode()">Join!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WAITING ROOM ══════════════════════════════════════════════════════════ -->
+<div id="waitingRoom" class="hidden">
+  <div class="waiting-header">
+    <span style="font-size:1.5rem">🦕</span>
+    <span class="waiting-title" id="waitRoomName">Room Name</span>
+    <span class="waiting-code" id="waitInviteCode" onclick="copyCode()" title="Click to copy invite code">Code: ------</span>
+    <span style="flex:1"></span>
+    <span id="waitModeTag" class="room-badge badge-mode">Classic</span>
+  </div>
+  <div class="waiting-body">
+    <!-- Player list -->
+    <div class="waiting-players">
+      <h3>Players (<span id="waitPlayerCount">0</span>/<span id="waitMaxPlayers">8</span>)</h3>
+      <div id="waitPlayerList"></div>
+    </div>
+    <!-- Sidebar -->
+    <div class="waiting-sidebar">
+      <!-- Host controls -->
+      <div id="hostControls" class="hidden">
+        <h3 style="margin-bottom:10px;">⚙️ Settings</h3>
+        <div class="settings-row">
+          <span class="settings-label">Public</span>
+          <button class="settings-btn" id="togglePublicBtn" onclick="togglePublic()">Yes</button>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Max Players</span>
+          <select class="modal-select" id="waitMaxSelect" onchange="updateSetting('maxPlayers',this.value)" style="width:auto;padding:5px 8px;">
+            <option>2</option><option>3</option><option>4</option><option>5</option>
+            <option>6</option><option>7</option><option selected>8</option>
+          </select>
+        </div>
+        <div style="margin-top:10px;">
+          <h3 style="margin-bottom:8px;">🤖 Add Bots</h3>
+          <div class="bot-controls">
+            <button class="bot-btn bot-easy" onclick="addBot('easy')">+ Easy</button>
+            <button class="bot-btn bot-medium" onclick="addBot('medium')">+ Medium</button>
+            <button class="bot-btn bot-hard" onclick="addBot('hard')">+ Hard</button>
+            <button class="bot-btn bot-hardcore" onclick="addBot('hardcore')" style="background:linear-gradient(135deg,#7a0000,#ff2222);color:#fff;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:bold;">💀 Hardcore</button>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <h3 style="margin-bottom:8px;">📨 Invite Player</h3>
+          <div class="invite-input-row">
+            <input class="invite-input" id="inviteUsernameInput" placeholder="Username">
+            <button class="invite-send-btn" onclick="sendInvite()">Invite</button>
+          </div>
+        </div>
+      </div>
+      <!-- Chat -->
+      <div class="chat-section" style="margin-top:16px;">
+        <h3 style="margin-bottom:8px;">💬 Chat</h3>
+        <div class="wait-chat-log" id="waitChatLog"></div>
+        <div class="wait-chat-input-row">
+          <input class="wait-chat-input" id="waitChatInput" placeholder="Say something..." maxlength="120">
+          <button class="wait-chat-send" onclick="sendWaitChat()">Send</button>
+        </div>
+      </div>
+      <!-- Start / Leave -->
+      <button class="start-btn hidden" id="startGameBtn" onclick="startGame()">🦕 START GAME!</button>
+      <button class="leave-room-btn" onclick="leaveRoom()" style="margin-top:8px;">Leave Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HUD ══════════════════════════════════════════════════════════════════ -->
+<div id="hud" class="hidden">
+  <div id="topBar">
+    <div class="hud-card" style="min-width:190px;">
+      <span class="hud-label">🦕 HEALTH</span>
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div class="bar-bg" style="flex:1"><div class="bar-fill" id="hpFill" style="width:100%"></div></div>
+        <span id="hpText" style="font-size:.75rem;color:#7fff6a;min-width:50px;">100/100</span>
+      </div>
+    </div>
+    <div class="hud-card">
+      <span class="hud-label">🦴 FOSSILS</span>
+      <span id="hudMoney" style="color:#ffd700;font-weight:bold;">$0</span>
+    </div>
+    <div class="hud-card">
+      <span class="hud-label">⛏️ INCOME</span>
+      <span id="hudMPS" style="color:#66bb6a;font-weight:bold;">+$1/s</span>
+    </div>
+    <div class="hud-card" style="min-width:140px;">
+      <span class="hud-label">✨ LVL <span id="hudLevel">1</span> XP</span>
+      <div class="bar-bg" style="width:120px;"><div class="bar-fill" id="xpFill" style="width:0%"></div></div>
+    </div>
+    <div class="hud-card">
+      <span class="hud-label">⚔️ K/D</span>
+      <span id="hudKD">0/0</span>
+    </div>
+    <div class="hud-card" id="hudPrestige" style="display:none;">
+      <span class="hud-label">⭐ PRESTIGE</span>
+      <span id="hudPrestigeVal" style="color:#ffd700;font-weight:bold;">★0</span>
+    </div>
+    <div class="hud-spacer"></div>
+    <span style="color:#557755;font-size:.85rem;font-weight:bold;letter-spacing:2px;">🦕 DINO TYCOON</span>
+  </div>
+</div>
+
+<!-- Shop toggle -->
+<button id="shopToggle" class="hidden" onclick="toggleShop()">🦴 Dino Den [B]</button>
+
+<!-- Shop -->
+<div id="shopPanel">
+  <h2>🦴 Dino Den — Upgrade Shop</h2>
+  <div class="shop-tabs" id="shopTabs"></div>
+  <div id="shopList"></div>
+  <button class="prestige-btn" onclick="doPrestige()">⭐ PRESTIGE ($100,000 fossils)</button>
+</div>
+
+<!-- Leaderboard -->
+<div id="lbPanel" class="hidden">
+  <h3>🏆 Fossil Leaders</h3>
+  <div id="lbList"></div>
+</div>
+
+<!-- Chat -->
+<div id="chatPanel" class="hidden">
+  <div id="chatLog"></div>
+  <div id="chatInputRow">
+    <input id="chatInput" placeholder="Press Enter to chat..." maxlength="120" autocomplete="off">
+    <button id="chatSend" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<!-- Controls -->
+<div id="controls" class="hidden">
+  <span class="key">WASD</span> Move &nbsp; <span class="key">Click</span> Attack<br>
+  <span class="key">B</span> Shop &nbsp; <span class="key">Enter</span> Chat<br>
+  <span class="key">Space</span> Collect &nbsp; <span class="key">Tab</span> Scores &nbsp; <span class="key">Click ON enemy</span> Bite 🦷
+</div>
+
+<!-- Kill feed -->
+<div id="killfeed"></div>
+
+<!-- Death screen -->
+<div id="deathScreen">
+  <div class="death-msg">
+    <span class="death-icon">🦴</span>
+    <h2>FOSSILIZED!</h2>
+    <p id="deathMsg">Respawning in 5s...</p>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Countdown overlay -->
+<div id="countdownOverlay" class="hidden">
+  <div id="countdownNum" class="countdown-num" style="color:#ff4757;">5</div>
+</div>
+
+<!-- Match Timer -->
+<div id="matchTimer" class="hidden">⏱ 10:00</div>
+
+<!-- Match Over Screen -->
+<div id="matchOver" class="hidden">
+  <div class="matchover-box">
+    <div class="matchover-title">🏆 MATCH OVER!</div>
+    <div class="matchover-sub" id="matchoverWinner" style="font-size:.95rem;margin-bottom:4px;"></div>
+    <div class="matchover-boards">
+      <div class="matchover-board">
+        <div class="matchover-board-title wealth">💰 Wealth Leaderboard</div>
+        <div id="matchoverWealth"></div>
+      </div>
+      <div class="matchover-board">
+        <div class="matchover-board-title kills">⚔️ Kill Leaderboard</div>
+        <div id="matchoverKills"></div>
+      </div>
+    </div>
+    <button onclick="matchOverQuit()" style="
+      margin-top:20px;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+      background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;font-size:1rem;font-weight:bold;
+    ">🚪 Back to Lobby</button>
+  </div>
+</div>
+
+<!-- ESC Pause Menu -->
+<div id="pauseMenu" class="hidden" style="
+  position:fixed;inset:0;z-index:50000;
+  background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+">
+  <div style="
+    background:#0f2b0f;border:1px solid rgba(100,200,80,.3);border-radius:24px;
+    padding:40px 48px;text-align:center;min-width:320px;
+    box-shadow:0 0 60px rgba(50,200,50,.15);
+  ">
+    <div style="font-size:3rem;margin-bottom:8px;">🦕</div>
+    <div style="font-size:1.5rem;font-weight:900;color:#7fff6a;margin-bottom:6px;">PAUSED</div>
+    <div style="color:#557755;font-size:.85rem;margin-bottom:28px;">Press ESC to resume</div>
+    <button onclick="togglePause()" style="
+      width:100%;padding:13px;border:none;border-radius:12px;cursor:pointer;
+      background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;
+      font-size:1rem;font-weight:bold;margin-bottom:10px;
+    ">▶ Resume Game</button>
+    <button onclick="saveCurrentGame()" style="
+      width:100%;padding:13px;border:1px solid rgba(100,200,80,.3);border-radius:12px;
+      cursor:pointer;background:rgba(100,200,80,.08);color:#7fff6a;font-size:1rem;margin-bottom:10px;
+    ">💾 Save Game</button>
+    <button onclick="quitToLobby()" style="
+      width:100%;padding:13px;border:1px solid rgba(255,100,100,.3);border-radius:12px;
+      cursor:pointer;background:transparent;color:#ff8888;font-size:1rem;
+    ">🚪 Quit to Lobby</button>
+  </div>
+</div>
+
+<!-- Game -->
+<div id="gameContainer"></div>
+
+<!-- socket.io is local/fast — load it now -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- Phaser (1MB CDN) + game.js are loaded ONLY when the game actually starts -->
+<!-- This keeps the auth screen and lobby instantly responsive -->
+<script>
+// ── Sound Engine (Web Audio API — no files needed) ───────────────────────────
+window.SFX = (() => {
+  let ctx = null;
+  const getCtx = () => {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  };
+  const osc = (freq, type, dur, vol=0.35, freqEnd=null) => {
+    const c=getCtx(); const o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type=type; o.frequency.setValueAtTime(freq, c.currentTime);
+    if(freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, c.currentTime+dur);
+    g.gain.setValueAtTime(vol, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+dur);
+    o.start(c.currentTime); o.stop(c.currentTime+dur+0.01);
+  };
+  const noise = (dur, vol=0.25, lpFreq=2000) => {
+    const c=getCtx(); const sz=Math.ceil(c.sampleRate*dur);
+    const buf=c.createBuffer(1,sz,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<sz;i++) d[i]=Math.random()*2-1;
+    const src=c.createBufferSource(); src.buffer=buf;
+    const filt=c.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=lpFreq;
+    const g=c.createGain(); g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    src.connect(filt); filt.connect(g); g.connect(c.destination);
+    src.start(); src.stop(c.currentTime+dur+0.01);
+  };
+  const play = fn => { if (!(window.GAME_SETTINGS?.soundEnabled === false)) fn(); };
+  return {
+    _muted: false,
+    pop:       () => play(()=>{ osc(900,'sine',0.07,0.5); osc(600,'sine',0.05,0.2); }),
+    click:     () => play(()=>{ osc(700,'sine',0.06,0.4); }),
+    crunch:    () => play(()=>{ noise(0.15,0.5,800); osc(90,'sawtooth',0.12,0.35); }),
+    hit:       () => play(()=>{ noise(0.1,0.35,1200); osc(150,'square',0.08,0.2); }),
+    death:     () => play(()=>{ noise(0.55,0.6,400); osc(55,'sawtooth',0.4,0.5); osc(40,'sine',0.6,0.3); }),
+    kill:      () => play(()=>{ osc(523,'sine',0.1,0.4); osc(784,'sine',0.12,0.4); osc(1047,'sine',0.1,0.35); }),
+    coin:      () => play(()=>{ osc(1400,'sine',0.08,0.3,1800); osc(1800,'sine',0.06,0.2); }),
+    levelUp:   () => play(()=>{ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>osc(f,'sine',0.18,0.35),i*90)); }),
+    upgrade:   () => play(()=>{ osc(400,'sine',0.09,0.3); osc(600,'sine',0.1,0.25); osc(800,'sine',0.08,0.2); }),
+    roar:      () => play(()=>{ noise(0.3,0.4,300); osc(80,'sawtooth',0.5,0.55); osc(110,'sawtooth',0.4,0.4); }),
+    error:     () => play(()=>{ osc(220,'sawtooth',0.15,0.4); osc(160,'sawtooth',0.12,0.3); }),
+    chatMsg:   () => play(()=>{ osc(1200,'sine',0.05,0.15); }),
+    countdown: () => play(()=>{ osc(600,'sine',0.12,0.1,600); }),
+    start:     () => play(()=>{ noise(0.2,0.3,500); osc(130,'sawtooth',0.4,0.6); setTimeout(()=>osc(200,'sawtooth',0.3,0.3),180); }),
+  };
+})();
+
+// Wire pop sound to every button click site-wide
+document.addEventListener('click', e => {
+  if (e.target.matches('button, .room-card, .auth-tab, .invite-accept, .invite-decline, .room-join-btn'))
+    window.SFX.pop();
+}, true);
+
+// ── Global error surface (shows JS errors as toasts) ─────────────────────────
+window.onerror = function(msg, src, line, col, err) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  const d = document.createElement('div');
+  d.className = 'toast-item';
+  d.style.borderColor = 'rgba(255,100,100,.5)';
+  d.style.color = '#ff8888';
+  d.textContent = '⚠️ JS Error: ' + msg + ' (line ' + line + ')';
+  t.appendChild(d);
+  setTimeout(() => d.remove(), 6000);
+};
+window.addEventListener('unhandledrejection', e => {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  const d = document.createElement('div');
+  d.className = 'toast-item';
+  d.style.borderColor = 'rgba(255,100,100,.5)';
+  d.style.color = '#ff8888';
+  d.textContent = '⚠️ Async Error: ' + (e.reason?.message || e.reason || 'Unknown');
+  t.appendChild(d);
+  setTimeout(() => d.remove(), 6000);
+});
+
+// ── Globals ──────────────────────────────────────────────────────────────────
+let authMode = 'login';
+let currentUser = null;
+let currentRoom = null;
+let isHost = false;
+let roomPublicFlag = true;
+let _gameScriptsLoaded = false;
+let _gameScriptsLoading = false;
+let _socketAuthed = false;  // true only after server confirms auth via lobbyReady
+
+// Dynamically load Phaser + game.js ONLY when the game starts (keeps lobby fast)
+function loadGameScripts(cb) {
+  if (_gameScriptsLoaded) { cb(); return; }
+  if (_gameScriptsLoading) { setTimeout(() => loadGameScripts(cb), 100); return; }
+  _gameScriptsLoading = true;
+  showToast('🦕 Loading game engine...', 8000);
+  const phaser = document.createElement('script');
+  phaser.src = 'https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js';
+  phaser.onerror = () => showToast('❌ Failed to load game engine (check internet)', 5000);
+  phaser.onload = () => {
+    const gameScript = document.createElement('script');
+    gameScript.src = 'game.js?v=' + Date.now();
+    gameScript.onload = () => {
+      _gameScriptsLoaded = true;
+      _gameScriptsLoading = false;
+      cb();
+    };
+    document.head.appendChild(gameScript);
+  };
+  document.head.appendChild(phaser);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+function switchTab(m) {
+  authMode = m;
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(m==='login'?0:1)));
+  document.getElementById('authBtn').textContent = m==='login' ? 'Enter the Jungle' : 'Join the Herd';
+  document.getElementById('authErr').textContent = '';
+}
+document.getElementById('authPass').addEventListener('keydown',e=>{ if(e.key==='Enter') doAuth(); });
+document.getElementById('authUser').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('authPass').focus(); });
+
+async function doAuth() {
+  const u=document.getElementById('authUser').value.trim(), p=document.getElementById('authPass').value;
+  const err=document.getElementById('authErr'); err.textContent='';
+  if(!u||!p){err.textContent='Fill in all fields';return;}
+  document.getElementById('authBtn').textContent='...';
+  try {
+    const res=await fetch(`/api/${authMode}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const data=await res.json();
+    if(!res.ok){err.textContent=data.error||'Error';document.getElementById('authBtn').textContent=authMode==='login'?'Enter the Jungle':'Join the Herd';return;}
+    localStorage.setItem('dt_token',data.token); localStorage.setItem('dt_user',data.username);
+    currentUser=data.username;
+    enterGame(data.token);
+  } catch(e) {err.textContent='Connection error';document.getElementById('authBtn').textContent=authMode==='login'?'Enter the Jungle':'Join the Herd';}
+}
+
+function doLogout() {
+  window.SFX?.click();
+  _socketAuthed = false;
+  localStorage.removeItem('dt_token'); localStorage.removeItem('dt_user');
+  if(window.gameSocket) window.gameSocket.disconnect();
+  location.reload();
+}
+
+function enterGame(token) {
+  // Immediately kill pointer events on auth screen so lobby buttons work during fade
+  const auth = document.getElementById('authScreen');
+  auth.style.pointerEvents = 'none';
+  auth.style.transition = 'opacity 0.4s';
+  auth.style.opacity = '0';
+  setTimeout(() => {
+    auth.style.display = 'none';
+    showScreen('lobby');
+    document.getElementById('lobbyUsername').textContent = '🦕 ' + currentUser;
+    initSocket(token);
+  }, 420);
+}
+
+window.addEventListener('load', () => {
+  const tok = localStorage.getItem('dt_token'), u = localStorage.getItem('dt_user');
+  if (tok && u) { currentUser = u; enterGame(tok); }
+});
+
+// ── Screen management — fully explicit, no clever logic ───────────────────────
+function showScreen(name) {
+  // Hide everything first
+  document.getElementById('authScreen').style.display   = 'none';
+  document.getElementById('lobbyScreen').classList.add('hidden');
+  document.getElementById('waitingRoom').classList.add('hidden');
+
+  if (name === 'lobby') {
+    document.getElementById('lobbyScreen').classList.remove('hidden');
+  } else if (name === 'waiting') {
+    document.getElementById('waitingRoom').classList.remove('hidden');
+  } else if (name === 'game') {
+    ['hud','shopToggle','lbPanel','chatPanel','controls']
+      .forEach(id => document.getElementById(id).classList.remove('hidden'));
+  }
+}
+
+// ── Lobby logic ────────────────────────────────────────────────────────────────
+function renderRooms(rooms) {
+  const grid=document.getElementById('roomGrid');
+  document.getElementById('roomCount').textContent=rooms.length ? `(${rooms.length})` : '';
+  if(!rooms.length){grid.innerHTML='<div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>';return;}
+  grid.innerHTML=rooms.map(r=>`
+    <div class="room-card" onclick="joinRoom('${r.id}')">
+      <div class="room-name">${esc(r.name)}</div>
+      <div class="room-host">Host: ${esc(r.hostName||'?')}</div>
+      <div class="room-meta">
+        <span class="room-badge badge-mode">${modeLabel(r.gameMode)}</span>
+        <span class="room-badge badge-players">🦕 ${r.playerCount}/${r.maxPlayers}</span>
+        <span class="room-badge badge-status">${r.status==='playing'?'🎮 In Game':'⏳ Waiting'}</span>
+      </div>
+      <button class="room-join-btn">Join Room →</button>
+    </div>
+  `).join('');
+}
+
+function modeLabel(m){return{classic:'🦕 Classic',rumble:'⚔️ Rumble',survival:'☄️ Survival'}[m]||m;}
+function esc(s){return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Create room modal ─────────────────────────────────────────────────────────
+const _botCounts = { easy:0, medium:0, hard:0, hardcore:0 };
+function changeBotCount(diff, delta) {
+  const total = Object.values(_botCounts).reduce((a,b)=>a+b,0);
+  const max = parseInt(document.getElementById('maxPlayers').value) - 1;
+  if (delta > 0 && total >= max) { window.SFX?.error(); showToast('❌ No more slots!'); return; }
+  _botCounts[diff] = Math.max(0, _botCounts[diff] + delta);
+  document.getElementById('botCount_' + diff).textContent = _botCounts[diff];
+  window.SFX?.pop();
+}
+
+let _roomDifficulty = 'easy';
+function setDifficulty(d) {
+  _roomDifficulty = d;
+  ['easy','medium','hard'].forEach(x => {
+    document.getElementById('diff_'+x).classList.toggle('diff-active', x===d);
+  });
+  const descs = {
+    easy:   '🌿 Easy — all upgrades cost <b style="color:#2ed573;">70% cheaper</b>. Great for learning!',
+    medium: '⚔️ Medium — <b style="color:#ffa502;">normal costs</b>. The balanced experience.',
+    hard:   '☄️ Hard — all upgrades cost <b style="color:#ff4757;">50% more expensive</b>. For veterans!',
+  };
+  document.getElementById('difficultyDesc').innerHTML = descs[d];
+  window.SFX?.pop();
+}
+
+function openPlayNowModal() {
+  window.SFX?.roar();
+  document.getElementById('roomName').value = currentUser + "'s Jungle";
+  document.getElementById('customCode').value = '';
+  for (const d of ['easy','medium','hard','hardcore']) {
+    _botCounts[d] = 0;
+    document.getElementById('botCount_' + d).textContent = '0';
+  }
+  document.getElementById('freshStartToggle').classList.remove('on');
+  document.getElementById('matchDuration').value = '0';
+  setDifficulty('easy');
+  // Show saved game row if player has one
+  const savedRow = document.getElementById('savedGameRow');
+  const saved = window._myStats?.savedGame;
+  if (saved) {
+    savedRow.style.display = 'flex';
+    const d = new Date(saved.savedAt);
+    document.getElementById('savedGameInfo').textContent =
+      `${saved.buildings?.length||0} buildings · $${(saved.money||0).toLocaleString()} · saved ${d.toLocaleDateString()}`;
+    document.getElementById('loadSavedToggle').classList.remove('on');
+  } else {
+    savedRow.style.display = 'none';
+  }
+  document.getElementById('playNowModal').classList.remove('hidden');
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+const SETTINGS_DEFS = [
+  { key:'cameraShake',     label:'📷 Camera Shake',        desc:'Screen wobbles when you take damage or knockback', default:true },
+  { key:'soundEnabled',    label:'🔊 Sound Effects',        desc:'All in-game sounds (hits, buys, level ups, etc.)', default:true },
+  { key:'damageNumbers',   label:'💢 Damage Numbers',       desc:'Floating numbers showing damage dealt/received',   default:true },
+  { key:'knockbackEffect', label:'💥 Knockback Animation',  desc:'Smooth slide when you or enemies get knocked back', default:true },
+  { key:'arenaFlash',      label:'⚡ Hit Screen Flash',     desc:'Brief red flash on screen when you take damage',   default:true },
+];
+let GAME_SETTINGS = {};
+
+function loadSettings() {
+  try { GAME_SETTINGS = JSON.parse(localStorage.getItem('dt_settings') || '{}'); } catch { GAME_SETTINGS = {}; }
+  for (const d of SETTINGS_DEFS) if (GAME_SETTINGS[d.key] === undefined) GAME_SETTINGS[d.key] = d.default;
+  applySettings();
+}
+
+function applySettings() {
+  window.GAME_SETTINGS = GAME_SETTINGS;
+  if (window.SFX) window.SFX._muted = !GAME_SETTINGS.soundEnabled;
+}
+
+function openSettingsModal() {
+  window.SFX?.pop();
+  loadSettings();
+  document.getElementById('settingsContent').innerHTML = SETTINGS_DEFS.map(d => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+      <div>
+        <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">${d.label}</div>
+        <div style="color:#557755;font-size:.72rem;margin-top:2px;">${d.desc}</div>
+      </div>
+      <button class="toggle ${GAME_SETTINGS[d.key]?'on':''}" id="setting_${d.key}" onclick="this.classList.toggle('on')"></button>
+    </div>`).join('');
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+
+function saveSettings() {
+  for (const d of SETTINGS_DEFS) {
+    GAME_SETTINGS[d.key] = document.getElementById('setting_'+d.key).classList.contains('on');
+  }
+  localStorage.setItem('dt_settings', JSON.stringify(GAME_SETTINGS));
+  applySettings();
+  closeModal('settingsModal');
+  showToast('✅ Settings saved!');
+  window.SFX?.pop();
+}
+
+// Load settings on startup
+loadSettings();
+
+function openSavedGamesModal() {
+  window.SFX?.pop();
+  document.getElementById('savedGamesModal').classList.remove('hidden');
+  document.getElementById('savedGamesList').innerHTML = '<div style="color:#557755;text-align:center;padding:20px;">Loading...</div>';
+  if (window.gameSocket) window.gameSocket.emit('getSavedGames');
+}
+
+function renderSavedGamesList(games) {
+  const el = document.getElementById('savedGamesList');
+  if (!games.length) {
+    el.innerHTML = '<div style="color:#557755;text-align:center;padding:30px;">No saved games yet.<br><span style="font-size:.8rem;">Save a game mid-match using ESC → 💾 Save Game</span></div>';
+    return;
+  }
+  const diffColors = {easy:'#2ed573',medium:'#ffa502',hard:'#ff4757'};
+  el.innerHTML = games.map(g => {
+    const d = new Date(g.savedAt);
+    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const dc = diffColors[g.difficulty]||'#aaa';
+    return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(100,200,80,.15);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-weight:bold;color:#e8f5e9;margin-bottom:3px;">${esc(g.name)}</div>
+        <div style="font-size:.75rem;color:#557755;">${dateStr} · <span style="color:${dc}">${g.difficulty||'medium'}</span></div>
+        <div style="font-size:.78rem;color:#88aa88;margin-top:3px;">💰 $${fmt(g.money)} · ⭐ Lvl ${g.level||1} · 🏗️ ${(g.buildings||[]).length} buildings</div>
+      </div>
+      <button onclick="loadSavedGameNow(${g.id})" style="padding:8px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.8rem;font-weight:bold;cursor:pointer;margin-right:6px;">▶ Play</button>
+      <button onclick="deleteSavedGame(${g.id})" style="padding:8px 10px;border:1px solid rgba(255,100,100,.3);border-radius:8px;background:transparent;color:#ff8888;font-size:.8rem;cursor:pointer;">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function loadSavedGameNow(saveId) {
+  window.SFX?.roar();
+  closeModal('savedGamesModal');
+  // Open play now modal with this save pre-selected
+  openPlayNowModal();
+  window._loadSaveId = saveId;
+  document.getElementById('loadSavedToggle').classList.add('on');
+  const savedRow = document.getElementById('savedGameRow');
+  savedRow.style.display = 'flex';
+  document.getElementById('savedGameInfo').textContent = 'Saved game selected — toggle off to start fresh';
+}
+
+function deleteSavedGame(id) {
+  if (!window.gameSocket) return;
+  window.SFX?.click();
+  window.gameSocket.emit('deleteSavedGame', id);
+}
+
+function openStatsModal() {
+  window.SFX?.pop();
+  document.getElementById('statsModal').classList.remove('hidden');
+  if (window._myStats) renderStats(window._myStats);
+  if (window.gameSocket) window.gameSocket.emit('getStats');
+  else renderStats(null);
+}
+
+function renderStats(s) {
+  const el = document.getElementById('statsContent');
+  if (!s) { el.innerHTML='<div style="text-align:center;color:#557755;padding:20px;">No stats yet — play a match!</div>'; return; }
+  const kd = s.deaths > 0 ? (s.kills/s.deaths).toFixed(2) : s.kills > 0 ? '∞' : '0.00';
+  const upgrades = window._allUpgrades || {};
+  const ownedNames = (s.upgrades||[]).map(id => upgrades[id]?.name || id);
+  el.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-card-val">${s.level||1}</div><div class="stat-card-lbl">🌟 Level</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">$${fmt(s.total_earned||0)}</div><div class="stat-card-lbl">💰 Total Earned</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#2ed573;">${s.kills||0}</div><div class="stat-card-lbl">⚔️ Total Kills</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#ff4757;">${s.deaths||0}</div><div class="stat-card-lbl">💀 Total Deaths</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#74b9ff;">${kd}</div><div class="stat-card-lbl">📈 K/D Ratio</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">${s.prestige||0}</div><div class="stat-card-lbl">⭐ Prestige</div></div>
+    </div>
+    <div style="color:#88aa88;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+      🧬 Upgrades Owned (${(s.upgrades||[]).length})
+    </div>
+    <div class="stat-upgrades">
+      ${ownedNames.length ? ownedNames.map(n=>`<span class="stat-upg-chip">${n}</span>`).join('') : '<span style="color:#446644;font-size:.8rem;">None yet — buy upgrades in a match!</span>'}
+    </div>
+  `;
+}
+function openJoinCodeModal() {
+  document.getElementById('joinCodeInput').value = '';
+  document.getElementById('joinCodeModal').classList.remove('hidden');
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function submitCreateRoom() {
+  const name       = document.getElementById('roomName').value.trim() || currentUser + "'s Jungle";
+  const mode       = document.getElementById('roomMode').value;
+  const max        = parseInt(document.getElementById('maxPlayers').value);
+  const isPublic   = document.getElementById('publicToggle').classList.contains('on');
+  const freshStart = document.getElementById('freshStartToggle').classList.contains('on');
+  const matchDuration = parseInt(document.getElementById('matchDuration').value);
+  const customCode = document.getElementById('customCode').value.trim().toUpperCase();
+  if (customCode && (customCode.length < 4 || customCode.length > 8)) {
+    showToast('❌ Code must be 4–8 characters'); return;
+  }
+  // Snapshot bot counts before closing
+  const bots = { ..._botCounts };
+  closeModal('playNowModal');
+  socketReady(() => {
+    const wantsLoad = document.getElementById('loadSavedToggle')?.classList.contains('on');
+    const saveId = wantsLoad ? (window._loadSaveId || null) : null;
+    window._loadSaveId = null;
+    window.gameSocket.emit('createRoom', {
+      name, gameMode: mode, maxPlayers: max, isPublic,
+      freshStart, matchDuration,
+      difficulty: _roomDifficulty,
+      loadSavedGame: saveId,
+      customCode: customCode || null,
+      _initialBots: bots,
+    });
+  });
+}
+
+function submitJoinCode() {
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if (code.length < 4) { showToast('❌ Enter the invite code'); return; }
+  closeModal('joinCodeModal');
+  socketReady(() => {
+    window.gameSocket.emit('joinRoom', { inviteCode: code });
+  });
+}
+
+// Legacy — now just opens the play now modal
+function createSoloRoom() { openPlayNowModal(); }
+
+// Socket readiness guard — waits until server confirms auth, then runs callback
+function socketReady(cb) {
+  if (_socketAuthed && window.gameSocket) {
+    cb(); return true;
+  }
+  // Not ready yet — retry every 400ms, up to 15 attempts (6s)
+  let attempts = 0;
+  function retry() {
+    attempts++;
+    if (_socketAuthed && window.gameSocket) { cb(); return; }
+    if (attempts > 15) { showToast('❌ Connection failed — try refreshing the page'); return; }
+    if (attempts === 1) showToast('⌛ Connecting...');
+    setTimeout(retry, 400);
+  }
+  retry();
+  return false;
+}
+
+function joinRoom(id){ socketReady(() => window.gameSocket.emit('joinRoom',{roomId:id})); }
+
+// ── Waiting room ──────────────────────────────────────────────────────────────
+function enterWaitingRoom(data) {
+  currentRoom=data.room; isHost=data.isHost;
+  showScreen('waiting');
+  document.getElementById('waitRoomName').textContent=data.room.name;
+  document.getElementById('waitInviteCode').textContent='Code: '+data.room.inviteCode;
+  document.getElementById('waitModeTag').textContent=modeLabel(data.room.gameMode);
+  document.getElementById('waitMaxPlayers').textContent=data.room.maxPlayers;
+  document.getElementById('hostControls').classList.toggle('hidden',!isHost);
+  document.getElementById('startGameBtn').classList.toggle('hidden',!isHost);
+  renderWaitPlayers(data.lobbyPlayers);
+}
+
+function renderWaitPlayers(lobbyPlayers) {
+  const list=document.getElementById('waitPlayerList');
+  const entries=Object.entries(lobbyPlayers);
+  document.getElementById('waitPlayerCount').textContent=entries.length;
+  list.innerHTML=entries.map(([sid,p])=>`
+    <div class="player-slot" id="slot_${sid}">
+      <div class="player-slot-dot" style="background:${p.color}"></div>
+      <span class="player-slot-name">${esc(p.username)}</span>
+      ${currentRoom&&sid===currentRoom.hostId?'<span class="player-slot-badge badge-host">Host</span>':''}
+      ${isHost&&sid!==window.gameSocket.id?`<button class="slot-kick" onclick="kickPlayer('${sid}')">Kick</button>`:''}
+    </div>
+  `).join('');
+}
+
+function addWaitPlayer(sid, data) {
+  if(!currentRoom) return;
+  const list=document.getElementById('waitPlayerList');
+  const existing=document.getElementById('slot_'+sid);
+  if(existing) return;
+  const div=document.createElement('div'); div.className='player-slot'; div.id='slot_'+sid;
+  div.innerHTML=`<div class="player-slot-dot" style="background:${data.color}"></div>
+    <span class="player-slot-name">${esc(data.username)}</span>
+    ${isHost&&sid!==window.gameSocket.id?`<button class="slot-kick" onclick="kickPlayer('${sid}')">Kick</button>`:''}`;
+  list.appendChild(div);
+  updateWaitCount();
+}
+
+function removeWaitPlayer(sid) {
+  const el=document.getElementById('slot_'+sid); if(el) el.remove();
+  updateWaitCount();
+}
+
+function addWaitBot(data) {
+  const list=document.getElementById('waitPlayerList');
+  const div=document.createElement('div'); div.className='player-slot'; div.id='slot_'+data.id;
+  const diffBadge=`badge-${data.difficulty}`;
+  div.innerHTML=`<div class="player-slot-dot" style="background:${data.color}"></div>
+    <span class="player-slot-name">${esc(data.username)}</span>
+    <span class="player-slot-badge badge-bot ${diffBadge}">🤖 ${data.difficulty}</span>
+    ${isHost?`<button class="slot-kick" onclick="removeBot('${data.id}')">Remove</button>`:''}`;
+  list.appendChild(div);
+  updateWaitCount();
+}
+
+function updateWaitCount() {
+  document.getElementById('waitPlayerCount').textContent=document.querySelectorAll('#waitPlayerList .player-slot').length;
+}
+
+function kickPlayer(sid){ window.gameSocket.emit('kickPlayer',sid); }
+function addBot(diff){ window.gameSocket.emit('addBot',diff); }
+function removeBot(id){ window.gameSocket.emit('removeBot',id); }
+function startGame(){ window.gameSocket.emit('startGame'); }
+function leaveRoom(){ window.gameSocket.emit('leaveRoom'); showScreen('lobby'); currentRoom=null; }
+
+function copyCode() {
+  if(currentRoom) { navigator.clipboard?.writeText(currentRoom.inviteCode); showToast('📋 Code copied: '+currentRoom.inviteCode); }
+}
+
+function sendInvite() {
+  const u=document.getElementById('inviteUsernameInput').value.trim(); if(!u) return;
+  window.gameSocket.emit('invitePlayer',u);
+  document.getElementById('inviteUsernameInput').value='';
+}
+
+function updateSetting(key, val) {
+  const s={}; s[key]=isNaN(val)?val:parseInt(val);
+  window.gameSocket.emit('updateRoomSettings',s);
+}
+
+let roomPublicState=true;
+function togglePublic() {
+  roomPublicState=!roomPublicState;
+  document.getElementById('togglePublicBtn').textContent=roomPublicState?'Yes':'No';
+  window.gameSocket.emit('updateRoomSettings',{isPublic:roomPublicState});
+}
+
+function sendWaitChat() {
+  const inp=document.getElementById('waitChatInput'); const msg=inp.value.trim(); if(!msg) return;
+  window.gameSocket.emit('chat',msg); inp.value='';
+}
+document.getElementById('waitChatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){sendWaitChat();e.preventDefault();}});
+
+function addWaitChat(username, message, color) {
+  const log=document.getElementById('waitChatLog');
+  const d=document.createElement('div'); d.className='wait-chat-row';
+  d.innerHTML=`<span class="wait-chat-name" style="color:${color}">${esc(username)}:</span> <span class="msg">${esc(message)}</span>`;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+  while(log.children.length>30) log.removeChild(log.firstChild);
+}
+
+// ── Invite notifications ───────────────────────────────────────────────────────
+function showInvite(from, roomId, roomName) {
+  const list=document.getElementById('inviteList');
+  // Clear "no invites" message
+  if(list.querySelector('div[style]')) list.innerHTML='';
+  const div=document.createElement('div'); div.className='invite-card'; div.id='invite_'+roomId;
+  div.innerHTML=`<div class="invite-from">🦕 ${esc(from)} invited you!</div>
+    <div class="invite-room">${esc(roomName)}</div>
+    <div class="invite-btns">
+      <button class="invite-accept" onclick="acceptInvite('${roomId}')">Accept</button>
+      <button class="invite-decline" onclick="declineInvite('${roomId}')">Decline</button>
+    </div>`;
+  list.insertBefore(div, list.firstChild);
+  showToast(`📨 ${from} invited you to "${roomName}"!`, 4000);
+}
+
+function acceptInvite(roomId) {
+  window.gameSocket.emit('acceptInvite',{roomId});
+  const el=document.getElementById('invite_'+roomId); if(el) el.remove();
+}
+function declineInvite(roomId) {
+  window.gameSocket.emit('declineInvite',{roomId});
+  const el=document.getElementById('invite_'+roomId); if(el) el.remove();
+}
+
+// ── HUD helpers ───────────────────────────────────────────────────────────────
+window.updateHUD = function(player) {
+  if(!player) return;
+  const pct=Math.max(0,Math.min(100,(player.hp/player.maxHp)*100));
+  document.getElementById('hpFill').style.width=pct+'%';
+  document.getElementById('hpText').textContent=`${Math.round(player.hp)}/${player.maxHp}`;
+  document.getElementById('hudMoney').textContent='$'+fmt(player.money);
+  document.getElementById('hudMPS').textContent='+$'+Math.round(player.mps)+'/s';
+  document.getElementById('hudLevel').textContent=player.level;
+  document.getElementById('hudKD').textContent=`${player.kills}/${player.deaths}`;
+  if(player.prestige>0){ document.getElementById('hudPrestige').style.display='block'; document.getElementById('hudPrestigeVal').textContent='★'+player.prestige; }
+};
+
+window.updateXPBar = function(xp,level) {
+  const needed=Math.floor(100*Math.pow(1.4,level-1));
+  document.getElementById('xpFill').style.width=Math.min(100,(xp/needed)*100)+'%';
+};
+
+window.updateLeaderboard = function(lb) {
+  document.getElementById('lbList').innerHTML=lb.map((p,i)=>`
+    <div class="lb-row ${p.isBot?'lb-bot':''}">
+      <span class="lb-rank">${['🥇','🥈','🥉'][i]||i+1}</span>
+      <div class="lb-dot" style="background:${p.color}"></div>
+      <span class="lb-name">${esc(p.username)}${p.prestige>0?` <span style="color:#ffd700;font-size:.68rem;">★${p.prestige}</span>`:''}${p.isBot?' 🤖':''}</span>
+      <span class="lb-money">$${fmt(p.money)}</span>
+    </div>`).join('');
+};
+
+const SHOP_CATS = {income:'⛏️ Income',speed:'💨 Speed',attack:'⚔️ Attack',defense:'🛡️ Defense',health:'❤️ Health',build:'🏗️ Build'};
+let shopCatFilter='income';
+
+window.buildShop = function(upgrades, owned) {
+  // Build tabs
+  const tabs=document.getElementById('shopTabs');
+  tabs.innerHTML=Object.entries(SHOP_CATS).map(([cat,label])=>
+    `<button class="shop-tab ${shopCatFilter===cat?'active':''}" onclick="filterShop('${cat}')">${label}</button>`
+  ).join('');
+  renderShopItems(upgrades, owned);
+};
+
+window.filterShop = function(cat) {
+  shopCatFilter=cat;
+  document.querySelectorAll('.shop-tab').forEach((t,i)=>t.classList.toggle('active', Object.keys(SHOP_CATS)[i]===cat));
+  if(window._shopUpgrades) renderShopItems(window._shopUpgrades, window._shopOwned||[]);
+};
+
+function renderShopItems(upgrades, owned) {
+  window._shopUpgrades=upgrades; window._shopOwned=owned;
+  const list=document.getElementById('shopList'); list.innerHTML='';
+  for(const [id,u] of Object.entries(upgrades)) {
+    if(u.cat !== shopCatFilter) continue;
+    const isBuild  = u.cat === 'build';
+    const isOwned  = !isBuild && owned.includes(id);   // build items never show as "owned"
+    const isLocked = u.req && !owned.includes(u.req);
+    const div=document.createElement('div');
+    div.className='shop-item'+(isOwned?' owned':'')+(isLocked?' locked':'');
+    div.innerHTML=`
+      <div class="shop-icon">${u.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${u.name}</div>
+        <div class="shop-desc">${u.desc}</div>
+        ${u.req&&!owned.includes(u.req)?`<div class="shop-req">Req: ${upgrades[u.req]?.name||u.req}</div>`:''}
+        <div class="shop-cost">${isOwned?'✅ Owned':'💰 $'+fmt(u.cost)}</div>
+        ${isBuild?'<div style="color:#557755;font-size:.68rem;">📍 Stand in your base to place</div>':''}
+      </div>
+      ${!isOwned?`<button class="buy-btn" ${isLocked?'disabled':''} onclick="window.buyUpgrade('${id}')">
+        ${isBuild?'🏗️ Build':'Buy'}</button>`:''}`;
+    list.appendChild(div);
+  }
+}
+
+window.buyUpgrade=function(id){if(window.gameSocket){window.SFX?.upgrade();window.gameSocket.emit('buyUpgrade',id);}};
+
+// ── Chat (in-game) ─────────────────────────────────────────────────────────────
+document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){sendChat();e.preventDefault();}e.stopPropagation();});
+let _paused = false;
+function togglePause() {
+  _paused = !_paused;
+  document.getElementById('pauseMenu').classList.toggle('hidden', !_paused);
+}
+function saveCurrentGame() {
+  if (!window.gameSocket) return;
+  const name = prompt('Name this save (or leave blank for auto-name):', '') ?? '';
+  window.gameSocket.emit('saveGame', name);
+  window.SFX?.upgrade();
+  showToast('💾 Saving...');
+}
+
+function quitToLobby() {
+  _paused = false;
+  document.getElementById('pauseMenu').classList.add('hidden');
+  if (window.gameSocket) window.gameSocket.emit('leaveRoom');
+  _leaveGame();
+}
+function matchOverQuit() {
+  document.getElementById('matchOver').classList.add('hidden');
+  if (window.gameSocket) window.gameSocket.emit('leaveRoom');
+  _leaveGame();
+}
+function _leaveGame() {
+  ['hud','shopToggle','lbPanel','chatPanel','controls'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.add('hidden');
+  });
+  const mt=document.getElementById('matchTimer'); if(mt){mt.style.display='none';mt.classList.add('hidden');}
+  if (shopOpen) toggleShop();
+  showScreen('lobby');
+}
+document.addEventListener('keydown',e=>{
+  if(e.target===document.getElementById('chatInput')) return;
+  if(e.key==='Escape') {
+    // Only allow ESC pause while actually in a game
+    const inGame = window._gameScene && window._gameScene.myPlayer && !document.getElementById('hud').classList.contains('hidden');
+    if(inGame) togglePause();
+    return;
+  }
+  if(e.key==='Enter') document.getElementById('chatInput').focus();
+  if(e.key==='b'||e.key==='B') toggleShop();
+});
+function sendChat(){const i=document.getElementById('chatInput');const m=i.value.trim();if(!m)return;if(window.gameSocket)window.gameSocket.emit('chat',m);i.value='';}
+function addChatMessage(u,msg,color){
+  window.SFX?.chatMsg();
+  const log=document.getElementById('chatLog');
+  const d=document.createElement('div');d.className='chat-msg';
+  d.innerHTML=`<span class="chat-name" style="color:${color}">${esc(u)}:</span> <span class="chat-text">${esc(msg)}</span>`;
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
+  while(log.children.length>50)log.removeChild(log.firstChild);
+}
+
+// ── Kill feed ─────────────────────────────────────────────────────────────────
+function addKillFeed(html){
+  const kf=document.getElementById('killfeed');
+  const d=document.createElement('div');d.className='kf-item';d.innerHTML=html;kf.appendChild(d);
+  setTimeout(()=>{d.style.transition='opacity .5s';d.style.opacity='0';setTimeout(()=>d.remove(),500);},3500);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast');const d=document.createElement('div');
+  d.className='toast-item';d.textContent=msg;t.appendChild(d);
+  setTimeout(()=>{d.style.transition='opacity .35s';d.style.opacity='0';setTimeout(()=>d.remove(),350);},dur);
+}
+window.showToast=showToast;
+
+// ── Shop toggle ───────────────────────────────────────────────────────────────
+let shopOpen=false;
+function toggleShop(){
+  shopOpen=!shopOpen;
+  document.getElementById('shopPanel').classList.toggle('open',shopOpen);
+  document.getElementById('shopToggle').style.opacity = shopOpen ? '0' : '1';
+  document.getElementById('shopToggle').style.pointerEvents = shopOpen ? 'none' : 'all';
+}
+
+// ── Prestige ──────────────────────────────────────────────────────────────────
+function doPrestige(){if(!window.gameSocket)return;if(!confirm('Prestige? Resets money & upgrades but grants permanent boosts!'))return;window.gameSocket.emit('prestige');}
+
+// ── Format ────────────────────────────────────────────────────────────────────
+function fmt(n){n=Math.floor(n);if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString();}
+window.fmt=fmt;
+
+// ── Socket init ───────────────────────────────────────────────────────────────
+function initSocket(token){
+  const s=io(); window.gameSocket=s;
+
+  s.on('connect',()=>{ s.emit('authenticate',token); });
+  s.on('authError',()=>{ localStorage.removeItem('dt_token'); location.reload(); });
+
+  s.on('lobbyReady',data=>{
+    _socketAuthed = true;
+    window._allUpgrades = data.upgrades;
+    window._myStats = data.stats || null;
+    document.getElementById('lobbyOnline').textContent=`🟢 ${data.online} online`;
+    renderRooms(data.rooms);
+  });
+
+  s.on('statsData', data => {
+    window._myStats = data;
+    if (!document.getElementById('statsModal').classList.contains('hidden')) renderStats(data);
+  });
+
+  s.on('gameSaved', ({entry}) => {
+    showToast(`💾 "${entry.name}" saved!`, 3000);
+    window.SFX?.levelUp();
+    if (window._myStats) {
+      if (!Array.isArray(window._myStats.savedGames)) window._myStats.savedGames = [];
+      window._myStats.savedGames.unshift(entry);
+      window._myStats.savedGames = window._myStats.savedGames.slice(0,5);
+    }
+  });
+
+  s.on('savedGamesList', ({games}) => {
+    window._savedGames = games;
+    if (!document.getElementById('savedGamesModal').classList.contains('hidden'))
+      renderSavedGamesList(games);
+  });
+  s.on('lobbyUpdate',data=>{
+    document.getElementById('lobbyOnline').textContent=`🟢 ${data.online} online`;
+    renderRooms(data.rooms);
+  });
+  s.on('roomError',msg=>showToast('❌ '+msg,3000));
+  s.on('inviteError',msg=>showToast('❌ '+msg,3000));
+
+  s.on('roomJoined', data=>{
+    currentRoom = data.room;
+    enterWaitingRoom(data);
+    // Solo mode: auto-add 3 bots, show a tip
+    if (data.room._soloMode || data.room.name.includes("Dino Run")) {
+      setTimeout(() => {
+        s.emit('addBot', 'easy');
+        s.emit('addBot', 'medium');
+        s.emit('addBot', 'hard');
+        showToast('🤖 3 dino bots added! Hit START GAME when ready.');
+      }, 300);
+    }
+  });
+  s.on('leftRoom',()=>{
+    // Clear all game objects so they don't appear in the next match
+    const scene = window._gameScene;
+    if (scene) {
+      for (const id of Object.keys(scene.playerObjs||{})) scene.removePlayer(id);
+      for (const id of Object.keys(scene.moneyDropObjs||{})) scene.removeDrop(id);
+      scene.playerObjs = {}; scene.moneyDropObjs = {};
+      scene.myId = null; scene.myPlayer = null;
+    }
+    const mt = document.getElementById('matchTimer');
+    if (mt) { mt.style.display='none'; mt.classList.add('hidden'); }
+    showScreen('lobby'); currentRoom=null;
+  });
+  s.on('kicked',msg=>{ showToast('👢 '+msg,4000); showScreen('lobby'); currentRoom=null; });
+
+  // ── Countdown ──
+  const cdColors = ['#ff4757','#ff6348','#ffa502','#2ed573','#7fff6a'];
+  s.on('countdown', ({count, go}) => {
+    const overlay = document.getElementById('countdownOverlay');
+    const num     = document.getElementById('countdownNum');
+    overlay.classList.remove('hidden');
+
+    if (go) {
+      num.className = 'countdown-num countdown-go';
+      num.style.color = '#7fff6a';
+      num.textContent = 'GO!';
+      window.SFX?.start();
+      // Tell game scene countdown is over
+      if (window._gameScene) window._gameScene._countdown = 0;
+      setTimeout(() => overlay.classList.add('hidden'), 900);
+    } else {
+      num.className = 'countdown-num';
+      num.style.color = cdColors[count] || '#ff4757';
+      num.textContent = count;
+      // Restart CSS animation by forcing a reflow
+      num.style.animation = 'none';
+      void num.offsetWidth;  // triggers reflow
+      num.style.animation = 'cdPop .35s cubic-bezier(.2,1.6,.4,1) forwards';
+      window.SFX?.countdown();
+      // Tell game scene we're in countdown
+      if (window._gameScene) window._gameScene._countdown = count;
+    }
+  });
+
+  // ── Match timer ──
+  s.on('matchTimer', ({remaining}) => {
+    const el = document.getElementById('matchTimer');
+    if (!el) return;
+    el.classList.remove('hidden'); el.style.display = 'block';
+    const m = Math.floor(remaining/60), sec = remaining%60;
+    el.textContent = `⏱ ${m}:${String(sec).padStart(2,'0')}`;
+    el.classList.toggle('urgent', remaining <= 30);
+    if (remaining <= 10 && remaining > 0) window.SFX?.countdown();
+  });
+
+  // ── Match over ──
+  s.on('matchOver', ({leaderboard}) => {
+    window.SFX?.roar();
+    const medals = ['🥇','🥈','🥉'];
+
+    // Sort by wealth
+    const byWealth = [...leaderboard].sort((a,b) => b.money - a.money);
+    // Sort by kills
+    const byKills  = [...leaderboard].sort((a,b) => b.kills - a.kills);
+
+    const makeRow = (p, i, statHtml) => `
+      <div class="matchover-row" style="${i===0?'background:rgba(255,215,0,.07);border-color:rgba(255,215,0,.2);':''}">
+        <span class="matchover-rank">${medals[i]||'#'+(i+1)}</span>
+        <div class="matchover-dot" style="background:${p.color}"></div>
+        <span class="matchover-name">${esc(p.username)}${p.isBot?' 🤖':''}</span>
+        <span class="matchover-stat">${statHtml}</span>
+      </div>`;
+
+    document.getElementById('matchoverWealth').innerHTML =
+      byWealth.map((p,i) => makeRow(p, i, `<span style="color:#ffd700">$${fmt(p.money)}</span>`)).join('');
+
+    document.getElementById('matchoverKills').innerHTML =
+      byKills.map((p,i) => makeRow(p, i, `<span style="color:#ff6b6b">${p.kills} kill${p.kills!==1?'s':''}</span>`)).join('');
+
+    // Winner announcement
+    const wealthWinner = byWealth[0], killsWinner = byKills[0];
+    const sameWinner = wealthWinner?.username === killsWinner?.username;
+    document.getElementById('matchoverWinner').innerHTML = sameWinner
+      ? `👑 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> dominated — richest AND most kills!`
+      : `💰 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> richest &nbsp;|&nbsp; ⚔️ <span style="color:#ff6b6b">${esc(killsWinner.username)}</span> most kills`;
+
+    document.getElementById('matchOver').classList.remove('hidden');
+  });
+
+  s.on('lobbyPlayerJoined',data=>{ addWaitPlayer(data.socketId,data); showToast(`🦕 ${data.username} joined!`); });
+  s.on('roomPlayerLeft',data=>{ removeWaitPlayer(data.socketId); });
+  s.on('botAdded',data=>{ addWaitBot(data); });
+  s.on('botRemoved',data=>{ removeWaitPlayer(data.id); });
+  s.on('hostChanged',data=>{ if(data.newHostId===s.id){isHost=true;document.getElementById('hostControls').classList.remove('hidden');document.getElementById('startGameBtn').classList.remove('hidden');showToast('👑 You are now the host!');} });
+  s.on('settingsUpdated',data=>{ if(currentRoom){Object.assign(currentRoom,data);document.getElementById('waitRoomName').textContent=data.name||currentRoom.name;} });
+
+  s.on('inviteReceived',data=>{ showInvite(data.from,data.roomId,data.roomName); });
+  s.on('inviteSent',u=>showToast(`📨 Invite sent to ${u}`));
+  s.on('inviteDeclined',data=>showToast(`❌ ${data.username} declined your invite`));
+
+  // ── Game start → load Phaser dynamically, then start ──
+  s.on('gameStarted', data => {
+    showScreen('game');
+    loadGameScripts(() => {
+      window._pendingGameData = data;
+      if (!window._gameInitialized) {
+        window._gameInitialized = true;
+        startPhaserGame();
+      }
+      if (window._gameReady) window.onGameReady(data);
+    });
+  });
+
+  s.on('chatMessage',({username,message,color})=>{
+    if(document.getElementById('waitingRoom')&&!document.getElementById('waitingRoom').classList.contains('hidden')) addWaitChat(username,message,color);
+    else addChatMessage(username,message,color);
+  });
+  s.on('inviteSent',u=>showToast(`📨 Invite sent to ${u}`));
+  s.on('disconnect',()=>showToast('❌ Disconnected — reconnecting...',5000));
+}
+
+// Expose for game.js
+window.showToast=showToast;
+window.addChatMessage=addChatMessage;
+window.addKillFeed=addKillFeed;
+</script>
+</body>
+</html>
