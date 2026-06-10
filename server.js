@@ -831,6 +831,17 @@ io.on('connection', (socket) => {
     let decoded;
     try { decoded = jwt.verify(token, JWT_SECRET); }
     catch { socket.emit('authError', 'Session expired, please login again'); return; }
+
+    // Kick any existing session for this username
+    const existingSocketId = onlineByName[decoded.username.toLowerCase()];
+    if (existingSocketId && existingSocketId !== socket.id) {
+      const existingSocket = io.sockets.sockets.get(existingSocketId);
+      if (existingSocket) {
+        existingSocket.emit('authError', 'You logged in from another tab or device.');
+        existingSocket.disconnect(true);
+      }
+    }
+
     authedUser = { id: decoded.id, username: decoded.username };
     onlineByName[decoded.username.toLowerCase()] = socket.id;
 
