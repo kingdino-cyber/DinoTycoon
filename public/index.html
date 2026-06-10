@@ -626,6 +626,9 @@ button:active{opacity:.75;transform:scale(.97)!important;}
     <div style="color:#446644;font-size:.7rem;margin-bottom:10px;margin-top:4px;">
       Fresh Start = everyone begins with $0 and no upgrades for this match only
     </div>
+    <div id="savedGameTip" style="display:none;background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;color:#7fff6a;font-size:.78rem;">
+      🤖 You can still add bots and invite friends below — they'll join your saved game session!
+    </div>
 
     <label class="modal-label">Custom Invite Code <span style="color:#446644;font-weight:normal;">(optional, 4–8 chars)</span></label>
     <input class="modal-input" id="customCode" placeholder="e.g. DINO42 — leave blank for random" maxlength="8" autocomplete="off"
@@ -1142,6 +1145,7 @@ function openPlayNowModal() {
   }
   document.getElementById('freshStartToggle').classList.remove('on');
   document.getElementById('matchDuration').value = '0';
+  document.getElementById('savedGameTip').style.display = 'none';
   setDifficulty('easy');
   // Show saved game row if player has one
   const savedRow = document.getElementById('savedGameRow');
@@ -1247,6 +1251,9 @@ function loadSavedGameNow(saveId) {
   const savedRow = document.getElementById('savedGameRow');
   savedRow.style.display = 'flex';
   document.getElementById('savedGameInfo').textContent = 'Saved game selected — toggle off to start fresh';
+  document.getElementById('savedGameTip').style.display = 'block';
+  // Tip: remind user they can still add bots/invite friends
+  showToast('💾 Saved game loaded! Add bots or invite friends below before starting.', 4000);
 }
 
 function deleteSavedGame(id) {
