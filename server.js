@@ -656,8 +656,11 @@ function handleAttack(attacker, target, room) {
     if (!target.isBot) persistPlayer(target);
 
     const respawnDelay = 5000;
+    const deadSocketId = target.socketId || target.id;
     setTimeout(() => {
-      if (!room.players[target.id] && !room.bots[target.id]) return;
+      // Check using socketId since room.players is keyed by socketId
+      const stillInRoom = room.players[deadSocketId] || room.bots[deadSocketId];
+      if (!stillInRoom) return;
       const stats = calcStats(target.upgrades);
       target.isDead = false; target.hp = stats.maxHp;
       const rbase = target.baseX ? { x:target.baseX, y:target.baseY } : padCenter(target.padIdx||0);
@@ -665,7 +668,13 @@ function handleAttack(attacker, target, room) {
       target.y = rbase.y + (Math.random()-0.5)*80;
       // Bots resume building phase after respawn
       if (target.isBot) { target.aiState = 'build'; target.aiTimer = 10 + Math.random()*10; }
-      emitToRoom(room, 'playerRespawned', { id: target.id, x: target.x, y: target.y, hp: target.hp, maxHp: target.maxHp });
+      const respawnData = { id: target.id, x: target.x, y: target.y, hp: target.hp, maxHp: target.maxHp };
+      emitToRoom(room, 'playerRespawned', respawnData);
+      // Also send directly to the dead player's socket as a guaranteed fallback
+      if (!target.isBot) {
+        const deadSocket = io.sockets.sockets.get(deadSocketId);
+        if (deadSocket) deadSocket.emit('playerRespawned', respawnData);
+      }
     }, respawnDelay);
   }
 }
