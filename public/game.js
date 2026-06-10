@@ -1193,15 +1193,6 @@ function setupGameSocketEvents() {
         if(sec<=0)clearInterval(iv);
         if(sec>0) window.SFX?.countdown();
       },1000);
-      // Failsafe: if server playerRespawned event never arrives, force-dismiss after 8s
-      setTimeout(()=>{
-        const ds=document.getElementById('deathScreen');
-        if(ds && ds.classList.contains('active')){
-          ds.classList.remove('active');
-          if(scene.myPlayer){ scene.myPlayer.isDead=false; scene.myPlayer.hp=100; }
-          window.showToast('🦕 Back from extinction!');
-        }
-      }, 8000);
     }
     if(killerId===scene.myId){
       scene.myPlayer.money=killerMoney; scene.myPlayer.kills++;
