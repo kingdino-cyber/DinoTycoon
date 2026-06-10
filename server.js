@@ -830,28 +830,39 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/register', async (req, res) => {
-  const { username, password } = req.body||{};
-  if (!username||!password) return res.status(400).json({error:'Missing fields'});
-  if (username.length<3||username.length>20) return res.status(400).json({error:'Username 3-20 chars'});
-  if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({error:'Letters/numbers/underscore only'});
-  if (password.length<4) return res.status(400).json({error:'Password min 4 chars'});
-  if (await findUser(username)) return res.status(400).json({error:'Username taken'});
-  const id = Date.now().toString(36)+Math.random().toString(36).slice(2);
-  const hash = await bcrypt.hash(password, 10);
-  await usersCol.insertOne({ id, username, username_lower: username.toLowerCase(), password: hash });
-  const token = jwt.sign({id, username}, JWT_SECRET, {expiresIn:'7d'});
-  res.json({token, username});
+  try {
+    const { username, password } = req.body||{};
+    if (!username||!password) return res.status(400).json({error:'Missing fields'});
+    if (username.length<3||username.length>20) return res.status(400).json({error:'Username 3-20 chars'});
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({error:'Letters/numbers/underscore only'});
+    if (password.length<4) return res.status(400).json({error:'Password min 4 chars'});
+    if (await findUser(username)) return res.status(400).json({error:'Username taken'});
+    const id = Date.now().toString(36)+Math.random().toString(36).slice(2);
+    const hash = await bcrypt.hash(password, 10);
+    await usersCol.insertOne({ id, username, username_lower: username.toLowerCase(), password: hash });
+    const token = jwt.sign({id, username}, JWT_SECRET, {expiresIn:'7d'});
+    res.json({token, username});
+  } catch(e) {
+    console.error('Register error:', e);
+    res.status(503).json({error:'Server starting up, please try again in a moment'});
+  }
 });
 
 app.post('/api/login', async (req, res) => {
-  const {username, password} = req.body||{};
-  if (!username||!password) return res.status(400).json({error:'Missing fields'});
-  const user = await findUser(username);
-  if (!user) return res.status(401).json({error:'Invalid credentials'});
-  const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return res.status(401).json({error:'Invalid credentials'});
-  const token = jwt.sign({id: user.id, username: user.username}, JWT_SECRET, {expiresIn:'7d'});
-  res.json({token, username: user.username});
+  try {
+    const {username, password} = req.body||{};
+    if (!username||!password) return res.status(400).json({error:'Missing fields'});
+    if (!usersCol) return res.status(503).json({error:'Server starting up, please try again in a moment'});
+    const user = await findUser(username);
+    if (!user) return res.status(401).json({error:'Invalid credentials'});
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({error:'Invalid credentials'});
+    const token = jwt.sign({id: user.id, username: user.username}, JWT_SECRET, {expiresIn:'7d'});
+    res.json({token, username: user.username});
+  } catch(e) {
+    console.error('Login error:', e);
+    res.status(503).json({error:'Server starting up, please try again in a moment'});
+  }
 });
 
 // ── Socket.io ─────────────────────────────────────────────────────────────────
