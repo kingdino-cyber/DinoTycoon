@@ -1709,7 +1709,7 @@ function sendLobbyChat(){
   if (!inp) return;
   const text = inp.value.trim();
   if (!text) return;
-  socket.emit('lobbyChat', text);
+  window.gameSocket.emit('lobbyChat', text);
   inp.value = '';
 }
 window.sendLobbyChat = sendLobbyChat;
