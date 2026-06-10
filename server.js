@@ -93,11 +93,16 @@ const UPGRADES = {
   ancientBlood:{ name:'Ancient Blood',    cost:8000,  icon:'🩸', effect:{regen:30},  req:'dinoVitality', desc:'+30 HP/s',  cat:'health' },
   titanRegen:  { name:'Titan Regen',      cost:25000, icon:'💉', effect:{regen:80},  req:'ancientBlood', desc:'+80 HP/s — near unkillable!', cat:'health' },
   // ── Defense Buildings (placed on your base) ──
-  stoneWall:     { name:'Stone Wall',      cost:120,   icon:'🪨', effect:{}, req:null,          desc:'Blocks everyone including you (250 HP). Damages on contact.', cat:'build' },
-  spikeTrap:     { name:'Spike Trap',      cost:300,   icon:'🔺', effect:{}, req:null,          desc:'Damages enemies on your base (20 dmg)',    cat:'build' },
-  thornHedge:    { name:'Thorn Hedge',     cost:400,   icon:'🌵', effect:{}, req:null,          desc:'Slows & hurts intruders (12 dmg)',          cat:'build' },
-  dinoTurret:    { name:'Dino Turret',     cost:900,   icon:'🗼', effect:{}, req:null,          desc:'Auto-attacks nearby enemies (20 dmg)',      cat:'build' },
-  fossilFortress:{ name:'Fossil Fortress', cost:3000,  icon:'🏰', effect:{}, req:'dinoTurret',  desc:'Heavy fortress — powerful auto-turret (45 dmg)', cat:'build' },
+  stoneWall:     { name:'Stone Wall',      cost:120,   icon:'🪨', effect:{}, req:null, desc:'Blocks everyone including you (250 HP). Damages on contact.', cat:'build' },
+  spikeTrap:     { name:'Spike Trap',      cost:300,   icon:'🔺', effect:{}, req:null, desc:'Damages enemies on your base (20 dmg)',    cat:'build' },
+  thornHedge:    { name:'Thorn Hedge',     cost:400,   icon:'🌵', effect:{}, req:null, desc:'Slows & hurts intruders (12 dmg)',          cat:'build' },
+  dinoTurret:    { name:'Dino Turret',     cost:900,   icon:'🗼', effect:{}, req:null, desc:'Auto-attacks nearby enemies (20 dmg)',      cat:'build' },
+  fossilFortress:{ name:'Fossil Fortress', cost:3000,  icon:'🏰', effect:{}, req:null, desc:'Heavy fortress — powerful auto-turret (45 dmg)', cat:'build' },
+  lavaPit:       { name:'Lava Pit',        cost:600,   icon:'🌋', effect:{}, req:null, desc:'Burns enemies who step on it (35 dmg, wide range)', cat:'build' },
+  iceTower:      { name:'Ice Tower',       cost:1200,  icon:'🧊', effect:{}, req:null, desc:'Freezes & slows nearby enemies — long range turret (15 dmg)', cat:'build' },
+  boneCannon:    { name:'Bone Cannon',     cost:2000,  icon:'💣', effect:{}, req:null, desc:'Long range cannon (55 dmg, slow fire rate)', cat:'build' },
+  healingTotem:  { name:'Healing Totem',   cost:800,   icon:'🪄', effect:{}, req:null, desc:'Heals YOU when you stand near it (+20 HP/s)', cat:'build' },
+  tarPit:        { name:'Tar Pit',         cost:500,   icon:'🕳️', effect:{}, req:null, desc:'Severely slows enemies who walk through it', cat:'build' },
 };
 
 // ── Building Data ─────────────────────────────────────────────────────────────
@@ -113,7 +118,12 @@ const BUILDING_DATA = {
   spikeTrap:     { maxHp:120, type:'defense', defType:'trap',    damage:20, range:70 },
   thornHedge:    { maxHp:180, type:'defense', defType:'trap',    damage:12, range:80, slow:true },
   dinoTurret:    { maxHp:200, type:'defense', defType:'turret',  damage:20, range:340, cooldown:1800 },
-  fossilFortress:{ maxHp:600, type:'defense', defType:'turret',  damage:45, range:440, cooldown:1400 },
+  fossilFortress:{ maxHp:600,  type:'defense', defType:'turret',  damage:45, range:440, cooldown:1400 },
+  lavaPit:       { maxHp:150,  type:'defense', defType:'trap',    damage:35, range:100, burn:true },
+  iceTower:      { maxHp:280,  type:'defense', defType:'turret',  damage:15, range:400, cooldown:2000, slow:true },
+  boneCannon:    { maxHp:350,  type:'defense', defType:'turret',  damage:55, range:520, cooldown:3500 },
+  healingTotem:  { maxHp:200,  type:'defense', defType:'totem',   healRate:20, range:120 },
+  tarPit:        { maxHp:100,  type:'defense', defType:'trap',    damage:5,  range:90,  slow:true, slowAmt:0.25 },
 };
 // Slot offsets from player's base (income slots then defense slots)
 const INCOME_OFFSETS  = [{dx:-90,dy:-70},{dx:0,dy:-90},{dx:90,dy:-70},{dx:-50,dy:60},{dx:50,dy:60}];
@@ -232,6 +242,8 @@ function placeBuilding(room, player, upgradeId) {
     cooldown: bd.cooldown || 2000, lastFired: 0,
     mps: bd.mps || 0,
     slow: bd.slow || false,
+    slowAmt: bd.slowAmt || 0,
+    healRate: bd.healRate || 0,
   };
   room.buildings[bid] = building;
   emitToRoom(room, 'buildingPlaced', building);
@@ -701,18 +713,31 @@ function startRoomLoop(room) {
           }
         }
       } else if (b.defType === 'trap') {
-        // Damage enemies who walk over the trap
+        // Damage (and optionally slow) enemies who walk over the trap
         for (const e of allEntities) {
           if (e.isDead || (e.id||e.socketId) === b.ownerId) continue;
           if (dist(b, e) < b.range && now - (b['_trap_'+e.id] || 0) > 1200) {
             b['_trap_'+e.id] = now;
             const dmg = Math.max(1, b.damage);
             e.hp -= dmg;
-            emitToRoom(room, 'trapTriggered', { buildingId: b.id, targetId: e.id||e.socketId, damage: dmg, targetHp: e.hp });
+            const slowAmt = b.slow ? (b.slowAmt || 0.4) : 0;
+            emitToRoom(room, 'trapTriggered', { buildingId: b.id, targetId: e.id||e.socketId, damage: dmg, targetHp: e.hp, slow: b.slow || false, slowAmt });
             if (e.hp <= 0) {
               e.isDead = true; e.deaths++;
               emitToRoom(room, 'playerDied', { victimId: e.id||e.socketId, killerId: b.ownerId, loot: 0, killerMoney: 0 });
             }
+          }
+        }
+      } else if (b.defType === 'totem') {
+        // Heal the building owner when they stand nearby
+        const owner = allEntities.find(e => (e.id||e.socketId) === b.ownerId && !e.isDead);
+        if (owner && dist(b, owner) < b.range) {
+          const maxHp = 100 + (owner.upgrades && owner.upgrades.includes('dinoBlood') ? 50 : 0);
+          if (owner.hp < maxHp && now - (b._lastHeal || 0) > 1000) {
+            b._lastHeal = now;
+            owner.hp = Math.min(maxHp, owner.hp + (b.healRate || 20));
+            const sock = io.sockets.sockets.get(owner.socketId);
+            if (sock) sock.emit('healed', { hp: owner.hp, source: 'totem' });
           }
         }
       }
@@ -1133,7 +1158,7 @@ io.on('connection', (socket) => {
             type: bd.type, defType: bd.defType||null,
             damage: bd.damage||0, range: bd.range||0,
             cooldown: bd.cooldown||2000, lastFired: 0,
-            mps: bd.mps||0, slow: bd.slow||false,
+            mps: bd.mps||0, slow: bd.slow||false, slowAmt: bd.slowAmt||0, healRate: bd.healRate||0,
           };
         }
       }
