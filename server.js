@@ -3,37 +3,44 @@ const http = require('http');
 const { Server } = require('socket.io');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
-  pingTimeout: 8000,    // Detect laptop closes fast
+  pingTimeout: 8000,
   pingInterval: 3000,
 });
 
 const JWT_SECRET = 'dino_tycoon_secret_2024';
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, 'db.json');
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
 
-// ── File DB ───────────────────────────────────────────────────────────────────
-function loadDB() {
-  if (!fs.existsSync(DB_FILE)) return { users: [], saves: {} };
-  try { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-  catch { return { users: [], saves: {} }; }
+// ── MongoDB ───────────────────────────────────────────────────────────────────
+let usersCol, savesCol;
+async function connectDB() {
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
+  const db = client.db('dinotycoon');
+  usersCol = db.collection('users');
+  savesCol = db.collection('saves');
+  await usersCol.createIndex({ username_lower: 1 }, { unique: true });
+  console.log('✅ MongoDB connected');
 }
-let db = loadDB();
-let dbDirty = false;
-function scheduleSave() {
-  if (dbDirty) return; dbDirty = true;
-  setTimeout(() => { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); dbDirty = false; }, 800);
+
+async function findUser(u) {
+  return usersCol.findOne({ username_lower: u.toLowerCase() });
 }
-function findUser(u) { return db.users.find(x => x.username.toLowerCase() === u.toLowerCase()); }
-function getSave(id) { return db.saves[id] || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGame:null }; }
-function putSave(id, data) { db.saves[id] = data; scheduleSave(); }
+async function getSave(id) {
+  const s = await savesCol.findOne({ userId: id });
+  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[] };
+}
+async function putSave(id, data) {
+  await savesCol.updateOne({ userId: id }, { $set: { ...data, userId: id } }, { upsert: true });
+}
 
 // ── Game Constants ────────────────────────────────────────────────────────────
 const WORLD_SIZE = 3200;
@@ -390,10 +397,10 @@ function createPlayerData(socketId, username, save, padIdx, color) {
   };
 }
 
-function persistPlayer(p) {
+async function persistPlayer(p) {
   if (!p.dbUserId) return;
-  const existing = getSave(p.dbUserId);
-  putSave(p.dbUserId, {
+  const existing = await getSave(p.dbUserId);
+  await putSave(p.dbUserId, {
     money: Math.floor(p.money), total_earned: Math.floor(p.totalEarned),
     level: p.level, xp: p.xp, upgrades: p.upgrades,
     kills: p.kills, deaths: p.deaths, prestige: p.prestige,
@@ -803,10 +810,10 @@ app.post('/api/register', async (req, res) => {
   if (username.length<3||username.length>20) return res.status(400).json({error:'Username 3-20 chars'});
   if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({error:'Letters/numbers/underscore only'});
   if (password.length<4) return res.status(400).json({error:'Password min 4 chars'});
-  if (findUser(username)) return res.status(400).json({error:'Username taken'});
+  if (await findUser(username)) return res.status(400).json({error:'Username taken'});
   const id = Date.now().toString(36)+Math.random().toString(36).slice(2);
   const hash = await bcrypt.hash(password, 10);
-  db.users.push({id, username, password: hash}); scheduleSave();
+  await usersCol.insertOne({ id, username, username_lower: username.toLowerCase(), password: hash });
   const token = jwt.sign({id, username}, JWT_SECRET, {expiresIn:'7d'});
   res.json({token, username});
 });
@@ -814,7 +821,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const {username, password} = req.body||{};
   if (!username||!password) return res.status(400).json({error:'Missing fields'});
-  const user = findUser(username);
+  const user = await findUser(username);
   if (!user) return res.status(401).json({error:'Invalid credentials'});
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({error:'Invalid credentials'});
@@ -827,7 +834,7 @@ io.on('connection', (socket) => {
   let authedUser = null; // { id, username }
 
   // ── Auth ──
-  socket.on('authenticate', (token) => {
+  socket.on('authenticate', async (token) => {
     let decoded;
     try { decoded = jwt.verify(token, JWT_SECRET); }
     catch { socket.emit('authError', 'Session expired, please login again'); return; }
@@ -847,7 +854,7 @@ io.on('connection', (socket) => {
 
     // Send lobby data including player's stats
     const publicRooms = Object.values(rooms).filter(r=>r.isPublic).map(getRoomPublicInfo);
-    const save = getSave(decoded.id);
+    const save = await getSave(decoded.id);
     socket.emit('lobbyReady', {
       username: decoded.username,
       rooms: publicRooms,
@@ -859,14 +866,14 @@ io.on('connection', (socket) => {
   });
 
   // ── Save / Load game ──
-  socket.on('saveGame', (saveName) => {
+  socket.on('saveGame', async (saveName) => {
     if (!authedUser) return;
     const room = rooms[socketRoom[socket.id]]; if (!room || room.status !== 'playing') return;
     const p = room.players[socket.id]; if (!p) return;
     const myBuildings = Object.values(room.buildings)
       .filter(b => b.ownerId === socket.id)
       .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp }));
-    const save = getSave(authedUser.id);
+    const save = await getSave(authedUser.id);
     if (!Array.isArray(save.savedGames)) save.savedGames = [];
     const entry = {
       id: Date.now(),
@@ -876,30 +883,30 @@ io.on('connection', (socket) => {
       difficulty: room.difficulty||'medium', kills: p.kills, level: p.level,
     };
     save.savedGames.unshift(entry);
-    if (save.savedGames.length > 5) save.savedGames.length = 5; // max 5 slots
-    putSave(authedUser.id, save);
+    if (save.savedGames.length > 5) save.savedGames.length = 5;
+    await putSave(authedUser.id, save);
     socket.emit('gameSaved', { entry });
   });
 
-  socket.on('getSavedGames', () => {
+  socket.on('getSavedGames', async () => {
     if (!authedUser) return;
-    const save = getSave(authedUser.id);
+    const save = await getSave(authedUser.id);
     socket.emit('savedGamesList', { games: Array.isArray(save.savedGames) ? save.savedGames : [] });
   });
 
-  socket.on('deleteSavedGame', (id) => {
+  socket.on('deleteSavedGame', async (id) => {
     if (!authedUser) return;
-    const save = getSave(authedUser.id);
+    const save = await getSave(authedUser.id);
     if (Array.isArray(save.savedGames))
       save.savedGames = save.savedGames.filter(g => g.id !== id);
-    putSave(authedUser.id, save);
+    await putSave(authedUser.id, save);
     socket.emit('savedGamesList', { games: save.savedGames });
   });
 
   // ── Stats ──
-  socket.on('getStats', () => {
+  socket.on('getStats', async () => {
     if (!authedUser) return;
-    const save = getSave(authedUser.id);
+    const save = await getSave(authedUser.id);
     socket.emit('statsData', { ...save, username: authedUser.username });
   });
 
@@ -1077,7 +1084,7 @@ io.on('connection', (socket) => {
     io.to(room.hostId).emit('inviteDeclined', { username: authedUser?.username });
   });
 
-  socket.on('startGame', () => {
+  socket.on('startGame', async () => {
     const room = rooms[socketRoom[socket.id]]; if (!room) return;
     if (room.hostId !== socket.id) return;
     if (room.status === 'playing') return;
@@ -1085,9 +1092,9 @@ io.on('connection', (socket) => {
 
     // Initialize all players from lobby
     for (const [sid, lp] of Object.entries(room.lobbyPlayers)) {
-      let dbId = null;
-      for (const u of db.users) { if (u.username === lp.username) { dbId = u.id; break; } }
-      const rawSave = dbId ? getSave(dbId) : {};
+      const userDoc = await usersCol.findOne({ username: lp.username });
+      const dbId = userDoc ? userDoc.id : null;
+      const rawSave = dbId ? await getSave(dbId) : {};
       let save2 = room.freshStart
         ? { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0 }
         : { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, ...rawSave };
@@ -1146,7 +1153,7 @@ io.on('connection', (socket) => {
         pads: PADS, worldSize: WORLD_SIZE, padSize: PAD_SIZE,
         gameMode: room.gameMode,
         buildings: Object.values(room.buildings),
-        savedGame: myPlayer.dbUserId ? (getSave(myPlayer.dbUserId).savedGame || null) : null,
+        savedGame: null,
       });
     }
     broadcastLobbyUpdate();
@@ -1295,4 +1302,6 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => console.log(`\n🦕 Dino Tycoon → http://localhost:${PORT}\n`));
+connectDB().then(() => {
+  server.listen(PORT, () => console.log(`\n🦕 Dino Tycoon → http://localhost:${PORT}\n`));
+}).catch(err => { console.error('❌ MongoDB connection failed:', err); process.exit(1); });
