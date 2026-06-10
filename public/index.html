@@ -423,9 +423,55 @@ canvas{display:block;}
 .matchover-stat{color:#ffd700;font-size:.85rem;font-weight:bold;}
 
 /* ── BUTTON FEEDBACK ── */
-button:active{opacity:.75;transform:scale(.97)!important;}
-.sidebar-btn:active,.modal-confirm:active,.modal-cancel:active,.auth-btn:active{
-  filter:brightness(1.2);
+/* Bulge effect on hover for all UI buttons except in-game shop/HUD */
+.auth-btn, .auth-tab,
+.sidebar-btn, .logout-btn,
+.room-join-btn, .room-card,
+.modal-confirm, .modal-cancel,
+.modal-select, .diff-btn,
+.bot-btn, .invite-accept, .invite-decline,
+.invite-send-btn, .wait-chat-send,
+.start-btn, .leave-room-btn,
+.waiting-code, .slot-kick,
+.settings-btn, .toggle,
+#joinCodeModal .modal-confirm,
+.matchover-box button,
+#pauseMenu button {
+  transition: transform .15s cubic-bezier(.2,1.6,.4,1), box-shadow .15s ease, filter .15s ease;
+}
+
+.auth-btn:hover, .auth-tab:hover,
+.sidebar-btn:hover, .logout-btn:hover,
+.room-join-btn:hover, .room-card:hover,
+.modal-confirm:hover, .modal-cancel:hover,
+.diff-btn:hover,
+.bot-btn:hover, .invite-accept:hover, .invite-decline:hover,
+.invite-send-btn:hover, .wait-chat-send:hover,
+.leave-room-btn:hover,
+.waiting-code:hover, .slot-kick:hover,
+.settings-btn:hover, .toggle:hover,
+.matchover-box button:hover,
+#pauseMenu button:hover {
+  transform: scale(1.06) translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,.35);
+  filter: brightness(1.08);
+}
+
+.auth-btn:active, .auth-tab:active,
+.sidebar-btn:active, .logout-btn:active,
+.room-join-btn:active, .room-card:active,
+.modal-confirm:active, .modal-cancel:active,
+.diff-btn:active,
+.bot-btn:active, .invite-accept:active, .invite-decline:active,
+.invite-send-btn:active, .wait-chat-send:active,
+.start-btn:active, .leave-room-btn:active,
+.waiting-code:active, .slot-kick:active,
+.settings-btn:active, .toggle:active,
+.matchover-box button:active,
+#pauseMenu button:active {
+  transform: scale(.96) translateY(1px) !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  filter: brightness(.95);
 }
 
 /* ── CONTROLS HINT ── */
