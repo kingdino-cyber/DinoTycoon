@@ -107,6 +107,28 @@ canvas{display:block;}
 .no-rooms{text-align:center;color:#557755;padding:60px 20px;font-size:1rem;}
 .no-rooms-icon{font-size:3rem;display:block;margin-bottom:12px;}
 
+/* Lobby Chat */
+.lobby-chat{width:300px;display:flex;flex-direction:column;border-left:1px solid rgba(100,200,80,.12);
+  background:rgba(0,0,0,.25);}
+.lobby-chat-header{padding:12px 16px;font-size:.8rem;font-weight:bold;color:#7fff6a;
+  text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(100,200,80,.1);
+  background:rgba(0,0,0,.2);flex-shrink:0;}
+.lobby-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;
+  gap:5px;scrollbar-width:thin;scrollbar-color:#2a4a2a transparent;}
+.lobby-chat-msg{font-size:.78rem;line-height:1.4;word-break:break-word;}
+.lobby-chat-msg .chat-name{font-weight:bold;color:#7fff6a;margin-right:4px;}
+.lobby-chat-msg .chat-name.chat-system{color:#88aa88;}
+.lobby-chat-msg .chat-text{color:#cceebb;}
+.lobby-chat-msg.system-msg .chat-text{color:#557755;font-style:italic;}
+.lobby-chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(100,200,80,.1);
+  flex-shrink:0;}
+.lobby-chat-input{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(100,200,80,.2);
+  border-radius:8px;padding:7px 10px;color:#eee;font-size:.8rem;outline:none;}
+.lobby-chat-input:focus{border-color:rgba(100,200,80,.5);}
+.lobby-chat-send{background:linear-gradient(135deg,#1a6b00,#4caf50);border:none;border-radius:8px;
+  padding:7px 12px;color:#fff;font-size:.85rem;cursor:pointer;font-weight:bold;transition:opacity .15s;}
+.lobby-chat-send:hover{opacity:.85;}
+
 /* Sidebar */
 .lobby-sidebar{width:280px;padding:20px;border-left:1px solid rgba(100,200,80,.1);
   display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
@@ -548,6 +570,17 @@ canvas{display:block;}
       <h2>🌿 Public Rooms <span style="color:#557755;font-weight:normal;font-size:.8rem;margin-left:4px;" id="roomCount"></span></h2>
       <div class="room-grid" id="roomGrid">
         <div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>
+      </div>
+    </div>
+    <!-- Public Chat -->
+    <div class="lobby-chat">
+      <div class="lobby-chat-header">💬 Global Chat</div>
+      <div class="lobby-chat-messages" id="lobbyChatMessages">
+        <div class="lobby-chat-msg system-msg"><span class="chat-text">Welcome to Dino Tycoon! Be kind 🦕</span></div>
+      </div>
+      <div class="lobby-chat-input-row">
+        <input class="lobby-chat-input" id="lobbyChatInput" maxlength="120" placeholder="Say something..." onkeydown="if(event.key==='Enter')sendLobbyChat()">
+        <button class="lobby-chat-send" onclick="sendLobbyChat()">➤</button>
       </div>
     </div>
     <!-- Sidebar -->
@@ -1669,6 +1702,18 @@ function addKillFeed(html){
   setTimeout(()=>{d.style.transition='opacity .5s';d.style.opacity='0';setTimeout(()=>d.remove(),500);},3500);
 }
 
+// ── Lobby Chat ────────────────────────────────────────────────────────────────
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function sendLobbyChat(){
+  const inp = document.getElementById('lobbyChatInput');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  socket.emit('lobbyChat', text);
+  inp.value = '';
+}
+window.sendLobbyChat = sendLobbyChat;
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg,dur=2500){
   const t=document.getElementById('toast');const d=document.createElement('div');
@@ -1732,6 +1777,24 @@ function initSocket(token){
     document.getElementById('lobbyOnline').textContent=`🟢 ${data.online} online`;
     renderRooms(data.rooms);
   });
+
+  // ── Lobby Chat ──
+  s.on('lobbyChatMsg', ({username, text, system})=>{
+    const box = document.getElementById('lobbyChatMessages');
+    if (!box) return;
+    const div = document.createElement('div');
+    div.className = 'lobby-chat-msg' + (system ? ' system-msg' : '');
+    if (system) {
+      div.innerHTML = `<span class="chat-text">${escHtml(text)}</span>`;
+    } else {
+      div.innerHTML = `<span class="chat-name">${escHtml(username)}:</span><span class="chat-text">${escHtml(text)}</span>`;
+    }
+    box.appendChild(div);
+    // keep max 80 messages
+    while (box.children.length > 80) box.removeChild(box.firstChild);
+    box.scrollTop = box.scrollHeight;
+  });
+
   s.on('roomError',msg=>showToast('❌ '+msg,3000));
   s.on('inviteError',msg=>showToast('❌ '+msg,3000));
 

@@ -899,6 +899,7 @@ io.on('connection', (socket) => {
       stats: { ...save, username: decoded.username },
     });
     broadcastLobbyUpdate();
+    io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
   });
 
   // ── Save / Load game ──
@@ -950,6 +951,15 @@ io.on('connection', (socket) => {
   socket.on('getLobby', () => {
     const publicRooms = Object.values(rooms).filter(r=>r.isPublic).map(getRoomPublicInfo);
     socket.emit('lobbyData', { rooms: publicRooms, online: Object.keys(onlineByName).length });
+  });
+
+  socket.on('lobbyChat', (text) => {
+    if (!authedUser) return;
+    if (typeof text !== 'string') return;
+    const clean = text.trim().slice(0, 120);
+    if (!clean) return;
+    // broadcast to all connected sockets (the whole lobby)
+    io.emit('lobbyChatMsg', { username: authedUser.username, text: clean });
   });
 
   socket.on('createRoom', (settings={}) => {
