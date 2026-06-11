@@ -922,6 +922,20 @@ io.on('connection', (socket) => {
     const myBuildings = Object.values(room.buildings)
       .filter(b => b.ownerId === socket.id)
       .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp }));
+
+    // Snapshot every guest's state so they can be restored next session
+    const guestStates = {};
+    for (const [sid, gp] of Object.entries(room.players)) {
+      if (sid === socket.id) continue; // skip host, handled above
+      const gBuildings = Object.values(room.buildings)
+        .filter(b => b.ownerId === sid)
+        .map(b => ({ upgradeId: b.upgradeId, dx: b.x - gp.baseX, dy: b.y - gp.baseY, hp: b.hp, maxHp: b.maxHp }));
+      guestStates[gp.username.toLowerCase()] = {
+        money: Math.floor(gp.money), upgrades: [...gp.upgrades],
+        buildings: gBuildings, kills: gp.kills, level: gp.level,
+      };
+    }
+
     const save = await getSave(authedUser.id);
     if (!Array.isArray(save.savedGames)) save.savedGames = [];
     const entry = {
@@ -930,6 +944,7 @@ io.on('connection', (socket) => {
       money: Math.floor(p.money), upgrades: [...p.upgrades],
       buildings: myBuildings, savedAt: new Date().toISOString(),
       difficulty: room.difficulty||'medium', kills: p.kills, level: p.level,
+      guestStates,
     };
     save.savedGames.unshift(entry);
     if (save.savedGames.length > 5) save.savedGames.length = 5;
@@ -1160,9 +1175,21 @@ io.on('connection', (socket) => {
       const sg = room.loadSavedGame && Array.isArray(rawSave.savedGames)
         ? rawSave.savedGames.find(g => g.id === room.loadSavedGame) || null
         : null;
+      // Check if this player is the host or a returning guest
+      const isHost = sid === room.hostId;
+      const guestSnap = (!isHost && sg?.guestStates)
+        ? sg.guestStates[lp.username.toLowerCase()] || null
+        : null;
       if (sg && !room.freshStart) {
-        save2.money = sg.money || 0;
-        save2.upgrades = sg.upgrades || [];
+        if (isHost) {
+          save2.money = sg.money || 0;
+          save2.upgrades = sg.upgrades || [];
+        } else if (guestSnap) {
+          // Returning guest — restore their exact state from last save
+          save2.money = guestSnap.money || 0;
+          save2.upgrades = guestSnap.upgrades || [];
+        }
+        // If guest has no prior state in this save, they keep their own account stats (default)
       }
       const player = createPlayerData(sid, lp.username, save2, lp.padIdx, lp.color);
       player.dbUserId = dbId;
@@ -1178,9 +1205,10 @@ io.on('connection', (socket) => {
       player.incomeSlot = 0; player.defenseSlot = 0;
       room.players[sid] = player;
 
-      // Restore saved buildings if loading saved game
-      if (sg && sg.buildings?.length) {
-        for (const sb of sg.buildings) {
+      // Restore buildings — host from sg.buildings, returning guest from guestSnap.buildings
+      const buildingsToRestore = isHost ? sg?.buildings : guestSnap?.buildings;
+      if (buildingsToRestore?.length) {
+        for (const sb of buildingsToRestore) {
           const bd = BUILDING_DATA[sb.upgradeId]; if (!bd) continue;
           const bid = 'b_' + (buildingIdCounter++);
           room.buildings[bid] = {
