@@ -947,7 +947,6 @@ io.on('connection', (socket) => {
       guestStates,
     };
     save.savedGames.unshift(entry);
-    if (save.savedGames.length > 5) save.savedGames.length = 5;
     await putSave(authedUser.id, save);
     socket.emit('gameSaved', { entry });
   });
