@@ -62,99 +62,198 @@ canvas{display:block;}
 .auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(76,175,80,.4);}
 .auth-err{color:#ff6b6b;font-size:.82rem;margin-top:10px;min-height:18px;}
 
-/* ── LOBBY ── */
+/* ── LOBBY (Overtide-style) ── */
+@keyframes dinoIdle{0%,100%{transform:translateY(0) scaleX(-1)}50%{transform:translateY(-12px) scaleX(-1)}}
+@keyframes dinoGlow{0%,100%{filter:drop-shadow(0 0 18px rgba(100,255,80,.35))}50%{filter:drop-shadow(0 0 38px rgba(100,255,80,.7))}}
+@keyframes bgDrift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes tabPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+
 #lobbyScreen{
   position:fixed;inset:0;z-index:1500;
-  background:radial-gradient(ellipse at 30% 60%,#1a3a0a 0%,#0d1f0d 80%);
-  display:flex;flex-direction:column;overflow:hidden;
+  background:#0a1a08;
+  display:flex;flex-direction:column;overflow:hidden;font-family:'Segoe UI',sans-serif;
 }
-.lobby-header{
-  display:flex;align-items:center;gap:16px;padding:16px 24px;
-  background:rgba(0,0,0,.4);border-bottom:1px solid rgba(100,200,80,.15);
-  flex-shrink:0;
+/* animated jungle bg */
+#lobbyScreen::before{
+  content:'';position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 80%,rgba(20,80,10,.7) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 20%,rgba(10,50,5,.6) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 50%,rgba(5,30,2,.5) 0%,transparent 80%);
+  pointer-events:none;
 }
-.lobby-logo{font-size:3.4rem;}
-.lobby-title{font-size:2rem;font-weight:900;color:#7fff6a;letter-spacing:2px;}
-.lobby-online{color:#88aa88;font-size:.82rem;background:rgba(76,175,80,.1);
-  border:1px solid rgba(76,175,80,.2);border-radius:8px;padding:4px 10px;margin-left:auto;}
-.lobby-username{color:#b8f5b0;font-weight:bold;font-size:.9rem;}
-.logout-btn{padding:6px 14px;border:1px solid rgba(255,100,100,.3);border-radius:8px;
-  background:transparent;color:#ff8888;cursor:pointer;font-size:.8rem;}
-.logout-btn:hover{background:rgba(255,100,100,.1);}
+#lobbyScreen>*{position:relative;z-index:1;}
 
-.lobby-body{display:flex;flex:1;overflow:hidden;gap:0;}
+/* ── TOP NAV ── */
+.lby-nav{
+  display:flex;align-items:center;padding:0 20px;height:56px;flex-shrink:0;
+  background:rgba(0,0,0,.55);border-bottom:1px solid rgba(100,200,80,.12);
+  backdrop-filter:blur(16px);gap:16px;
+}
+.lby-nav-logo{font-size:1.6rem;font-weight:900;color:#7fff6a;letter-spacing:3px;
+  text-shadow:0 0 20px rgba(100,255,80,.4);display:flex;align-items:center;gap:8px;}
+.lby-nav-logo span{font-size:1.8rem;}
+.lby-nav-spacer{flex:1;}
+.lby-nav-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:5px 12px;font-size:.82rem;color:#b8f5b0;}
+.lby-nav-pill .pip{width:8px;height:8px;border-radius:50%;background:#4caf50;box-shadow:0 0 8px #4caf50;}
+.lby-nav-icon{width:38px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1.1rem;transition:all .15s;}
+.lby-nav-icon:hover{background:rgba(100,200,80,.15);border-color:rgba(100,200,80,.3);}
+.lby-nav-user{display:flex;align-items:center;gap:8px;padding:5px 12px;
+  background:rgba(100,200,80,.08);border:1px solid rgba(100,200,80,.2);border-radius:10px;cursor:pointer;}
+.lby-nav-avatar{font-size:1.3rem;}
+.lby-nav-username{font-weight:bold;font-size:.88rem;color:#b8f5b0;}
 
-/* Room list */
-.lobby-rooms{flex:1;padding:20px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;}
-.lobby-rooms h2{color:#b8f5b0;font-size:1rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;
+/* ── MAIN AREA ── */
+.lby-main{flex:1;display:flex;overflow:hidden;min-height:0;}
+
+/* ── LEFT PANEL ── */
+.lby-left{width:220px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;
+  background:rgba(0,0,0,.3);border-right:1px solid rgba(255,255,255,.06);overflow-y:auto;flex-shrink:0;}
+
+.lby-drop-card{
+  background:linear-gradient(135deg,#1a3a0a,#2d6a10);border:1px solid rgba(100,200,80,.3);
+  border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 20px rgba(50,200,30,.15);
+}
+.lby-drop-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(50,200,30,.3);}
+.lby-drop-title{font-size:.75rem;font-weight:900;color:#ffd700;text-transform:uppercase;letter-spacing:1px;}
+.lby-drop-subtitle{font-size:.65rem;color:#88aa88;margin-bottom:8px;}
+.lby-drop-egg{font-size:2.4rem;display:block;margin:4px 0;animation:float 2.5s ease-in-out infinite;}
+.lby-drop-btn{background:linear-gradient(135deg,#1a7a00,#4cde1e);border:none;border-radius:8px;
+  padding:7px 16px;color:#fff;font-size:.8rem;font-weight:900;cursor:pointer;width:100%;
+  letter-spacing:1px;box-shadow:0 2px 12px rgba(76,220,30,.4);}
+
+.lby-left-btn{width:100%;padding:11px 14px;border:none;border-radius:12px;cursor:pointer;
+  font-size:.88rem;font-weight:bold;display:flex;align-items:center;gap:10px;
+  text-align:left;transition:all .18s;color:#fff;}
+.lby-left-btn:hover{transform:translateX(3px);filter:brightness(1.1);}
+.lby-btn-friends{background:linear-gradient(135deg,#1a5500,#2d9e00);}
+.lby-btn-rewards{background:linear-gradient(135deg,#5a0080,#9c27b0);}
+.lby-btn-stats  {background:linear-gradient(135deg,#003d7a,#1565c0);}
+.lby-btn-saves  {background:linear-gradient(135deg,#004d5a,#00838f);}
+.lby-btn-settings{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#ccc;}
+.lby-left-divider{height:1px;background:rgba(255,255,255,.07);margin:2px 0;}
+.lby-invites-label{font-size:.7rem;color:#557755;text-transform:uppercase;letter-spacing:1px;padding:2px 0;}
+.invite-list{flex:1;}
+.invite-card{background:rgba(50,120,30,.2);border:1px solid rgba(76,175,80,.3);border-radius:12px;
+  padding:10px;margin-bottom:8px;animation:slideIn .3s ease;}
+.invite-from{color:#7fff6a;font-weight:bold;font-size:.82rem;margin-bottom:3px;}
+.invite-room{color:#88aa88;font-size:.75rem;margin-bottom:8px;}
+.invite-btns{display:flex;gap:5px;}
+.invite-accept{flex:1;padding:6px;border:none;border-radius:7px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.75rem;font-weight:bold;}
+.invite-decline{flex:1;padding:6px;border:1px solid rgba(255,100,100,.3);border-radius:7px;
+  cursor:pointer;background:transparent;color:#ff8888;font-size:.75rem;}
+
+/* ── CENTER HERO ── */
+.lby-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;padding:20px;gap:0;}
+.lby-hero-username{font-size:1.1rem;font-weight:900;color:#e8f5e9;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;letter-spacing:.5px;}
+.lby-hero-username-icon{font-size:1rem;}
+.lby-hero-row{display:flex;align-items:flex-end;gap:20px;}
+.lby-invite-slot{width:160px;height:220px;border:2px dashed rgba(100,200,80,.2);border-radius:18px;
+  background:rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;cursor:pointer;transition:all .2s;color:#557755;font-size:.82rem;}
+.lby-invite-slot:hover{border-color:rgba(100,200,80,.5);background:rgba(100,200,80,.05);
+  color:#b8f5b0;transform:scale(1.02);}
+.lby-invite-slot-plus{font-size:2rem;color:rgba(100,200,80,.3);}
+.lby-dino-hero{font-size:9rem;line-height:1;
+  animation:dinoIdle 3s ease-in-out infinite, dinoGlow 3s ease-in-out infinite;
+  cursor:default;user-select:none;}
+.lby-hero-pedestal{
+  width:220px;height:16px;background:radial-gradient(ellipse,rgba(100,200,80,.25) 0%,transparent 70%);
+  border-radius:50%;margin-top:-8px;}
+
+/* ── RIGHT PLAY PANEL ── */
+.lby-right{width:260px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;
+  background:rgba(0,0,0,.3);border-left:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+.lby-mode-row{display:flex;gap:8px;}
+.lby-mode-box{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:8px 10px;cursor:pointer;transition:all .15s;}
+.lby-mode-box:hover{background:rgba(100,200,80,.1);border-color:rgba(100,200,80,.3);}
+.lby-mode-label{font-size:.62rem;color:#557755;text-transform:uppercase;letter-spacing:.5px;}
+.lby-mode-val{font-size:.88rem;font-weight:bold;color:#e8f5e9;margin-top:2px;}
+.lby-play-btn{
+  width:100%;padding:18px;border:none;border-radius:14px;cursor:pointer;
+  background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;
+  font-size:1.3rem;font-weight:900;letter-spacing:2px;
+  box-shadow:0 6px 30px rgba(76,220,30,.45);transition:all .18s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.lby-play-btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 10px 40px rgba(76,220,30,.6);}
+.lby-play-btn:active{transform:scale(.97);}
+.lby-play-sub{font-size:.72rem;font-weight:normal;opacity:.8;display:block;margin-top:2px;letter-spacing:0;}
+.lby-servers-btn{
+  width:100%;padding:12px;border:1px solid rgba(100,200,80,.25);border-radius:12px;cursor:pointer;
+  background:rgba(100,200,80,.07);color:#b8f5b0;font-size:.9rem;font-weight:bold;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:all .18s;
+}
+.lby-servers-btn:hover{background:rgba(100,200,80,.15);border-color:rgba(100,200,80,.4);}
+.lby-right-divider{height:1px;background:rgba(255,255,255,.07);}
+
+/* ── BOTTOM TABS ── */
+.lby-tabs{height:52px;display:flex;flex-shrink:0;
+  background:rgba(0,0,0,.65);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(12px);}
+.lby-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  border:none;background:transparent;color:#557755;font-size:.82rem;font-weight:bold;
+  cursor:pointer;transition:all .18s;position:relative;text-transform:uppercase;letter-spacing:.5px;}
+.lby-tab:hover{color:#88aa88;background:rgba(255,255,255,.03);}
+.lby-tab.active{color:#7fff6a;background:rgba(100,200,80,.08);border-top:2px solid #4caf50;}
+.lby-tab-badge{position:absolute;top:6px;right:calc(50% - 22px);background:#ff4757;color:#fff;
+  border-radius:99px;font-size:.6rem;padding:1px 5px;font-weight:900;min-width:16px;text-align:center;}
+.lby-tab-icon{font-size:1rem;}
+
+/* ── TAB CONTENT PANELS ── */
+.lby-tab-panel{display:none;flex:1;overflow:hidden;min-height:0;}
+.lby-tab-panel.active{display:flex;animation:tabPop .2s ease;}
+
+/* ROOMS panel */
+.lby-rooms-panel{flex:1;padding:18px 20px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;}
+.lby-rooms-panel h2{color:#b8f5b0;font-size:.85rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
   display:flex;align-items:center;gap:8px;}
-.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
-.room-card{
-  background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.15);border-radius:16px;
-  padding:18px;cursor:pointer;transition:all .2s;animation:slideIn .3s ease;
-}
-.room-card:hover{border-color:rgba(100,200,80,.4);transform:translateY(-2px);
-  box-shadow:0 8px 20px rgba(50,150,30,.2);}
-.room-name{font-size:1rem;font-weight:bold;color:#e8f5e9;margin-bottom:6px;}
-.room-host{color:#88aa88;font-size:.78rem;margin-bottom:10px;}
-.room-meta{display:flex;gap:8px;flex-wrap:wrap;}
-.room-badge{font-size:.72rem;padding:3px 10px;border-radius:99px;font-weight:bold;}
+.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
+.room-card{background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.15);border-radius:14px;
+  padding:16px;cursor:pointer;transition:all .2s;animation:slideIn .3s ease;}
+.room-card:hover{border-color:rgba(100,200,80,.4);transform:translateY(-2px);box-shadow:0 8px 20px rgba(50,150,30,.2);}
+.room-name{font-size:.95rem;font-weight:bold;color:#e8f5e9;margin-bottom:5px;}
+.room-host{color:#88aa88;font-size:.75rem;margin-bottom:8px;}
+.room-meta{display:flex;gap:6px;flex-wrap:wrap;}
+.room-badge{font-size:.68rem;padding:2px 8px;border-radius:99px;font-weight:bold;}
 .badge-mode{background:rgba(76,175,80,.15);color:#7fff6a;border:1px solid rgba(76,175,80,.25);}
 .badge-players{background:rgba(255,180,50,.1);color:#ffd700;border:1px solid rgba(255,180,50,.2);}
 .badge-status{background:rgba(100,180,255,.1);color:#90caf9;border:1px solid rgba(100,180,255,.2);}
-.room-join-btn{width:100%;margin-top:12px;padding:9px;border:none;border-radius:10px;cursor:pointer;
-  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;font-size:.85rem;}
+.room-join-btn{width:100%;margin-top:10px;padding:8px;border:none;border-radius:9px;cursor:pointer;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;font-size:.82rem;}
 .no-rooms{text-align:center;color:#557755;padding:60px 20px;font-size:1rem;}
 .no-rooms-icon{font-size:3rem;display:block;margin-bottom:12px;}
 
-/* Lobby Chat */
-.lobby-chat{width:300px;display:flex;flex-direction:column;border-left:1px solid rgba(100,200,80,.12);
-  background:rgba(0,0,0,.25);}
-.lobby-chat-header{padding:12px 16px;font-size:.8rem;font-weight:bold;color:#7fff6a;
-  text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(100,200,80,.1);
-  background:rgba(0,0,0,.2);flex-shrink:0;}
-.lobby-chat-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;
+/* CHAT panel */
+.lby-chat-panel{flex:1;display:flex;flex-direction:column;padding:0;}
+.lobby-chat-messages{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;
   gap:5px;scrollbar-width:thin;scrollbar-color:#2a4a2a transparent;}
-.lobby-chat-msg{font-size:.78rem;line-height:1.4;word-break:break-word;}
+.lobby-chat-msg{font-size:.8rem;line-height:1.5;word-break:break-word;}
 .lobby-chat-msg .chat-name{font-weight:bold;color:#7fff6a;margin-right:4px;}
-.lobby-chat-msg .chat-name.chat-system{color:#88aa88;}
 .lobby-chat-msg .chat-text{color:#cceebb;}
 .lobby-chat-msg.system-msg .chat-text{color:#557755;font-style:italic;}
-.lobby-chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(100,200,80,.1);
-  flex-shrink:0;}
+.lobby-chat-input-row{display:flex;gap:8px;padding:12px 16px;
+  border-top:1px solid rgba(100,200,80,.1);background:rgba(0,0,0,.2);flex-shrink:0;}
 .lobby-chat-input{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(100,200,80,.2);
-  border-radius:8px;padding:7px 10px;color:#eee;font-size:.8rem;outline:none;}
+  border-radius:10px;padding:9px 14px;color:#eee;font-size:.85rem;outline:none;}
 .lobby-chat-input:focus{border-color:rgba(100,200,80,.5);}
-.lobby-chat-send{background:linear-gradient(135deg,#1a6b00,#4caf50);border:none;border-radius:8px;
-  padding:7px 12px;color:#fff;font-size:.85rem;cursor:pointer;font-weight:bold;transition:opacity .15s;}
+.lobby-chat-send{background:linear-gradient(135deg,#1a6b00,#4caf50);border:none;border-radius:10px;
+  padding:9px 16px;color:#fff;font-size:.9rem;cursor:pointer;font-weight:bold;transition:opacity .15s;}
 .lobby-chat-send:hover{opacity:.85;}
 
-/* Sidebar */
-.lobby-sidebar{width:280px;padding:20px;border-left:1px solid rgba(100,200,80,.1);
-  display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
-.sidebar-btn{width:100%;padding:14px 16px;border:none;border-radius:14px;cursor:pointer;
-  font-size:.95rem;font-weight:bold;display:flex;align-items:center;gap:10px;
-  transition:all .2s;text-align:left;}
-.btn-create{background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;}
-.btn-create:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(76,175,80,.35);}
-.btn-solo{background:linear-gradient(135deg,#7a4a00,#ff9800);color:#fff;}
-.btn-solo:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,152,0,.35);}
-.btn-join-code{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#ccc;}
-.btn-join-code:hover{background:rgba(255,255,255,.08);}
+/* kept for backwards compat */
+.sidebar-btn{width:100%;padding:11px 14px;border:none;border-radius:12px;cursor:pointer;
+  font-size:.88rem;font-weight:bold;display:flex;align-items:center;gap:10px;text-align:left;transition:all .18s;color:#fff;}
+.btn-stats{background:linear-gradient(135deg,#003d7a,#1565c0);color:#fff;}
 .sidebar-divider{height:1px;background:rgba(100,200,80,.1);margin:4px 0;}
 .sidebar-title{color:#557755;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;padding:4px 0;}
-.invite-list{flex:1;min-height:80px;}
-.invite-card{
-  background:rgba(50,120,30,.2);border:1px solid rgba(76,175,80,.3);border-radius:12px;
-  padding:12px;margin-bottom:8px;animation:slideIn .3s ease;
-}
-.invite-from{color:#7fff6a;font-weight:bold;font-size:.85rem;margin-bottom:4px;}
-.invite-room{color:#88aa88;font-size:.78rem;margin-bottom:10px;}
-.invite-btns{display:flex;gap:6px;}
-.invite-accept{flex:1;padding:7px;border:none;border-radius:8px;cursor:pointer;
-  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.8rem;font-weight:bold;}
-.invite-decline{flex:1;padding:7px;border:1px solid rgba(255,100,100,.3);border-radius:8px;
-  cursor:pointer;background:transparent;color:#ff8888;font-size:.8rem;}
 
 /* ── CREATE ROOM MODAL ── */
 .modal-overlay{
@@ -557,44 +656,149 @@ canvas{display:block;}
 
 <!-- ══ LOBBY ══════════════════════════════════════════════════════════════════ -->
 <div id="lobbyScreen" class="hidden">
-  <div class="lobby-header">
-    <span class="lobby-logo">🦕</span>
-    <span class="lobby-title">DINO TYCOON</span>
-    <span class="lobby-online" id="lobbyOnline">🟢 0 online</span>
-    <span class="lobby-username" id="lobbyUsername"></span>
-    <button class="logout-btn" onclick="doLogout()">Logout</button>
+
+  <!-- TOP NAV -->
+  <div class="lby-nav">
+    <div class="lby-nav-logo"><span>🦕</span>DINO TYCOON</div>
+    <div class="lby-nav-spacer"></div>
+    <div class="lby-nav-pill"><span class="pip"></span><span id="lobbyOnline">0 online</span></div>
+    <div class="lby-nav-user">
+      <span class="lby-nav-avatar">🦖</span>
+      <span class="lby-nav-username" id="lobbyUsername"></span>
+    </div>
+    <div class="lby-nav-icon" onclick="openSettingsModal()" title="Settings">⚙️</div>
+    <div class="lby-nav-icon" onclick="doLogout()" title="Logout" style="color:#ff8888;">🚪</div>
   </div>
-  <div class="lobby-body">
-    <!-- Room list -->
-    <div class="lobby-rooms">
-      <h2>🌿 Public Rooms <span style="color:#557755;font-weight:normal;font-size:.8rem;margin-left:4px;" id="roomCount"></span></h2>
+
+  <!-- MAIN AREA — HOME tab default view -->
+  <div class="lby-main" id="lbyHomeView">
+
+    <!-- LEFT PANEL -->
+    <div class="lby-left">
+      <!-- Fossil Drop card -->
+      <div class="lby-drop-card" onclick="openSavedGamesModal()">
+        <div class="lby-drop-title">🥚 Fossil Drop</div>
+        <div class="lby-drop-subtitle">Daily reward</div>
+        <span class="lby-drop-egg">🦕</span>
+        <button class="lby-drop-btn">CLAIM FREE ▶</button>
+      </div>
+
+      <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">🔑 Join by Code</button>
+      <button class="lby-left-btn lby-btn-rewards" onclick="openSavedGamesModal()">💾 Saved Games</button>
+      <button class="lby-left-btn lby-btn-stats"   onclick="openStatsModal()">📊 My Stats</button>
+      <button class="lby-left-btn lby-btn-settings" onclick="openSettingsModal()">⚙️ Settings</button>
+
+      <div class="lby-left-divider"></div>
+      <div class="lby-invites-label">📨 Invites</div>
+      <div class="invite-list" id="inviteList">
+        <div style="color:#334433;font-size:.75rem;text-align:center;padding:16px 0;">No invites yet</div>
+      </div>
+    </div>
+
+    <!-- CENTER HERO -->
+    <div class="lby-hero">
+      <div class="lby-hero-username">
+        <span class="lby-hero-username-icon">🦴</span>
+        <span id="heroUsername" style="color:#7fff6a;"></span>
+      </div>
+      <div class="lby-hero-row">
+        <!-- Left invite slot -->
+        <div class="lby-invite-slot" onclick="openJoinCodeModal()">
+          <span style="font-size:1.8rem;">🦕</span>
+          <span class="lby-invite-slot-plus">＋</span>
+          <span>Invite a Dino</span>
+        </div>
+
+        <!-- Big dino hero -->
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div class="lby-dino-hero">🦖</div>
+          <div class="lby-hero-pedestal"></div>
+        </div>
+
+        <!-- Right invite slot -->
+        <div class="lby-invite-slot" onclick="openJoinCodeModal()">
+          <span style="font-size:1.8rem;">🦕</span>
+          <span class="lby-invite-slot-plus">＋</span>
+          <span>Invite a Dino</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PLAY PANEL -->
+    <div class="lby-right">
+      <div style="color:#557755;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Select Mode</div>
+      <div class="lby-mode-row">
+        <div class="lby-mode-box">
+          <div class="lby-mode-label">Mode</div>
+          <div class="lby-mode-val">Classic 🦕</div>
+        </div>
+        <div class="lby-mode-box">
+          <div class="lby-mode-label">Map</div>
+          <div class="lby-mode-val">All Maps</div>
+        </div>
+      </div>
+
+      <div style="flex:1;"></div>
+
+      <button class="lby-play-btn" onclick="openPlayNowModal()">
+        ▶ PLAY NOW!
+        <span class="lby-play-sub">Start your dino empire</span>
+      </button>
+
+      <div class="lby-right-divider"></div>
+
+      <button class="lby-servers-btn" onclick="switchLbyTab('rooms')">
+        ☰ SERVERS <span id="roomCount" style="color:#ffd700;font-size:.75rem;"></span>
+      </button>
+
+      <div style="color:#334433;font-size:.68rem;text-align:center;margin-top:auto;padding-top:8px;">
+        Dino Tycoon • Build your prehistoric empire
+      </div>
+    </div>
+  </div>
+
+  <!-- ROOMS TAB PANEL -->
+  <div class="lby-tab-panel" id="lbyRoomsPanel">
+    <div class="lby-rooms-panel">
+      <h2>🌿 Public Servers <span style="color:#557755;font-weight:normal;font-size:.75rem;margin-left:4px;" id="roomCount2"></span></h2>
       <div class="room-grid" id="roomGrid">
         <div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>
       </div>
     </div>
-    <!-- Public Chat -->
-    <div class="lobby-chat">
-      <div class="lobby-chat-header">💬 Global Chat</div>
+  </div>
+
+  <!-- CHAT TAB PANEL -->
+  <div class="lby-tab-panel" id="lbyChatPanel">
+    <div class="lby-chat-panel">
       <div class="lobby-chat-messages" id="lobbyChatMessages">
         <div class="lobby-chat-msg system-msg"><span class="chat-text">Welcome to Dino Tycoon! Be kind 🦕</span></div>
       </div>
       <div class="lobby-chat-input-row">
-        <input class="lobby-chat-input" id="lobbyChatInput" maxlength="120" placeholder="Say something..." onkeydown="if(event.key==='Enter')sendLobbyChat()">
+        <input class="lobby-chat-input" id="lobbyChatInput" maxlength="120" placeholder="Roar something at the herd..." onkeydown="if(event.key==='Enter')sendLobbyChat()">
         <button class="lobby-chat-send" onclick="sendLobbyChat()">➤</button>
       </div>
     </div>
-    <!-- Sidebar -->
-    <div class="lobby-sidebar">
-      <button class="sidebar-btn btn-solo" onclick="openPlayNowModal()" style="font-size:1.05rem;padding:16px;background:linear-gradient(135deg,#1a6b00,#4cde1e);box-shadow:0 4px 20px rgba(76,220,30,.3);">🦖 PLAY NOW!</button>
-      <button class="sidebar-btn btn-join-code" onclick="openJoinCodeModal()">🔑 Join by Code</button>
-      <button class="sidebar-btn btn-stats" onclick="openStatsModal()">📊 My Stats</button>
-      <button class="sidebar-btn" onclick="openSavedGamesModal()" style="background:linear-gradient(135deg,#1a3a5a,#0a6a9a);color:#7ff;font-size:.9rem;">💾 Saved Games</button>
-      <button class="sidebar-btn" onclick="openSettingsModal()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#ccc;font-size:.9rem;">⚙️ Settings</button>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-title">📨 Invites</div>
-      <div class="invite-list" id="inviteList"><div style="color:#334433;font-size:.8rem;text-align:center;padding:20px 0;">No invites yet</div></div>
-    </div>
   </div>
+
+  <!-- BOTTOM TABS -->
+  <div class="lby-tabs">
+    <button class="lby-tab active" id="lbyTab-home" onclick="switchLbyTab('home')">
+      <span class="lby-tab-icon">🏠</span> HOME
+    </button>
+    <button class="lby-tab" id="lbyTab-rooms" onclick="switchLbyTab('rooms')">
+      <span class="lby-tab-icon">⚔️</span> SERVERS
+    </button>
+    <button class="lby-tab" id="lbyTab-chat" onclick="switchLbyTab('chat')">
+      <span class="lby-tab-icon">💬</span> CHAT
+    </button>
+    <button class="lby-tab" id="lbyTab-stats" onclick="openStatsModal()">
+      <span class="lby-tab-icon">📊</span> STATS
+    </button>
+    <button class="lby-tab" id="lbyTab-saves" onclick="openSavedGamesModal()">
+      <span class="lby-tab-icon">💾</span> SAVED
+    </button>
+  </div>
+
 </div>
 
 <!-- ══ PLAY NOW MODAL ═══════════════════════════════════════════════════════ -->
@@ -1139,7 +1343,8 @@ function enterGame(token) {
   setTimeout(() => {
     auth.style.display = 'none';
     showScreen('lobby');
-    document.getElementById('lobbyUsername').textContent = '🦕 ' + currentUser;
+    document.getElementById('lobbyUsername').textContent = currentUser;
+    const hu = document.getElementById('heroUsername'); if(hu) hu.textContent = currentUser;
     initSocket(token);
   }, 420);
 }
@@ -1702,6 +1907,30 @@ function addKillFeed(html){
   setTimeout(()=>{d.style.transition='opacity .5s';d.style.opacity='0';setTimeout(()=>d.remove(),500);},3500);
 }
 
+// ── Lobby Tab Switcher ────────────────────────────────────────────────────────
+function switchLbyTab(tab) {
+  // hide all panels
+  document.getElementById('lbyHomeView').style.display  = 'none';
+  document.getElementById('lbyRoomsPanel').classList.remove('active');
+  document.getElementById('lbyChatPanel').classList.remove('active');
+  // deactivate all tabs
+  document.querySelectorAll('.lby-tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'home') {
+    document.getElementById('lbyHomeView').style.display = 'flex';
+    document.getElementById('lbyTab-home').classList.add('active');
+  } else if (tab === 'rooms') {
+    document.getElementById('lbyRoomsPanel').classList.add('active');
+    document.getElementById('lbyTab-rooms').classList.add('active');
+  } else if (tab === 'chat') {
+    document.getElementById('lbyChatPanel').classList.add('active');
+    document.getElementById('lbyTab-chat').classList.add('active');
+    // scroll chat to bottom
+    const box = document.getElementById('lobbyChatMessages');
+    if (box) box.scrollTop = box.scrollHeight;
+  }
+}
+window.switchLbyTab = switchLbyTab;
+
 // ── Lobby Chat ────────────────────────────────────────────────────────────────
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function sendLobbyChat(){
@@ -1749,7 +1978,7 @@ function initSocket(token){
     _socketAuthed = true;
     window._allUpgrades = data.upgrades;
     window._myStats = data.stats || null;
-    document.getElementById('lobbyOnline').textContent=`🟢 ${data.online} online`;
+    document.getElementById('lobbyOnline').textContent=`${data.online} online`;
     renderRooms(data.rooms);
   });
 
@@ -1774,7 +2003,7 @@ function initSocket(token){
       renderSavedGamesList(games);
   });
   s.on('lobbyUpdate',data=>{
-    document.getElementById('lobbyOnline').textContent=`🟢 ${data.online} online`;
+    document.getElementById('lobbyOnline').textContent=`${data.online} online`;
     renderRooms(data.rooms);
   });
 
