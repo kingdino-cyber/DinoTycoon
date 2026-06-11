@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const { Server } = require('socket.io');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -36,7 +37,7 @@ async function findUser(u) {
 }
 async function getSave(id) {
   const s = await savesCol.findOne({ userId: id });
-  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none' };
+  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkin:null };
 }
 async function putSave(id, data) {
   await savesCol.updateOne({ userId: id }, { $set: { ...data, userId: id } }, { upsert: true });
@@ -443,6 +444,7 @@ async function persistPlayer(p) {
     lobbyItems: existing.lobbyItems || { skins:[], tags:[] },
     equippedSkin: existing.equippedSkin || 'default',
     equippedTag: existing.equippedTag || 'none',
+    customSkin: existing.customSkin || null,
   });
 }
 
@@ -868,6 +870,51 @@ function destroyRoom(roomId) {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Image Proxy (for custom skin background removal — avoids CORS) ────────────
+app.get('/api/proxy-image', (req, res) => {
+  const rawUrl = req.query.url;
+  if (!rawUrl) return res.status(400).json({ error: 'No URL provided' });
+  let parsed;
+  try { parsed = new URL(rawUrl); } catch { return res.status(400).json({ error: 'Invalid URL' }); }
+  if (!['http:', 'https:'].includes(parsed.protocol)) return res.status(400).json({ error: 'http/https only' });
+
+  const lib = parsed.protocol === 'https:' ? https : require('http');
+  const options = {
+    hostname: parsed.hostname,
+    port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+    path: parsed.pathname + parsed.search,
+    method: 'GET',
+    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'image/*' },
+    timeout: 10000,
+  };
+  const proxyReq = lib.request(options, proxyRes => {
+    // Handle redirects
+    if ((proxyRes.statusCode === 301 || proxyRes.statusCode === 302) && proxyRes.headers.location) {
+      proxyRes.resume();
+      return res.redirect('/api/proxy-image?url=' + encodeURIComponent(proxyRes.headers.location));
+    }
+    const ct = proxyRes.headers['content-type'] || '';
+    if (!ct.startsWith('image/')) {
+      proxyRes.resume();
+      return res.status(400).json({ error: 'URL is not an image' });
+    }
+    // Limit to 5 MB
+    let size = 0;
+    res.setHeader('Content-Type', ct);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    proxyRes.on('data', chunk => {
+      size += chunk.length;
+      if (size > 5 * 1024 * 1024) { proxyRes.destroy(); res.status(413).end(); return; }
+      res.write(chunk);
+    });
+    proxyRes.on('end', () => res.end());
+  });
+  proxyReq.on('error', () => res.status(502).json({ error: 'Could not fetch image' }));
+  proxyReq.on('timeout', () => { proxyReq.destroy(); res.status(408).json({ error: 'Fetch timed out' }); });
+  proxyReq.end();
+});
+
 app.post('/api/register', async (req, res) => {
   try {
     const { username, password } = req.body||{};
@@ -941,6 +988,7 @@ io.on('connection', (socket) => {
       equippedSkin: save.equippedSkin || 'default',
       equippedTag: save.equippedTag || 'none',
       lobbyShop: LOBBY_SHOP,
+      customSkin: save.customSkin || null,
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
@@ -1012,6 +1060,19 @@ io.on('connection', (socket) => {
   });
 
   // ── Lobby Shop ──
+  // ── Custom Skin ──
+  socket.on('setCustomSkin', async (base64Data) => {
+    if (!authedUser) return;
+    if (typeof base64Data !== 'string') return;
+    if (base64Data.length > 300000) { socket.emit('lobbyShopError', 'Image too large — try a smaller one'); return; }
+    if (!base64Data.startsWith('data:image/png;base64,')) return;
+    const save = await getSave(authedUser.id);
+    save.customSkin = base64Data;
+    save.equippedSkin = 'custom';
+    await putSave(authedUser.id, save);
+    socket.emit('customSkinSet', { customSkin: base64Data });
+  });
+
   socket.on('getLobbyShop', async () => {
     if (!authedUser) return;
     const save = await getSave(authedUser.id);

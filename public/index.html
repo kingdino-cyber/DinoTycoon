@@ -702,6 +702,33 @@ canvas{display:block;}
 .tag-buy-btn{background:linear-gradient(135deg,#7a4a00,#ff9800);color:#fff;}
 .tag-equip-btn{background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;}
 .tag-equipped-lbl{color:#ffd700;font-size:.75rem;padding:7px 10px;}
+
+/* ── CUSTOM SKIN MODAL ── */
+.cs-upload-zone{border:2px dashed rgba(100,200,80,.3);border-radius:12px;padding:18px;
+  text-align:center;cursor:pointer;transition:all .2s;color:#7fff6a;font-size:.85rem;}
+.cs-upload-zone:hover{border-color:rgba(100,200,80,.6);background:rgba(100,200,80,.05);}
+.cs-or{text-align:center;color:#334433;font-size:.78rem;margin:10px 0;}
+.cs-preview-row{display:flex;gap:16px;justify-content:center;align-items:flex-start;margin:16px 0;}
+.cs-canvas-wrap{text-align:center;}
+.cs-canvas-lbl{font-size:.7rem;color:#557755;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.cs-canvas{width:128px;height:128px;border:1px solid rgba(255,255,255,.1);border-radius:10px;display:block;}
+.cs-arrow{color:#557755;font-size:1.3rem;align-self:center;padding-top:18px;}
+.cs-result-canvas{background:repeating-conic-gradient(#2a3a2a 0% 25%,#1a2a1a 0% 50%) 0 0/16px 16px;}
+.cs-tol-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.cs-tol-row label{color:#88aa88;font-size:.78rem;white-space:nowrap;}
+.cs-btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px;}
+.cs-btn{padding:9px 18px;border:none;border-radius:9px;cursor:pointer;font-size:.82rem;font-weight:bold;transition:all .15s;}
+.cs-btn:hover{filter:brightness(1.1);transform:scale(1.03);}
+.cs-btn-remove{background:linear-gradient(135deg,#1a4a8a,#1e90ff);color:#fff;}
+.cs-btn-set{background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;}
+.cs-status{color:#88aa88;font-size:.78rem;text-align:center;min-height:18px;}
+
+/* ── HERO CONTAINER ── */
+#heroDinoContainer{position:relative;width:150px;height:170px;margin:0 auto;}
+#heroDinoContainer svg, #heroDinoContainer img{position:absolute;inset:0;width:100%;height:100%;}
+#heroDinoCustomImg{object-fit:contain;display:none;
+  animation:dinoIdle 3s ease-in-out infinite,dinoGlow 3s ease-in-out infinite;
+  filter:drop-shadow(0 0 22px rgba(200,200,255,.5));}
 </style>
 </head>
 <body>
@@ -787,7 +814,9 @@ canvas{display:block;}
         <!-- Big dino hero -->
         <div style="display:flex;flex-direction:column;align-items:center;">
           <div class="hero-dino-tag" id="heroTagDisplay"></div>
-          <svg class="hero-dino-svg" id="heroDinoSvg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg" onclick="switchLbyTab('shop')">
+          <div id="heroDinoContainer" onclick="switchLbyTab('shop')" style="cursor:pointer;">
+          <img id="heroDinoCustomImg" alt="custom skin">
+          <svg class="hero-dino-svg" id="heroDinoSvg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
             <!-- Tail -->
             <path d="M38 108 Q8 122 10 100 Q17 85 40 98 Z" fill="var(--dc,#e84393)"/>
             <!-- Body -->
@@ -820,9 +849,10 @@ canvas{display:block;}
             <!-- Belly highlight -->
             <ellipse cx="80" cy="108" rx="22" ry="18" fill="rgba(255,255,255,.17)"/>
           </svg>
+          </div><!-- /heroDinoContainer -->
           <div class="lby-hero-pedestal"></div>
           <button class="hero-shop-btn" onclick="switchLbyTab('shop')">🛒 SHOP</button>
-        </div>
+        </div><!-- /flex column -->
 
         <!-- Right invite slot -->
         <div class="lby-invite-slot" onclick="openJoinCodeModal()">
@@ -1098,6 +1128,52 @@ canvas{display:block;}
     </div>
     <div class="modal-footer" style="margin-top:16px;">
       <button class="modal-cancel" onclick="closeModal('savedGamesModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CUSTOM SKIN MODAL ════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="customSkinModal">
+  <div class="modal" style="width:500px;">
+    <h2>🎨 Import Custom Skin</h2>
+    <p style="color:#88aa88;font-size:.82rem;margin-bottom:16px;">Paste an image URL from the web — we'll remove the background automatically. Free forever.</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:4px;">
+      <input id="csUrlInput" class="modal-input" placeholder="https://... paste any image URL" style="flex:1;font-size:.88rem;">
+      <button onclick="csFetchUrl()" class="modal-confirm" style="width:auto;padding:11px 16px;white-space:nowrap;font-size:.88rem;">Fetch →</button>
+    </div>
+    <div class="cs-or">— or upload from your device —</div>
+    <label style="display:block;margin-bottom:14px;">
+      <input type="file" id="csFileInput" accept="image/*" style="display:none;" onchange="csLoadFile(this)">
+      <div class="cs-upload-zone">📁 Click to upload an image</div>
+    </label>
+
+    <div id="csPreviewSection" style="display:none;">
+      <div class="cs-tol-row">
+        <label>BG Tolerance:</label>
+        <input type="range" id="csTolerance" min="10" max="120" value="45" style="flex:1;accent-color:#4caf50;">
+        <span id="csToleranceVal" style="color:#7fff6a;font-size:.78rem;min-width:28px;">45</span>
+      </div>
+      <div class="cs-preview-row">
+        <div class="cs-canvas-wrap">
+          <div class="cs-canvas-lbl">Original</div>
+          <canvas id="csOrigCanvas" class="cs-canvas" width="256" height="256"></canvas>
+        </div>
+        <div class="cs-arrow">→</div>
+        <div class="cs-canvas-wrap">
+          <div class="cs-canvas-lbl">Background Removed</div>
+          <canvas id="csResultCanvas" class="cs-canvas cs-result-canvas" width="256" height="256"></canvas>
+        </div>
+      </div>
+      <div class="cs-btn-row">
+        <button class="cs-btn cs-btn-remove" onclick="csRemoveBg()">✨ Remove Background</button>
+        <button class="cs-btn cs-btn-set" id="csSetBtn" style="display:none;" onclick="csSetSkin()">🎨 Use as My Skin</button>
+      </div>
+      <div class="cs-status" id="csStatus"></div>
+    </div>
+
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="modal-cancel" onclick="closeModal('customSkinModal')">Cancel</button>
     </div>
   </div>
 </div>
@@ -2168,16 +2244,32 @@ function dinoSvgHtml(color, spike, size=70) {
   </svg>`;
 }
 
-function applyDinoSkin(skinId) {
+function applyDinoSkin(skinId, customSkinData) {
+  const svg = document.getElementById('heroDinoSvg');
+  const customImg = document.getElementById('heroDinoCustomImg');
+  if (!svg || !customImg) return;
+
+  if (skinId === 'custom') {
+    const src = customSkinData || window._customSkinData;
+    if (src) {
+      customImg.src = src;
+      customImg.style.display = 'block';
+      svg.style.display = 'none';
+      return;
+    }
+    // Fall through to default if no custom data yet
+    skinId = 'default';
+  }
+
+  // SVG skin
+  customImg.style.display = 'none';
+  svg.style.display = '';
   const shop = window._lobbyShop;
   if (!shop) return;
   const skin = shop.skins.find(s => s.id === skinId) || shop.skins[0];
-  const svg = document.getElementById('heroDinoSvg');
-  if (svg) {
-    svg.style.setProperty('--dc', skin.color);
-    svg.style.setProperty('--ds', skin.spike);
-    svg.style.filter = `drop-shadow(0 0 22px ${skin.color}88)`;
-  }
+  svg.style.setProperty('--dc', skin.color);
+  svg.style.setProperty('--ds', skin.spike);
+  svg.style.filter = `drop-shadow(0 0 22px ${skin.color}88)`;
 }
 
 function applyDinoTag(tagId) {
@@ -2195,7 +2287,21 @@ function renderShopTab() {
 
   if (_shopTab === 'skins') {
     const ownedSkins = lobbyItems.skins || [];
-    body.innerHTML = `<div class="skin-grid">${shop.skins.map(skin => {
+    const isCustomEquipped = equippedSkin === 'custom';
+    const customCard = `<div class="skin-card ${isCustomEquipped ? 'equipped' : ''}">
+      <div class="skin-dino-wrap">
+        ${window._customSkinData && isCustomEquipped
+          ? `<img src="${window._customSkinData}" style="width:70px;height:80px;object-fit:contain;">`
+          : `<div style="font-size:2.8rem;line-height:1;margin:10px 0;">🎨</div>`}
+      </div>
+      <div class="skin-name">Custom Import</div>
+      <div class="skin-desc">Upload any image — background auto-removed.</div>
+      <div class="skin-cost" style="color:#2ed573;">🆓 Free</div>
+      ${isCustomEquipped
+        ? `<div class="skin-equipped-label">✅ Equipped</div>`
+        : `<button class="skin-action-btn skin-buy-btn" onclick="openCustomSkinModal()">🎨 Import Image</button>`}
+    </div>`;
+    body.innerHTML = `<div class="skin-grid">${customCard}${shop.skins.map(skin => {
       const isEquipped = equippedSkin === skin.id;
       const isOwned = skin.cost === 0 || ownedSkins.includes(skin.id);
       const canAfford = points >= skin.cost;
@@ -2268,6 +2374,173 @@ function sendLobbyChat(){
 }
 window.sendLobbyChat = sendLobbyChat;
 
+// ── Custom Skin ───────────────────────────────────────────────────────────────
+let _csImageReady = false;
+
+function openCustomSkinModal() {
+  _csImageReady = false;
+  document.getElementById('csUrlInput').value = '';
+  document.getElementById('csPreviewSection').style.display = 'none';
+  document.getElementById('csSetBtn').style.display = 'none';
+  document.getElementById('csStatus').textContent = '';
+  document.getElementById('customSkinModal').classList.remove('hidden');
+}
+window.openCustomSkinModal = openCustomSkinModal;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tolSlider = document.getElementById('csTolerance');
+  if (tolSlider) tolSlider.addEventListener('input', function() {
+    document.getElementById('csToleranceVal').textContent = this.value;
+  });
+  const uploadZone = document.querySelector('.cs-upload-zone');
+  if (uploadZone) uploadZone.addEventListener('click', () => document.getElementById('csFileInput').click());
+});
+
+async function csFetchUrl() {
+  const url = document.getElementById('csUrlInput').value.trim();
+  if (!url) { showToast('❌ Paste an image URL first'); return; }
+  document.getElementById('csStatus').textContent = '⌛ Fetching image...';
+  document.getElementById('csPreviewSection').style.display = 'block';
+  document.getElementById('csSetBtn').style.display = 'none';
+  _csImageReady = false;
+  try {
+    const proxyUrl = '/api/proxy-image?url=' + encodeURIComponent(url);
+    await csDrawImageFromSrc(proxyUrl);
+  } catch(e) {
+    document.getElementById('csStatus').textContent = '❌ Could not load image — try a different URL';
+  }
+}
+window.csFetchUrl = csFetchUrl;
+
+function csLoadFile(input) {
+  const file = input.files[0]; if (!file) return;
+  document.getElementById('csPreviewSection').style.display = 'block';
+  document.getElementById('csSetBtn').style.display = 'none';
+  document.getElementById('csStatus').textContent = '⌛ Loading...';
+  _csImageReady = false;
+  const reader = new FileReader();
+  reader.onload = e => csDrawImageFromSrc(e.target.result).catch(() => {
+    document.getElementById('csStatus').textContent = '❌ Could not load image';
+  });
+  reader.readAsDataURL(file);
+}
+window.csLoadFile = csLoadFile;
+
+function csDrawImageFromSrc(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const origCanvas = document.getElementById('csOrigCanvas');
+      const resultCanvas = document.getElementById('csResultCanvas');
+      const SIZE = 256;
+      // Draw original, fitting into 256x256
+      const ctx = origCanvas.getContext('2d');
+      ctx.clearRect(0, 0, SIZE, SIZE);
+      const scale = Math.min(SIZE / img.width, SIZE / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      const ox = (SIZE - w) / 2, oy = (SIZE - h) / 2;
+      ctx.drawImage(img, ox, oy, w, h);
+      // Clear result canvas
+      resultCanvas.getContext('2d').clearRect(0, 0, SIZE, SIZE);
+      document.getElementById('csStatus').textContent = '✅ Image loaded — click "Remove Background"';
+      document.getElementById('csSetBtn').style.display = 'none';
+      _csImageReady = true;
+      resolve();
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function csRemoveBg() {
+  if (!_csImageReady) { showToast('Load an image first'); return; }
+  const origCanvas = document.getElementById('csOrigCanvas');
+  const resultCanvas = document.getElementById('csResultCanvas');
+  const tolerance = parseInt(document.getElementById('csTolerance').value) || 45;
+  const SIZE = 256;
+
+  // Copy original to result
+  const rctx = resultCanvas.getContext('2d');
+  rctx.clearRect(0, 0, SIZE, SIZE);
+  rctx.drawImage(origCanvas, 0, 0);
+
+  const imageData = rctx.getImageData(0, 0, SIZE, SIZE);
+  const data = imageData.data;
+
+  // Sample background color: average of corner + edge pixels
+  const samplePts = [];
+  for (let i = 0; i < 8; i++) {
+    samplePts.push([Math.floor(i * SIZE / 7), 0]);
+    samplePts.push([Math.floor(i * SIZE / 7), SIZE - 1]);
+    samplePts.push([0, Math.floor(i * SIZE / 7)]);
+    samplePts.push([SIZE - 1, Math.floor(i * SIZE / 7)]);
+  }
+  let sr = 0, sg = 0, sb = 0;
+  for (const [px, py] of samplePts) {
+    const idx = (py * SIZE + px) * 4;
+    sr += data[idx]; sg += data[idx+1]; sb += data[idx+2];
+  }
+  sr /= samplePts.length; sg /= samplePts.length; sb /= samplePts.length;
+
+  function colorDist(idx) {
+    return Math.abs(data[idx]-sr) + Math.abs(data[idx+1]-sg) + Math.abs(data[idx+2]-sb);
+  }
+
+  // BFS flood fill from all edge pixels that match bg colour
+  const visited = new Uint8Array(SIZE * SIZE);
+  const queue = [];
+  const threshold = tolerance * 3;
+
+  for (let x = 0; x < SIZE; x++) {
+    for (const y of [0, SIZE-1]) {
+      const p = y * SIZE + x;
+      if (!visited[p] && colorDist(p * 4) < threshold) { visited[p] = 1; queue.push(p); }
+    }
+  }
+  for (let y = 1; y < SIZE - 1; y++) {
+    for (const x of [0, SIZE-1]) {
+      const p = y * SIZE + x;
+      if (!visited[p] && colorDist(p * 4) < threshold) { visited[p] = 1; queue.push(p); }
+    }
+  }
+
+  let head = 0;
+  while (head < queue.length) {
+    const pos = queue[head++];
+    const idx = pos * 4;
+    data[idx+3] = 0; // transparent
+    const x = pos % SIZE, y = Math.floor(pos / SIZE);
+    const neighbors = [];
+    if (x > 0)      neighbors.push(pos - 1);
+    if (x < SIZE-1) neighbors.push(pos + 1);
+    if (y > 0)      neighbors.push(pos - SIZE);
+    if (y < SIZE-1) neighbors.push(pos + SIZE);
+    for (const nb of neighbors) {
+      if (!visited[nb] && colorDist(nb * 4) < threshold) {
+        visited[nb] = 1;
+        queue.push(nb);
+      }
+    }
+  }
+
+  rctx.putImageData(imageData, 0, 0);
+  document.getElementById('csStatus').textContent = '✅ Done! Adjust tolerance and redo if needed, then set as your skin.';
+  document.getElementById('csSetBtn').style.display = 'inline-block';
+  window.SFX?.upgrade();
+}
+window.csRemoveBg = csRemoveBg;
+
+function csSetSkin() {
+  const canvas = document.getElementById('csResultCanvas');
+  const base64 = canvas.toDataURL('image/png');
+  if (!window.gameSocket) { showToast('❌ Not connected'); return; }
+  document.getElementById('csStatus').textContent = '⌛ Saving skin...';
+  window.gameSocket.emit('setCustomSkin', base64);
+  window.SFX?.levelUp();
+}
+window.csSetSkin = csSetSkin;
+
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg,dur=2500){
   const t=document.getElementById('toast');const d=document.createElement('div');
@@ -2311,8 +2584,9 @@ function initSocket(token){
     // Shop data
     if (data.lobbyShop) {
       window._lobbyShop = data.lobbyShop;
+      if (data.customSkin) window._customSkinData = data.customSkin;
       _shopData = { shop: data.lobbyShop, points: pts, lobbyItems: data.lobbyItems||{skins:[],tags:[]}, equippedSkin: data.equippedSkin||'default', equippedTag: data.equippedTag||'none' };
-      applyDinoSkin(data.equippedSkin || 'default');
+      applyDinoSkin(data.equippedSkin || 'default', data.customSkin);
       applyDinoTag(data.equippedTag || 'none');
       document.getElementById('shopPointsVal').textContent = pts;
     }
@@ -2390,6 +2664,17 @@ function initSocket(token){
     renderShopTab();
   });
   s.on('lobbyShopError', msg => { showToast('❌ ' + msg, 2500); window.SFX?.error(); });
+  s.on('customSkinSet', ({ customSkin }) => {
+    window._customSkinData = customSkin;
+    if (_shopData) _shopData.equippedSkin = 'custom';
+    applyDinoSkin('custom', customSkin);
+    document.getElementById('csStatus').textContent = '✅ Skin saved and equipped!';
+    document.getElementById('csSetBtn').style.display = 'none';
+    showToast('🎨 Custom skin equipped!', 2500);
+    window.SFX?.levelUp();
+    setTimeout(() => closeModal('customSkinModal'), 1200);
+    renderShopTab();
+  });
 
   s.on('roomError',msg=>showToast('❌ '+msg,3000));
   s.on('inviteError',msg=>showToast('❌ '+msg,3000));
