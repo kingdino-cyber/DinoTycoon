@@ -780,6 +780,19 @@ canvas{display:block;}
     </div>
   </div>
 
+  <!-- SAVED TAB PANEL -->
+  <div class="lby-tab-panel" id="lbySavedPanel">
+    <div style="flex:1;overflow-y:auto;padding:24px 28px;scrollbar-width:thin;scrollbar-color:#333 transparent;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <h2 style="color:#b8f5b0;font-size:1rem;text-transform:uppercase;letter-spacing:1px;margin:0;">💾 Saved Games</h2>
+        <span style="color:#557755;font-size:.75rem;">Up to 5 slots</span>
+      </div>
+      <div id="lbySavedList">
+        <div style="color:#557755;text-align:center;padding:40px 0;">Loading...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM TABS -->
   <div class="lby-tabs">
     <button class="lby-tab active" id="lbyTab-home" onclick="switchLbyTab('home')">
@@ -791,7 +804,7 @@ canvas{display:block;}
     <button class="lby-tab" id="lbyTab-chat" onclick="switchLbyTab('chat')">
       <span class="lby-tab-icon">💬</span> CHAT
     </button>
-    <button class="lby-tab" id="lbyTab-saves" onclick="openSavedGamesModal()">
+    <button class="lby-tab" id="lbyTab-saves" onclick="switchLbyTab('saves')">
       <span class="lby-tab-icon">💾</span> SAVED
     </button>
   </div>
@@ -1522,6 +1535,29 @@ function renderSavedGamesList(games) {
   }).join('');
 }
 
+function renderSavedGamesPanel(games, el) {
+  if (!games || !games.length) {
+    el.innerHTML = '<div style="color:#557755;text-align:center;padding:60px 0;font-size:.95rem;">No saved games yet.<br><span style="font-size:.8rem;color:#334433;display:block;margin-top:8px;">Save a game mid-match using ESC → 💾 Save Game</span></div>';
+    return;
+  }
+  const diffColors = {easy:'#2ed573',medium:'#ffa502',hard:'#ff4757'};
+  el.innerHTML = games.map(g => {
+    const d = new Date(g.savedAt);
+    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const dc = diffColors[g.difficulty]||'#aaa';
+    return `<div style="background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.18);border-radius:16px;padding:18px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;">
+      <div style="font-size:2.2rem;">💾</div>
+      <div style="flex:1;">
+        <div style="font-weight:900;color:#e8f5e9;font-size:1rem;margin-bottom:4px;">${esc(g.name)}</div>
+        <div style="font-size:.75rem;color:#557755;">${dateStr} · <span style="color:${dc};font-weight:bold;">${g.difficulty||'medium'}</span></div>
+        <div style="font-size:.8rem;color:#88aa88;margin-top:4px;">💰 $${fmt(g.money)} &nbsp;⭐ Lvl ${g.level||1} &nbsp;🏗️ ${(g.buildings||[]).length} buildings</div>
+      </div>
+      <button onclick="loadSavedGameNow(${g.id})" style="padding:10px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;font-size:.88rem;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(76,220,30,.35);">▶ PLAY</button>
+      <button onclick="deleteSavedGame(${g.id})" style="padding:10px 12px;border:1px solid rgba(255,100,100,.3);border-radius:10px;background:transparent;color:#ff8888;font-size:.88rem;cursor:pointer;">🗑</button>
+    </div>`;
+  }).join('');
+}
+
 function loadSavedGameNow(saveId) {
   window.SFX?.roar();
   closeModal('savedGamesModal');
@@ -1906,11 +1942,10 @@ function addKillFeed(html){
 
 // ── Lobby Tab Switcher ────────────────────────────────────────────────────────
 function switchLbyTab(tab) {
-  // hide all panels
-  document.getElementById('lbyHomeView').style.display  = 'none';
+  document.getElementById('lbyHomeView').style.display = 'none';
   document.getElementById('lbyRoomsPanel').classList.remove('active');
   document.getElementById('lbyChatPanel').classList.remove('active');
-  // deactivate all tabs
+  document.getElementById('lbySavedPanel').classList.remove('active');
   document.querySelectorAll('.lby-tab').forEach(t => t.classList.remove('active'));
   if (tab === 'home') {
     document.getElementById('lbyHomeView').style.display = 'flex';
@@ -1921,9 +1956,14 @@ function switchLbyTab(tab) {
   } else if (tab === 'chat') {
     document.getElementById('lbyChatPanel').classList.add('active');
     document.getElementById('lbyTab-chat').classList.add('active');
-    // scroll chat to bottom
     const box = document.getElementById('lobbyChatMessages');
     if (box) box.scrollTop = box.scrollHeight;
+  } else if (tab === 'saves') {
+    document.getElementById('lbySavedPanel').classList.add('active');
+    document.getElementById('lbyTab-saves').classList.add('active');
+    // Load saves into the panel
+    document.getElementById('lbySavedList').innerHTML = '<div style="color:#557755;text-align:center;padding:40px 0;">Loading...</div>';
+    if (window.gameSocket) window.gameSocket.emit('getSavedGames');
   }
 }
 window.switchLbyTab = switchLbyTab;
@@ -1998,6 +2038,9 @@ function initSocket(token){
     window._savedGames = games;
     if (!document.getElementById('savedGamesModal').classList.contains('hidden'))
       renderSavedGamesList(games);
+    // Also render into the tab panel if it's open
+    const panel = document.getElementById('lbySavedList');
+    if (panel) renderSavedGamesPanel(games, panel);
   });
   s.on('lobbyUpdate',data=>{
     document.getElementById('lobbyOnline').textContent=`${data.online} online`;
