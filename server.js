@@ -36,7 +36,7 @@ async function findUser(u) {
 }
 async function getSave(id) {
   const s = await savesCol.findOne({ userId: id });
-  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[] };
+  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none' };
 }
 async function putSave(id, data) {
   await savesCol.updateOne({ userId: id }, { $set: { ...data, userId: id } }, { upsert: true });
@@ -103,6 +103,27 @@ const UPGRADES = {
   boneCannon:    { name:'Bone Cannon',     cost:2000,  icon:'💣', effect:{}, req:null, desc:'Long range cannon (55 dmg, slow fire rate)', cat:'build' },
   healingTotem:  { name:'Healing Totem',   cost:800,   icon:'🪄', effect:{}, req:null, desc:'Heals YOU when you stand near it (+20 HP/s)', cat:'build' },
   tarPit:        { name:'Tar Pit',         cost:500,   icon:'🕳️', effect:{}, req:null, desc:'Severely slows enemies who walk through it', cat:'build' },
+};
+
+// ── Lobby Shop ────────────────────────────────────────────────────────────────
+const LOBBY_SHOP = {
+  skins: [
+    { id:'default', name:'Jungle Rex',    cost:0,    color:'#4caf50', spike:'#2d7a1e', desc:'The original dino. Classic.' },
+    { id:'pink',    name:'Fringling',     cost:50,   color:'#e84393', spike:'#c2185b', desc:'The iconic pink dino from the game.' },
+    { id:'blue',    name:'Glacier Rex',   cost:150,  color:'#1e90ff', spike:'#0d47a1', desc:'Ice-cold and calculating.' },
+    { id:'gold',    name:'Dino King',     cost:400,  color:'#ffd700', spike:'#e65100', desc:'Royalty of the prehistoric world.' },
+    { id:'purple',  name:'Shadow Raptor', cost:600,  color:'#9c27b0', spike:'#4a148c', desc:'Lurks in the prehistoric shadows.' },
+    { id:'red',     name:'Lava Dino',     cost:800,  color:'#ff4757', spike:'#b71c1c', desc:'Born from the volcano\'s heart.' },
+    { id:'teal',    name:'Ocean Rex',     cost:1000, color:'#00bcd4', spike:'#006064', desc:'Ruler of the ancient seas.' },
+  ],
+  tags: [
+    { id:'none',   name:'No Tag',    cost:0,    prefix:'' },
+    { id:'fossil', name:'Fossil',    cost:100,  prefix:'🦴 ' },
+    { id:'alpha',  name:'Alpha',     cost:250,  prefix:'[ALPHA] ' },
+    { id:'king',   name:'King',      cost:500,  prefix:'👑 ' },
+    { id:'terror', name:'Terror',    cost:750,  prefix:'[TERROR] ' },
+    { id:'pro',    name:'Pro',       cost:1500, prefix:'⚔️ ' },
+  ]
 };
 
 // ── Building Data ─────────────────────────────────────────────────────────────
@@ -405,6 +426,7 @@ function createPlayerData(socketId, username, save, padIdx, color) {
     money: save.money||0, totalEarned: save.total_earned||0,
     level: save.level||1, xp: save.xp||0, prestige: save.prestige||0,
     upgrades: [...(save.upgrades||[])],
+    points: save.points||0,
     padIdx, color, dbUserId: null, isBot: false, ...stats,
   };
 }
@@ -416,7 +438,11 @@ async function persistPlayer(p) {
     money: Math.floor(p.money), total_earned: Math.floor(p.totalEarned),
     level: p.level, xp: p.xp, upgrades: p.upgrades,
     kills: p.kills, deaths: p.deaths, prestige: p.prestige,
+    points: Math.floor(p.points || 0),
     savedGames: existing.savedGames || [],
+    lobbyItems: existing.lobbyItems || { skins:[], tags:[] },
+    equippedSkin: existing.equippedSkin || 'default',
+    equippedTag: existing.equippedTag || 'none',
   });
 }
 
@@ -667,6 +693,7 @@ function handleAttack(attacker, target, room) {
   if (target.hp <= 0) {
     target.isDead = true; target.deaths++;
     attacker.kills++;
+    attacker.points = (attacker.points || 0) + 10;  // +10 Dino Points per kill
     const loot = Math.floor(target.money * 0.25);
     target.money = Math.max(0, target.money - loot);
     attacker.money += loot; attacker.totalEarned += loot;
@@ -909,6 +936,11 @@ io.on('connection', (socket) => {
       online: Object.keys(onlineByName).length,
       upgrades: UPGRADES,
       stats: { ...save, username: decoded.username },
+      points: save.points || 0,
+      lobbyItems: save.lobbyItems || { skins:[], tags:[] },
+      equippedSkin: save.equippedSkin || 'default',
+      equippedTag: save.equippedTag || 'none',
+      lobbyShop: LOBBY_SHOP,
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
@@ -977,6 +1009,51 @@ io.on('connection', (socket) => {
   socket.on('getLobby', () => {
     const publicRooms = Object.values(rooms).filter(r=>r.isPublic).map(getRoomPublicInfo);
     socket.emit('lobbyData', { rooms: publicRooms, online: Object.keys(onlineByName).length });
+  });
+
+  // ── Lobby Shop ──
+  socket.on('getLobbyShop', async () => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    socket.emit('lobbyShopData', {
+      shop: LOBBY_SHOP,
+      points: save.points || 0,
+      lobbyItems: save.lobbyItems || { skins:[], tags:[] },
+      equippedSkin: save.equippedSkin || 'default',
+      equippedTag: save.equippedTag || 'none',
+    });
+  });
+
+  socket.on('buyLobbyItem', async ({ type, itemId }) => {
+    if (!authedUser) return;
+    const items = type === 'skin' ? LOBBY_SHOP.skins : LOBBY_SHOP.tags;
+    const item = items.find(i => i.id === itemId);
+    if (!item || item.cost === 0) return;
+    const save = await getSave(authedUser.id);
+    if ((save.points || 0) < item.cost) { socket.emit('lobbyShopError', 'Not enough Dino Points!'); return; }
+    if (!save.lobbyItems) save.lobbyItems = { skins:[], tags:[] };
+    const owned = save.lobbyItems[type === 'skin' ? 'skins' : 'tags'] || [];
+    if (owned.includes(itemId)) { socket.emit('lobbyShopError', 'Already owned!'); return; }
+    save.points = (save.points || 0) - item.cost;
+    save.lobbyItems[type === 'skin' ? 'skins' : 'tags'] = [...owned, itemId];
+    await putSave(authedUser.id, save);
+    socket.emit('lobbyItemBought', { type, itemId, points: save.points, lobbyItems: save.lobbyItems });
+  });
+
+  socket.on('equipLobbyItem', async ({ type, itemId }) => {
+    if (!authedUser) return;
+    const items = type === 'skin' ? LOBBY_SHOP.skins : LOBBY_SHOP.tags;
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    const save = await getSave(authedUser.id);
+    if (item.cost > 0) {
+      const owned = save.lobbyItems?.[type === 'skin' ? 'skins' : 'tags'] || [];
+      if (!owned.includes(itemId)) { socket.emit('lobbyShopError', 'Not owned!'); return; }
+    }
+    const field = type === 'skin' ? 'equippedSkin' : 'equippedTag';
+    save[field] = itemId;
+    await putSave(authedUser.id, save);
+    socket.emit('lobbyItemEquipped', { type, itemId });
   });
 
   socket.on('lobbyChat', (text) => {

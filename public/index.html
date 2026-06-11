@@ -628,6 +628,80 @@ canvas{display:block;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:#224422;border-radius:2px;}
+
+/* ── POINTS PILL ── */
+.lby-nav-points{display:flex;align-items:center;gap:5px;background:rgba(255,215,0,.1);
+  border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:5px 12px;
+  font-size:.82rem;color:#ffd700;font-weight:bold;cursor:pointer;}
+.lby-nav-points:hover{background:rgba(255,215,0,.18);}
+
+/* ── HERO DINO SVG ── */
+.hero-dino-svg{width:150px;height:170px;display:block;
+  animation:dinoIdle 3s ease-in-out infinite,dinoGlow 3s ease-in-out infinite;
+  cursor:pointer;filter:drop-shadow(0 0 22px rgba(100,255,80,.45));}
+.hero-dino-tag{font-size:.82rem;font-weight:900;color:#ffd700;letter-spacing:1px;
+  text-shadow:0 0 10px rgba(255,215,0,.5);margin-bottom:4px;min-height:18px;text-align:center;}
+
+/* ── HERO SHOP BTN ── */
+.hero-shop-btn{margin-top:14px;background:linear-gradient(135deg,#7a4a00,#ff9800);
+  border:none;border-radius:14px;color:#fff;font-size:1.05rem;font-weight:900;
+  letter-spacing:2px;padding:13px 36px;cursor:pointer;
+  box-shadow:0 6px 24px rgba(255,152,0,.45);transition:all .18s;}
+.hero-shop-btn:hover{transform:scale(1.07) translateY(-3px);box-shadow:0 12px 34px rgba(255,152,0,.6);}
+.hero-shop-btn:active{transform:scale(.96);}
+
+/* ── LOBBY SHOP PANEL ── */
+.lby-shop-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.lby-shop-header{padding:18px 24px 14px;background:rgba(0,0,0,.25);
+  border-bottom:1px solid rgba(100,200,80,.1);flex-shrink:0;}
+.lby-shop-pts-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.lby-shop-pts-val{font-size:1.8rem;font-weight:900;color:#ffd700;
+  text-shadow:0 0 16px rgba(255,215,0,.4);}
+.lby-shop-pts-lbl{color:#88aa88;font-size:.8rem;line-height:1.3;}
+.lby-shop-subtabs{display:flex;gap:8px;}
+.lby-shop-subtab{padding:8px 22px;border:1px solid rgba(255,255,255,.1);border-radius:10px;
+  cursor:pointer;background:transparent;color:#557755;font-size:.88rem;font-weight:bold;
+  transition:all .15s;}
+.lby-shop-subtab.active{background:rgba(100,200,80,.12);color:#7fff6a;
+  border-color:rgba(100,200,80,.3);}
+.lby-shop-body{flex:1;overflow-y:auto;padding:20px 24px;
+  scrollbar-width:thin;scrollbar-color:#333 transparent;}
+.skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;}
+.skin-card{background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.15);
+  border-radius:16px;padding:16px 14px 14px;text-align:center;transition:all .2s;}
+.skin-card:hover{border-color:rgba(100,200,80,.4);transform:translateY(-3px);
+  box-shadow:0 8px 24px rgba(50,200,50,.15);}
+.skin-card.equipped{border-color:#ffd700;background:rgba(255,215,0,.05);
+  box-shadow:0 0 20px rgba(255,215,0,.12);}
+.skin-card.owned{border-color:rgba(76,175,80,.35);}
+.skin-dino-wrap{width:90px;height:100px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;}
+.skin-dino-wrap svg{width:80px;height:90px;}
+.skin-name{font-weight:900;color:#e8f5e9;font-size:.9rem;margin-bottom:3px;}
+.skin-desc{color:#557755;font-size:.7rem;margin-bottom:6px;line-height:1.4;}
+.skin-cost{color:#ffd700;font-size:.78rem;font-weight:bold;margin-bottom:10px;}
+.skin-action-btn{width:100%;padding:8px;border:none;border-radius:9px;cursor:pointer;
+  font-size:.8rem;font-weight:900;transition:all .15s;letter-spacing:.5px;}
+.skin-action-btn:hover{filter:brightness(1.1);transform:scale(1.03);}
+.skin-buy-btn{background:linear-gradient(135deg,#7a4a00,#ff9800);color:#fff;}
+.skin-equip-btn{background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;}
+.skin-equipped-label{background:rgba(255,215,0,.12);color:#ffd700;
+  border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:7px;font-size:.78rem;}
+.tag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.tag-card{background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.15);
+  border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;transition:all .2s;}
+.tag-card:hover{border-color:rgba(100,200,80,.35);transform:translateY(-2px);}
+.tag-card.equipped{border-color:#ffd700;background:rgba(255,215,0,.04);}
+.tag-preview{font-size:.95rem;font-weight:900;color:#7fff6a;min-width:90px;
+  background:rgba(0,0,0,.3);border-radius:8px;padding:6px 10px;text-align:center;}
+.tag-info{flex:1;}
+.tag-name{font-weight:bold;color:#e8f5e9;font-size:.88rem;}
+.tag-cost{color:#ffd700;font-size:.75rem;margin-top:3px;}
+.tag-action-btn{padding:7px 14px;border:none;border-radius:8px;cursor:pointer;
+  font-size:.78rem;font-weight:bold;transition:all .15s;white-space:nowrap;}
+.tag-action-btn:hover{filter:brightness(1.1);}
+.tag-buy-btn{background:linear-gradient(135deg,#7a4a00,#ff9800);color:#fff;}
+.tag-equip-btn{background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;}
+.tag-equipped-lbl{color:#ffd700;font-size:.75rem;padding:7px 10px;}
 </style>
 </head>
 <body>
@@ -662,6 +736,7 @@ canvas{display:block;}
     <div class="lby-nav-logo"><span>🦕</span>DINO TYCOON</div>
     <div class="lby-nav-spacer"></div>
     <div class="lby-nav-pill"><span class="pip"></span><span id="lobbyOnline">0 online</span></div>
+    <div class="lby-nav-points" onclick="switchLbyTab('shop')" title="Dino Points — earned from kills">⚡ <span id="lobbyPoints">0</span> pts</div>
     <div class="lby-nav-user">
       <span class="lby-nav-avatar">🦖</span>
       <span class="lby-nav-username" id="lobbyUsername"></span>
@@ -711,8 +786,42 @@ canvas{display:block;}
 
         <!-- Big dino hero -->
         <div style="display:flex;flex-direction:column;align-items:center;">
-          <div class="lby-dino-hero">🦖</div>
+          <div class="hero-dino-tag" id="heroTagDisplay"></div>
+          <svg class="hero-dino-svg" id="heroDinoSvg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg" onclick="switchLbyTab('shop')">
+            <!-- Tail -->
+            <path d="M38 108 Q8 122 10 100 Q17 85 40 98 Z" fill="var(--dc,#e84393)"/>
+            <!-- Body -->
+            <ellipse cx="78" cy="105" rx="44" ry="38" fill="var(--dc,#e84393)"/>
+            <!-- Neck -->
+            <ellipse cx="108" cy="75" rx="18" ry="26" fill="var(--dc,#e84393)"/>
+            <!-- Head -->
+            <circle cx="106" cy="52" r="27" fill="var(--dc,#e84393)"/>
+            <!-- Snout -->
+            <ellipse cx="126" cy="60" rx="14" ry="10" fill="var(--dc,#e84393)"/>
+            <!-- Nostril -->
+            <circle cx="133" cy="55" r="2.5" fill="rgba(0,0,0,.22)"/>
+            <!-- Spikes -->
+            <polygon points="86,57 91,35 96,57" fill="var(--ds,#c2185b)"/>
+            <polygon points="98,54 103,32 108,54" fill="var(--ds,#c2185b)"/>
+            <!-- Eye white -->
+            <circle cx="112" cy="44" r="9" fill="white"/>
+            <!-- Eye pupil -->
+            <circle cx="114" cy="45" r="6" fill="#110a0a"/>
+            <!-- Eye shine -->
+            <circle cx="111" cy="42" r="2.5" fill="white"/>
+            <!-- Small arm -->
+            <ellipse cx="88" cy="118" rx="11" ry="7" fill="var(--dc,#e84393)" transform="rotate(25 88 118)"/>
+            <!-- Claws -->
+            <path d="M93 124 L99 129 M95 126 L102 129" stroke="var(--ds,#c2185b)" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- Left leg -->
+            <rect x="55" y="135" width="20" height="22" rx="10" fill="var(--dc,#e84393)"/>
+            <!-- Right leg -->
+            <rect x="80" y="138" width="18" height="20" rx="9" fill="var(--dc,#e84393)"/>
+            <!-- Belly highlight -->
+            <ellipse cx="80" cy="108" rx="22" ry="18" fill="rgba(255,255,255,.17)"/>
+          </svg>
           <div class="lby-hero-pedestal"></div>
+          <button class="hero-shop-btn" onclick="switchLbyTab('shop')">🛒 SHOP</button>
         </div>
 
         <!-- Right invite slot -->
@@ -753,6 +862,28 @@ canvas{display:block;}
 
       <div style="color:#334433;font-size:.68rem;text-align:center;margin-top:auto;padding-top:8px;">
         Dino Tycoon • Build your prehistoric empire
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP TAB PANEL -->
+  <div class="lby-tab-panel" id="lbyShopPanel">
+    <div class="lby-shop-panel">
+      <div class="lby-shop-header">
+        <div class="lby-shop-pts-row">
+          <span style="font-size:1.8rem;">⚡</span>
+          <div>
+            <div class="lby-shop-pts-val"><span id="shopPointsVal">0</span> pts</div>
+            <div class="lby-shop-pts-lbl">Dino Points — earn 10 per kill in any game</div>
+          </div>
+        </div>
+        <div class="lby-shop-subtabs">
+          <button class="lby-shop-subtab active" id="shopSubSkins" onclick="switchShopTab('skins')">🦖 Skins</button>
+          <button class="lby-shop-subtab" id="shopSubTags" onclick="switchShopTab('tags')">🏷️ Nametags</button>
+        </div>
+      </div>
+      <div class="lby-shop-body" id="shopBody">
+        <div style="color:#557755;text-align:center;padding:60px 0;">Loading shop...</div>
       </div>
     </div>
   </div>
@@ -805,6 +936,9 @@ canvas{display:block;}
   <div class="lby-tabs">
     <button class="lby-tab active" id="lbyTab-home" onclick="switchLbyTab('home')">
       <span class="lby-tab-icon">🏠</span> HOME
+    </button>
+    <button class="lby-tab" id="lbyTab-shop" onclick="switchLbyTab('shop')">
+      <span class="lby-tab-icon">🛒</span> SHOP
     </button>
     <button class="lby-tab" id="lbyTab-rooms" onclick="switchLbyTab('rooms')">
       <span class="lby-tab-icon">⚔️</span> SERVERS
@@ -1972,6 +2106,7 @@ function addKillFeed(html){
 // ── Lobby Tab Switcher ────────────────────────────────────────────────────────
 function switchLbyTab(tab) {
   document.getElementById('lbyHomeView').style.display = 'none';
+  document.getElementById('lbyShopPanel').classList.remove('active');
   document.getElementById('lbyRoomsPanel').classList.remove('active');
   document.getElementById('lbyChatPanel').classList.remove('active');
   document.getElementById('lbySavedPanel').classList.remove('active');
@@ -1979,6 +2114,10 @@ function switchLbyTab(tab) {
   if (tab === 'home') {
     document.getElementById('lbyHomeView').style.display = 'flex';
     document.getElementById('lbyTab-home').classList.add('active');
+  } else if (tab === 'shop') {
+    document.getElementById('lbyShopPanel').classList.add('active');
+    document.getElementById('lbyTab-shop').classList.add('active');
+    if (window.gameSocket) window.gameSocket.emit('getLobbyShop');
   } else if (tab === 'rooms') {
     document.getElementById('lbyRoomsPanel').classList.add('active');
     document.getElementById('lbyTab-rooms').classList.add('active');
@@ -1990,12 +2129,132 @@ function switchLbyTab(tab) {
   } else if (tab === 'saves') {
     document.getElementById('lbySavedPanel').classList.add('active');
     document.getElementById('lbyTab-saves').classList.add('active');
-    // Load saves into the panel
     document.getElementById('lbySavedList').innerHTML = '<div style="color:#557755;text-align:center;padding:40px 0;">Loading...</div>';
     if (window.gameSocket) window.gameSocket.emit('getSavedGames');
   }
 }
 window.switchLbyTab = switchLbyTab;
+
+// ── Lobby Shop ────────────────────────────────────────────────────────────────
+let _shopData = null;
+let _shopTab = 'skins';
+
+function switchShopTab(tab) {
+  _shopTab = tab;
+  document.getElementById('shopSubSkins').classList.toggle('active', tab === 'skins');
+  document.getElementById('shopSubTags').classList.toggle('active', tab === 'tags');
+  if (_shopData) renderShopTab();
+}
+window.switchShopTab = switchShopTab;
+
+function dinoSvgHtml(color, spike, size=70) {
+  const h = Math.round(size * 1.125);
+  return `<svg viewBox="0 0 140 160" width="${size}" height="${h}" xmlns="http://www.w3.org/2000/svg">
+    <path d="M38 108 Q8 122 10 100 Q17 85 40 98 Z" fill="${color}"/>
+    <ellipse cx="78" cy="105" rx="44" ry="38" fill="${color}"/>
+    <ellipse cx="108" cy="75" rx="18" ry="26" fill="${color}"/>
+    <circle cx="106" cy="52" r="27" fill="${color}"/>
+    <ellipse cx="126" cy="60" rx="14" ry="10" fill="${color}"/>
+    <circle cx="133" cy="55" r="2.5" fill="rgba(0,0,0,.22)"/>
+    <polygon points="86,57 91,35 96,57" fill="${spike}"/>
+    <polygon points="98,54 103,32 108,54" fill="${spike}"/>
+    <circle cx="112" cy="44" r="9" fill="white"/>
+    <circle cx="114" cy="45" r="6" fill="#110a0a"/>
+    <circle cx="111" cy="42" r="2.5" fill="white"/>
+    <ellipse cx="88" cy="118" rx="11" ry="7" fill="${color}" transform="rotate(25 88 118)"/>
+    <rect x="55" y="135" width="20" height="22" rx="10" fill="${color}"/>
+    <rect x="80" y="138" width="18" height="20" rx="9" fill="${color}"/>
+    <ellipse cx="80" cy="108" rx="22" ry="18" fill="rgba(255,255,255,.17)"/>
+  </svg>`;
+}
+
+function applyDinoSkin(skinId) {
+  const shop = window._lobbyShop;
+  if (!shop) return;
+  const skin = shop.skins.find(s => s.id === skinId) || shop.skins[0];
+  const svg = document.getElementById('heroDinoSvg');
+  if (svg) {
+    svg.style.setProperty('--dc', skin.color);
+    svg.style.setProperty('--ds', skin.spike);
+    svg.style.filter = `drop-shadow(0 0 22px ${skin.color}88)`;
+  }
+}
+
+function applyDinoTag(tagId) {
+  const shop = window._lobbyShop;
+  if (!shop) return;
+  const tag = shop.tags.find(t => t.id === tagId);
+  const el = document.getElementById('heroTagDisplay');
+  if (el) el.textContent = tag && tag.prefix ? tag.prefix + (currentUser || '') : '';
+}
+
+function renderShopTab() {
+  const { shop, points, lobbyItems, equippedSkin, equippedTag } = _shopData;
+  const body = document.getElementById('shopBody');
+  if (!body) return;
+
+  if (_shopTab === 'skins') {
+    const ownedSkins = lobbyItems.skins || [];
+    body.innerHTML = `<div class="skin-grid">${shop.skins.map(skin => {
+      const isEquipped = equippedSkin === skin.id;
+      const isOwned = skin.cost === 0 || ownedSkins.includes(skin.id);
+      const canAfford = points >= skin.cost;
+      let btn = '';
+      if (isEquipped) {
+        btn = `<div class="skin-equipped-label">✅ Equipped</div>`;
+      } else if (isOwned) {
+        btn = `<button class="skin-action-btn skin-equip-btn" onclick="equipLobbyItem('skin','${skin.id}')">Equip</button>`;
+      } else {
+        btn = `<button class="skin-action-btn skin-buy-btn" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'} onclick="buyLobbyItem('skin','${skin.id}')">Buy — ⚡${skin.cost}</button>`;
+      }
+      return `<div class="skin-card ${isEquipped?'equipped':isOwned?'owned':''}">
+        <div class="skin-dino-wrap">${dinoSvgHtml(skin.color, skin.spike, 70)}</div>
+        <div class="skin-name">${skin.name}</div>
+        <div class="skin-desc">${skin.desc}</div>
+        <div class="skin-cost">${skin.cost===0?'🆓 Free':'⚡ '+skin.cost+' pts'}</div>
+        ${btn}
+      </div>`;
+    }).join('')}</div>`;
+  } else {
+    const ownedTags = lobbyItems.tags || [];
+    body.innerHTML = `<div class="tag-grid">${shop.tags.map(tag => {
+      const isEquipped = equippedTag === tag.id;
+      const isOwned = tag.cost === 0 || ownedTags.includes(tag.id);
+      const canAfford = points >= tag.cost;
+      let btn = '';
+      if (isEquipped) {
+        btn = `<span class="tag-equipped-lbl">✅ On</span>`;
+      } else if (isOwned) {
+        btn = `<button class="tag-action-btn tag-equip-btn" onclick="equipLobbyItem('tag','${tag.id}')">Equip</button>`;
+      } else {
+        btn = `<button class="tag-action-btn tag-buy-btn" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'} onclick="buyLobbyItem('tag','${tag.id}')">⚡${tag.cost}</button>`;
+      }
+      const preview = tag.prefix ? tag.prefix + (currentUser||'Player') : (currentUser||'Player');
+      return `<div class="tag-card ${isEquipped?'equipped':''}">
+        <div class="tag-preview">${escHtml(preview)}</div>
+        <div class="tag-info">
+          <div class="tag-name">${tag.name}</div>
+          <div class="tag-cost">${tag.cost===0?'🆓 Free':'⚡ '+tag.cost+' pts'}</div>
+        </div>
+        ${btn}
+      </div>`;
+    }).join('')}</div>`;
+  }
+}
+
+function buyLobbyItem(type, itemId) {
+  if (!window.gameSocket) return;
+  window.SFX?.pop();
+  window.gameSocket.emit('buyLobbyItem', { type, itemId });
+}
+window.buyLobbyItem = buyLobbyItem;
+
+function equipLobbyItem(type, itemId) {
+  if (!window.gameSocket) return;
+  window.SFX?.pop();
+  window.gameSocket.emit('equipLobbyItem', { type, itemId });
+}
+window.equipLobbyItem = equipLobbyItem;
 
 // ── Lobby Chat ────────────────────────────────────────────────────────────────
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2046,6 +2305,17 @@ function initSocket(token){
     window._myStats = data.stats || null;
     document.getElementById('lobbyOnline').textContent=`${data.online} online`;
     renderRooms(data.rooms);
+    // Points
+    const pts = data.points || 0;
+    document.getElementById('lobbyPoints').textContent = pts;
+    // Shop data
+    if (data.lobbyShop) {
+      window._lobbyShop = data.lobbyShop;
+      _shopData = { shop: data.lobbyShop, points: pts, lobbyItems: data.lobbyItems||{skins:[],tags:[]}, equippedSkin: data.equippedSkin||'default', equippedTag: data.equippedTag||'none' };
+      applyDinoSkin(data.equippedSkin || 'default');
+      applyDinoTag(data.equippedTag || 'none');
+      document.getElementById('shopPointsVal').textContent = pts;
+    }
   });
 
   s.on('statsData', data => {
@@ -2092,6 +2362,34 @@ function initSocket(token){
     while (box.children.length > 80) box.removeChild(box.firstChild);
     box.scrollTop = box.scrollHeight;
   });
+
+  // ── Lobby Shop events ──
+  s.on('lobbyShopData', data => {
+    _shopData = data;
+    window._lobbyShop = data.shop;
+    document.getElementById('shopPointsVal').textContent = data.points || 0;
+    document.getElementById('lobbyPoints').textContent = data.points || 0;
+    renderShopTab();
+  });
+  s.on('lobbyItemBought', ({ type, itemId, points, lobbyItems }) => {
+    if (_shopData) { _shopData.points = points; _shopData.lobbyItems = lobbyItems; }
+    document.getElementById('shopPointsVal').textContent = points;
+    document.getElementById('lobbyPoints').textContent = points;
+    showToast(`✅ Purchased! ⚡${points} pts remaining`, 2500);
+    window.SFX?.levelUp();
+    renderShopTab();
+  });
+  s.on('lobbyItemEquipped', ({ type, itemId }) => {
+    if (_shopData) {
+      if (type === 'skin') _shopData.equippedSkin = itemId;
+      else _shopData.equippedTag = itemId;
+    }
+    if (type === 'skin') applyDinoSkin(itemId);
+    else applyDinoTag(itemId);
+    showToast('🦖 Equipped!', 1800);
+    renderShopTab();
+  });
+  s.on('lobbyShopError', msg => { showToast('❌ ' + msg, 2500); window.SFX?.error(); });
 
   s.on('roomError',msg=>showToast('❌ '+msg,3000));
   s.on('inviteError',msg=>showToast('❌ '+msg,3000));
