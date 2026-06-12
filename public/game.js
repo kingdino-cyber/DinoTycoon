@@ -35,20 +35,24 @@ function hexStr2num(s) {
 // ── 3D Dino Drawing ───────────────────────────────────────────────────────────
 // Draws a detailed dino (facing right) using Phaser Graphics
 // The container is then rotated for direction
-function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
+function drawDino3D(gfx, colorHex, upgrades=[], biting=false, walkPhase=0) {
   gfx.clear();
   const base = hexStr2num(colorHex);
-  const light  = adjustHex(base,  90);
-  const dark   = adjustHex(base, -90);
-  const vlight = adjustHex(base, 140);
+  const light  = adjustHex(base,  70);
+  const dark   = adjustHex(base, -70);
   const belly  = 0xf5e6c8;
+  const isPanda = colorHex === '#f5f5f5';
   const hasFireStaff = upgrades.includes('fireStaff') || upgrades.includes('meteorStrike');
   const hasDiamondArmor = upgrades.includes('diamondArmor');
   const hasJetBoots = upgrades.includes('jetBoots');
 
+  const lLeg = Math.sin(walkPhase) * 5;
+  const rLeg = Math.sin(walkPhase + Math.PI) * 5;
+  const armSway = Math.sin(walkPhase + Math.PI / 2) * 2;
+
   // === GROUND SHADOW ===
-  gfx.fillStyle(0x000000, 0.30);
-  gfx.fillEllipse(4, 25, 72, 20);
+  gfx.fillStyle(0x000000, 0.22);
+  gfx.fillEllipse(4, 25, 68, 18);
 
   // === TAIL ===
   const tailPts = [[-16,-2],[-22,-5],[-28,-9],[-32,-13],[-34,-16],[-35,-18]];
@@ -57,77 +61,35 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
     gfx.fillStyle(i===0 ? base : dark, 1);
     gfx.fillCircle(tailPts[i][0], tailPts[i][1], tailSizes[i]);
   }
-  // Tail highlight (top edge)
-  gfx.fillStyle(light, 0.25);
+  gfx.fillStyle(light, 0.20);
   gfx.fillCircle(-16, -4, 7);
 
   // === BACK LEGS ===
-  gfx.fillStyle(dark, 1);
-  gfx.fillRoundedRect(-12, 14, 10, 18, 4);
-  gfx.fillRoundedRect(-2, 14, 10, 18, 4);
-  // Leg front-face highlight
-  gfx.fillStyle(light, 0.3);
-  gfx.fillRoundedRect(-11, 15, 4, 12, 2);
-  gfx.fillRoundedRect(-1, 15, 4, 12, 2);
+  gfx.fillStyle(isPanda ? 0x111111 : dark, 1);
+  gfx.fillRoundedRect(-12, 14 + lLeg, 10, 18, 4);
+  gfx.fillRoundedRect(-2, 14 + rLeg, 10, 18, 4);
   // Feet
-  gfx.fillStyle(adjustHex(base,-100), 1);
-  gfx.fillRoundedRect(-14, 29, 14, 6, 3);
-  gfx.fillRoundedRect(-4, 29, 14, 6, 3);
+  gfx.fillStyle(isPanda ? 0x111111 : adjustHex(base,-100), 1);
+  gfx.fillRoundedRect(-14, 29 + lLeg, 14, 6, 3);
+  gfx.fillRoundedRect(-4, 29 + rLeg, 14, 6, 3);
   // Claws
   gfx.fillStyle(0x222222, 1);
   for(let cx=0; cx<3; cx++) {
-    gfx.fillTriangle(-14+cx*4, 34, -13+cx*4, 37, -10+cx*4, 34);
-    gfx.fillTriangle(-4+cx*4, 34, -3+cx*4, 37, 0+cx*4, 34);
+    gfx.fillTriangle(-14+cx*4, 34+lLeg, -13+cx*4, 37+lLeg, -10+cx*4, 34+lLeg);
+    gfx.fillTriangle(-4+cx*4, 34+rLeg, -3+cx*4, 37+rLeg, 0+cx*4, 34+rLeg);
   }
 
-  // === BODY — 3D layered ===
-  // Outer shadow for depth separation
+  // === BODY ===
   gfx.fillStyle(dark, 1);
-  gfx.fillEllipse(5, 4, 60, 42);
-  // Main body
+  gfx.fillEllipse(5, 4, 58, 40);
   gfx.fillStyle(base, 1);
   gfx.fillEllipse(1, 0, 54, 37);
-  // Ambient occlusion at waist (legs meet body)
-  gfx.fillStyle(0x000000, 0.20);
-  gfx.fillEllipse(0, 18, 36, 10);
-  // Large diffuse highlight (top-left)
-  gfx.fillStyle(light, 0.50);
-  gfx.fillEllipse(-8, -8, 28, 18);
-  // Specular hot-spot
-  gfx.fillStyle(vlight, 0.30);
-  gfx.fillCircle(-13, -12, 5);
-  // Belly patch
-  gfx.fillStyle(belly, 0.65);
+  gfx.fillStyle(light, 0.55);
+  gfx.fillEllipse(-6, -8, 26, 16);
+  gfx.fillStyle(belly, 0.55);
   gfx.fillEllipse(6, 9, 26, 20);
-  // Subtle body outline for depth
-  gfx.lineStyle(1, dark, 0.55);
-  gfx.strokeEllipse(1, 0, 54, 37);
 
-  // === BACK SPIKES ===
-  gfx.fillStyle(dark, 1);
-  const spikePositions = [[-8,-14],[-2,-16],[4,-16],[10,-15],[15,-13]];
-  const spikeHeights = [8, 10, 11, 9, 7];
-  for(let i=0; i<spikePositions.length; i++) {
-    const [sx, sy] = spikePositions[i];
-    const h = spikeHeights[i];
-    gfx.fillTriangle(sx-5, sy+3, sx, sy-h, sx+5, sy+3);
-  }
-  // Spike left-face highlight
-  gfx.fillStyle(light, 0.30);
-  for(let i=0; i<spikePositions.length; i++) {
-    const [sx, sy] = spikePositions[i];
-    const h = spikeHeights[i];
-    gfx.fillTriangle(sx-4, sy+2, sx, sy-h+1, sx, sy+2);
-  }
-  // Spike bright tip highlight
-  gfx.fillStyle(vlight, 0.20);
-  for(let i=0; i<spikePositions.length; i++) {
-    const [sx, sy] = spikePositions[i];
-    const h = spikeHeights[i];
-    gfx.fillTriangle(sx-1, sy-h+3, sx, sy-h, sx+1, sy-h+3);
-  }
-
-  // === DIAMOND ARMOR overlay ===
+  // === DIAMOND ARMOR ===
   if (hasDiamondArmor) {
     gfx.lineStyle(2, 0x00e5ff, 0.6);
     gfx.strokeEllipse(1, 0, 56, 39);
@@ -139,52 +101,52 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
     });
   }
 
-  // === FRONT ARMS ===
+  // === BACK SPIKES ===
   gfx.fillStyle(dark, 1);
-  gfx.fillRoundedRect(10, -4, 8, 12, 3);
-  gfx.fillRoundedRect(16, 4, 7, 8, 3);
-  // Arm highlight
-  gfx.fillStyle(light, 0.35);
-  gfx.fillRoundedRect(11, -3, 3, 7, 2);
-  // Small claws on arms
+  const spikePositions = [[-8,-14],[-2,-16],[4,-16],[10,-15],[15,-13]];
+  const spikeHeights = [8, 10, 11, 9, 7];
+  for(let i=0; i<spikePositions.length; i++) {
+    const [sx, sy] = spikePositions[i];
+    const h = spikeHeights[i];
+    gfx.fillTriangle(sx-5, sy+3, sx, sy-h, sx+5, sy+3);
+  }
+  gfx.fillStyle(0xffffff, 0.15);
+  for(let i=0; i<spikePositions.length; i++) {
+    const [sx, sy] = spikePositions[i];
+    const h = spikeHeights[i];
+    gfx.fillTriangle(sx-4, sy+2, sx, sy-h+1, sx, sy+2);
+  }
+
+  // === FRONT ARMS ===
+  gfx.fillStyle(isPanda ? 0x111111 : dark, 1);
+  gfx.fillRoundedRect(10, -4 + armSway, 8, 12, 3);
+  gfx.fillRoundedRect(16, 4 + armSway, 7, 8, 3);
   gfx.fillStyle(0x222222, 1);
-  gfx.fillTriangle(16, 11, 15, 14, 20, 12);
-  gfx.fillTriangle(20, 11, 19, 14, 23, 11);
+  gfx.fillTriangle(16, 11+armSway, 15, 14+armSway, 20, 12+armSway);
+  gfx.fillTriangle(20, 11+armSway, 19, 14+armSway, 23, 11+armSway);
 
   // === NECK ===
   gfx.fillStyle(dark, 1);
   gfx.fillEllipse(20, -10, 20, 14);
   gfx.fillStyle(base, 1);
   gfx.fillEllipse(18, -12, 17, 12);
-  gfx.fillStyle(light, 0.28);
-  gfx.fillEllipse(15, -14, 9, 6);
 
   // === HEAD ===
   gfx.fillStyle(dark, 1);
   gfx.fillCircle(31, -16, 17);
   gfx.fillStyle(base, 1);
   gfx.fillCircle(29, -18, 15);
-  // Head outline
-  gfx.lineStyle(1, dark, 0.5);
-  gfx.strokeCircle(29, -18, 15);
-  // Large highlight
   gfx.fillStyle(light, 0.55);
   gfx.fillCircle(23, -23, 7);
-  // Specular hot-spot
-  gfx.fillStyle(vlight, 0.35);
-  gfx.fillCircle(21, -25, 3.5);
 
   // === SNOUT & JAW ===
   const jawDrop = biting ? 11 : 0;
-
   gfx.fillStyle(dark, 1);
   gfx.fillRoundedRect(38, -24, 17, 11, 4);
   gfx.fillStyle(base, 1);
   gfx.fillRoundedRect(37, -25, 15, 10, 3);
-  // Snout highlight
   gfx.fillStyle(light, 0.30);
   gfx.fillRoundedRect(38, -25, 7, 4, 2);
-  // Nostril
   gfx.fillStyle(adjustHex(base,-130), 1);
   gfx.fillCircle(48, -21, 2.2);
   gfx.fillCircle(43, -21, 2.2);
@@ -209,49 +171,53 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
   }
 
   // === EYE ===
-  // Sclera shadow
   gfx.fillStyle(0xdddddd, 1);
   gfx.fillCircle(28, -23, 5.5);
-  // White
   gfx.fillStyle(0xffffff, 1);
   gfx.fillCircle(27, -24, 5);
-  // Iris (rich dark brown)
   gfx.fillStyle(0x2b1400, 1);
   gfx.fillCircle(29, -23, 3.2);
-  // Pupil
   gfx.fillStyle(0x080808, 1);
   gfx.fillCircle(29, -23, 1.8);
-  // Bright highlight
   gfx.fillStyle(0xffffff, 1);
   gfx.fillCircle(30, -24, 1.4);
-  // Secondary micro-highlight
   gfx.fillStyle(0xffffff, 0.6);
   gfx.fillCircle(28, -25, 0.7);
-  // Brow
   gfx.lineStyle(2.5, dark, 1);
   gfx.beginPath(); gfx.moveTo(23,-28); gfx.lineTo(33,-27); gfx.strokePath();
+
+  // === PANDA MARKINGS ===
+  if (isPanda) {
+    gfx.fillStyle(0x111111, 1);
+    gfx.fillCircle(20, -32, 6);   // left ear
+    gfx.fillCircle(35, -31, 6);   // right ear
+    gfx.fillStyle(0x111111, 0.85);
+    gfx.fillEllipse(28, -23, 15, 12); // eye patch
+    // Redraw eye on top of patch
+    gfx.fillStyle(0xffffff, 1); gfx.fillCircle(27, -24, 5);
+    gfx.fillStyle(0x2b1400, 1); gfx.fillCircle(29, -23, 3.2);
+    gfx.fillStyle(0x080808, 1); gfx.fillCircle(29, -23, 1.8);
+    gfx.fillStyle(0xffffff, 1); gfx.fillCircle(30, -24, 1.4);
+  }
 
   // === JET BOOTS ===
   if (hasJetBoots) {
     gfx.fillStyle(0xff6600, 0.7);
-    gfx.fillCircle(-14, 35, 6);
-    gfx.fillCircle(-4, 35, 6);
-    // Flame
+    gfx.fillCircle(-14, 35 + lLeg, 6);
+    gfx.fillCircle(-4, 35 + rLeg, 6);
     gfx.fillStyle(0xffcc00, 0.9);
-    gfx.fillTriangle(-17,35,-11,35,-14,44);
-    gfx.fillTriangle(-7,35,-1,35,-4,44);
+    gfx.fillTriangle(-17, 35+lLeg, -11, 35+lLeg, -14, 44+lLeg);
+    gfx.fillTriangle(-7, 35+rLeg, -1, 35+rLeg, -4, 44+rLeg);
   }
 
-  // === WEAPON (right side) ===
+  // === WEAPON ===
   if (hasFireStaff) {
-    // Fire staff
     gfx.lineStyle(3, 0x8B4513, 1);
     gfx.beginPath(); gfx.moveTo(22, 10); gfx.lineTo(35, -5); gfx.strokePath();
     gfx.fillStyle(0xff4400, 1); gfx.fillCircle(36, -6, 6);
     gfx.fillStyle(0xffcc00, 0.9); gfx.fillCircle(36, -6, 4);
     gfx.fillStyle(0xffffff, 0.7); gfx.fillCircle(36, -7, 2);
   } else if (upgrades.includes('trexJaw') || upgrades.includes('raptorClaw')) {
-    // Sword
     gfx.lineStyle(3, 0xaaaaaa, 1);
     gfx.beginPath(); gfx.moveTo(18, 8); gfx.lineTo(28, -8); gfx.strokePath();
     gfx.fillStyle(0xcccccc, 1); gfx.fillRect(26,-10,5,3);
@@ -666,6 +632,14 @@ class GameScene extends Phaser.Scene {
 
   setPos(id, x, y, dir) {
     const obj=this.playerObjs[id]; if(!obj) return;
+    // Walk animation: update leg phase based on distance moved
+    if (!obj.customImg && obj.data.x !== undefined) {
+      const moved = Math.hypot(x - obj.data.x, y - obj.data.y);
+      if (moved > 0.5) {
+        obj.walkPhase = ((obj.walkPhase || 0) + moved * 0.18) % (Math.PI * 2);
+        drawDino3D(obj.sprite, obj.data.skinColor || obj.data.color, obj.data.upgrades || [], false, obj.walkPhase);
+      }
+    }
     const dep=y;
     obj.shadow.setPosition(x,y+22).setDepth(dep-1);
     obj.sprite.setPosition(x,y).setDepth(dep);
@@ -693,10 +667,10 @@ class GameScene extends Phaser.Scene {
     const obj = this.playerObjs[id]; if(!obj) return;
     if(obj.customImg) return; // custom skin — no graphics bite animation needed
     const col = obj.data.skinColor || obj.data.color;
-    drawDino3D(obj.sprite, col, obj.data.upgrades||[], true);
+    drawDino3D(obj.sprite, col, obj.data.upgrades||[], true, obj.walkPhase||0);
     this.time.delayedCall(260, () => {
       const o = this.playerObjs[id]; if(!o) return;
-      drawDino3D(o.sprite, o.data.skinColor || o.data.color, o.data.upgrades||[], false);
+      drawDino3D(o.sprite, o.data.skinColor || o.data.color, o.data.upgrades||[], false, o.walkPhase||0);
     });
   }
 
@@ -777,6 +751,17 @@ class GameScene extends Phaser.Scene {
     gfx.clear();
     const col = parseInt(ownerColor.replace('#',''), 16);
     const dark = 0x222222;
+
+    // 3D depth: offset shadow beneath building to suggest height/volume
+    gfx.fillStyle(0x000000, 0.28 * alpha);
+    if (defType === 'wall') {
+      const _o = upgInfo?.orientation || 'h';
+      const _hw = _o === 'h' ? 26 : 7, _hh = _o === 'h' ? 7 : 26;
+      gfx.fillRect(-_hw + 5, -_hh + 6, _hw * 2, _hh * 2);
+    } else {
+      gfx.fillEllipse(5, 8, 56, 20);
+    }
+
     if (upgradeId === 'bonePile1') {
       // Pile of bones
       gfx.fillStyle(0xd4c49a,alpha); gfx.fillEllipse(0,8,40,16);

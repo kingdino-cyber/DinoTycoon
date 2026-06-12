@@ -2230,22 +2230,22 @@ function _adjHex(n, amt) {
   const clamp = v => Math.max(0, Math.min(255, v));
   return (clamp(((n>>16)&255)+amt)<<16)|(clamp(((n>>8)&255)+amt)<<8)|clamp((n&255)+amt);
 }
-function drawDinoCanvas(canvas, colorHex, flipped=false) {
+function drawDinoCanvas(canvas, colorHex, scaleXMult=1) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
   const scale = Math.min(W / 100, H / 78);
   ctx.save();
   ctx.translate(W/2 - 8*scale, H/2 - 5*scale);
-  ctx.scale(flipped ? -scale : scale, scale);
+  ctx.scale(scaleXMult * scale, scale);
 
   const base = _hexToNum(colorHex);
-  const light  = _adjHex(base,  90), dark = _adjHex(base, -90);
-  const vlight = _adjHex(base, 140), belly = 0xf5e6c8;
+  const light  = _adjHex(base,  70), dark = _adjHex(base, -70);
+  const belly = 0xf5e6c8;
+  const isPanda = colorHex === '#f5f5f5';
 
   function sf(num, a=1) { ctx.fillStyle = _numToRgba(num, a); }
   function ss(w, num, a=1) { ctx.strokeStyle = _numToRgba(num, a); ctx.lineWidth = w; }
-  function sc() { ctx.beginPath(); }
   function circ(x,y,r) { ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
   function scirc(x,y,r) { ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke(); }
   function elps(cx,cy,w,h) { ctx.beginPath(); ctx.ellipse(cx,cy,w/2,h/2,0,0,Math.PI*2); ctx.fill(); }
@@ -2257,54 +2257,57 @@ function drawDinoCanvas(canvas, colorHex, flipped=false) {
   // Tail
   const tpts=[[-16,-2],[-22,-5],[-28,-9],[-32,-13],[-34,-16],[-35,-18]],tsz=[12,10,8,6,4,2.5];
   for(let i=tpts.length-1;i>=0;i--){sf(i===0?base:dark);circ(tpts[i][0],tpts[i][1],tsz[i]);}
-  sf(light,.25); circ(-16,-4,7);
-  // Back legs + highlight
-  sf(dark); rrect(-12,14,10,18,4); rrect(-2,14,10,18,4);
-  sf(light,.3); rrect(-11,15,4,12,2); rrect(-1,15,4,12,2);
-  sf(_adjHex(base,-100)); rrect(-14,29,14,6,3); rrect(-4,29,14,6,3);
+  sf(light,.20); circ(-16,-4,7);
+  // Back legs
+  sf(isPanda?0x111111:dark); rrect(-12,14,10,18,4); rrect(-2,14,10,18,4);
+  sf(isPanda?0x111111:_adjHex(base,-100)); rrect(-14,29,14,6,3); rrect(-4,29,14,6,3);
   sf(0x222222); for(let c=0;c<3;c++){tri(-14+c*4,34,-13+c*4,37,-10+c*4,34);tri(-4+c*4,34,-3+c*4,37,0+c*4,34);}
-  // Body: shadow, main, AO, highlight, specular, belly, outline
-  sf(dark); elps(5,4,60,42); sf(base); elps(1,0,54,37);
-  sf(0x000000,.20); elps(0,18,36,10);
-  sf(light,.50); elps(-8,-8,28,18); sf(vlight,.30); circ(-13,-12,5);
-  sf(belly,.65); elps(6,9,26,20);
-  ss(1,dark,.55); selps(1,0,54,37);
+  // Body
+  sf(dark); elps(5,4,58,40); sf(base); elps(1,0,54,37);
+  sf(light,.55); elps(-6,-8,26,16);
+  sf(belly,.55); elps(6,9,26,20);
   // Spikes
   const sp=[[-8,-14],[-2,-16],[4,-16],[10,-15],[15,-13]],sh=[8,10,11,9,7];
   sf(dark); for(let i=0;i<sp.length;i++){const[sx,sy]=sp[i],h=sh[i];tri(sx-5,sy+3,sx,sy-h,sx+5,sy+3);}
-  sf(light,.30); for(let i=0;i<sp.length;i++){const[sx,sy]=sp[i],h=sh[i];tri(sx-4,sy+2,sx,sy-h+1,sx,sy+2);}
-  sf(vlight,.20); for(let i=0;i<sp.length;i++){const[sx,sy]=sp[i],h=sh[i];tri(sx-1,sy-h+3,sx,sy-h,sx+1,sy-h+3);}
-  // Arms + highlight
-  sf(dark); rrect(10,-4,8,12,3); rrect(16,4,7,8,3);
-  sf(light,.35); rrect(11,-3,3,7,2);
+  sf(0xffffff,.15); for(let i=0;i<sp.length;i++){const[sx,sy]=sp[i],h=sh[i];tri(sx-4,sy+2,sx,sy-h+1,sx,sy+2);}
+  // Arms
+  sf(isPanda?0x111111:dark); rrect(10,-4,8,12,3); rrect(16,4,7,8,3);
   sf(0x222222); tri(16,11,15,14,20,12); tri(20,11,19,14,23,11);
-  // Neck + highlight
-  sf(dark); elps(20,-10,20,14); sf(base); elps(18,-12,17,12); sf(light,.28); elps(15,-14,9,6);
-  // Head: shadow, main, outline, highlight, specular
+  // Neck
+  sf(dark); elps(20,-10,20,14); sf(base); elps(18,-12,17,12);
+  // Head
   sf(dark); circ(31,-16,17); sf(base); circ(29,-18,15);
-  ss(1,dark,.5); scirc(29,-18,15);
-  sf(light,.55); circ(23,-23,7); sf(vlight,.35); circ(21,-25,3.5);
-  // Snout + highlight
+  sf(light,.55); circ(23,-23,7);
+  // Snout
   sf(dark); rrect(38,-24,17,11,4); sf(base); rrect(37,-25,15,10,3);
   sf(light,.30); rrect(38,-25,7,4,2);
   sf(_adjHex(base,-130)); circ(48,-21,2.2); circ(43,-21,2.2);
-  // Teeth
+  // Teeth + jaw
   sf(0xffffff); tri(39,-15,42,-12,45,-15); tri(45,-15,48,-12,51,-15);
-  // Lower jaw
   sf(dark); rrect(39,-14,15,8,3); sf(_adjHex(base,-40)); rrect(40,-13,13,6,2);
-  // Eye: sclera shadow, white, iris, pupil, highlights
+  // Eye
   sf(0xdddddd); circ(28,-23,5.5); sf(0xffffff); circ(27,-24,5);
   sf(0x2b1400); circ(29,-23,3.2); sf(0x080808); circ(29,-23,1.8);
   sf(0xffffff); circ(30,-24,1.4); sf(0xffffff,.6); circ(28,-25,.7);
-  // Brow
   ss(2.5,dark); sline(23,-28,33,-27);
+
+  // Panda markings
+  if (isPanda) {
+    sf(0x111111); circ(20,-32,6); circ(35,-31,6); // ears
+    sf(0x111111,.85); elps(28,-23,15,12); // eye patch
+    sf(0xffffff); circ(27,-24,5); sf(0x2b1400); circ(29,-23,3.2);
+    sf(0x080808); circ(29,-23,1.8); sf(0xffffff); circ(30,-24,1.4);
+  }
 
   ctx.restore();
 }
 window.drawDinoCanvas = drawDinoCanvas;
 
-// ── Hero dino mouse tracking ───────────────────────────────────────────────────
-let _heroFlipped = false;
+// ── Hero dino smooth directional tracking ────────────────────────────────────
+let _heroCurrSX = 1;
+let _heroTargetSX = 1;
+let _heroAnimRafId = null;
+
 function _redrawHeroDino() {
   const canvas = document.getElementById('heroDinoCanvas');
   if (!canvas || canvas.style.display === 'none') return;
@@ -2316,20 +2319,33 @@ function _redrawHeroDino() {
     const skin = shop.skins.find(s => s.id === skinId);
     if (skin) color = skin.color;
   }
-  drawDinoCanvas(canvas, color, _heroFlipped);
+  drawDinoCanvas(canvas, color, _heroCurrSX);
   canvas.style.filter = `drop-shadow(0 0 18px ${color}99)`;
 }
 window._redrawHeroDino = _redrawHeroDino;
+
+function _heroAnimStep() {
+  _heroCurrSX += (_heroTargetSX - _heroCurrSX) * 0.12;
+  _redrawHeroDino();
+  if (Math.abs(_heroTargetSX - _heroCurrSX) > 0.004) {
+    _heroAnimRafId = requestAnimationFrame(_heroAnimStep);
+  } else {
+    _heroCurrSX = _heroTargetSX;
+    _heroAnimRafId = null;
+  }
+}
 
 document.addEventListener('mousemove', e => {
   const canvas = document.getElementById('heroDinoCanvas');
   if (!canvas || canvas.style.display === 'none') return;
   const rect = canvas.getBoundingClientRect();
-  const newFlip = e.clientX < rect.left + rect.width / 2;
-  if (newFlip !== _heroFlipped) {
-    _heroFlipped = newFlip;
-    _redrawHeroDino();
-  }
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const dx = e.clientX - cx;
+  const dy = e.clientY - cy;
+  if (Math.hypot(dx, dy) < 5) return;
+  _heroTargetSX = Math.cos(Math.atan2(dy, dx));
+  if (!_heroAnimRafId) _heroAnimRafId = requestAnimationFrame(_heroAnimStep);
 });
 
 function dinoCanvasHtml(color, size=80) {
@@ -2370,7 +2386,7 @@ function applyDinoSkin(skinId, customSkinData) {
   canvas.style.display = 'block';
   const shop = window._lobbyShop;
   const skin = shop ? (shop.skins.find(s => s.id === skinId) || shop.skins[0]) : { color:'#4caf50', spike:'#2d7a1e' };
-  drawDinoCanvas(canvas, skin.color, window._heroFlipped || false);
+  drawDinoCanvas(canvas, skin.color, window._heroCurrSX ?? 1);
   canvas.style.filter = `drop-shadow(0 0 18px ${skin.color}99)`;
   try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'color', color: skin.color, spike: skin.spike })); } catch(e){}
 }

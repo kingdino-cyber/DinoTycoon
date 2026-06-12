@@ -137,6 +137,7 @@ const LOBBY_SHOP = {
     { id:'purple',  name:'Shadow Raptor', cost:600,  color:'#9c27b0', spike:'#4a148c', desc:'Lurks in the prehistoric shadows.' },
     { id:'red',     name:'Lava Dino',     cost:800,  color:'#ff4757', spike:'#b71c1c', desc:'Born from the volcano\'s heart.' },
     { id:'teal',    name:'Ocean Rex',     cost:1000, color:'#00bcd4', spike:'#006064', desc:'Ruler of the ancient seas.' },
+    { id:'panda',   name:'Panda Rex',     cost:500,  color:'#f5f5f5', spike:'#111111', desc:'Black and white and fierce all over.' },
   ],
   tags: [
     { id:'none',   name:'No Tag',    cost:0,    prefix:'' },
