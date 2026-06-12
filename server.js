@@ -1124,10 +1124,20 @@ io.on('connection', (socket) => {
 
   socket.on('equipLobbyItem', async ({ type, itemId }) => {
     if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    // Custom skins (custom_<id>) are always equippable if the slot exists
+    if (type === 'skin' && typeof itemId === 'string' && itemId.startsWith('custom_')) {
+      const csId = itemId.slice(7);
+      const exists = (save.customSkins || []).some(s => s.id === csId);
+      if (!exists) { socket.emit('lobbyShopError', 'Custom skin not found!'); return; }
+      save.equippedSkin = itemId;
+      await putSave(authedUser.id, save);
+      socket.emit('lobbyItemEquipped', { type, itemId });
+      return;
+    }
     const items = type === 'skin' ? LOBBY_SHOP.skins : LOBBY_SHOP.tags;
     const item = items.find(i => i.id === itemId);
     if (!item) return;
-    const save = await getSave(authedUser.id);
     if (item.cost > 0) {
       const owned = save.lobbyItems?.[type === 'skin' ? 'skins' : 'tags'] || [];
       if (!owned.includes(itemId)) { socket.emit('lobbyShopError', 'Not owned!'); return; }
@@ -1418,8 +1428,8 @@ io.on('connection', (socket) => {
     }
     broadcastLobbyUpdate();
 
-    // 5-second countdown then start the loop
-    let count = 5;
+    // 3-second countdown then start the loop
+    let count = 3;
     emitToRoom(room, 'countdown', { count });
     const cdInterval = setInterval(() => {
       count--;

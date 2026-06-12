@@ -724,11 +724,12 @@ canvas{display:block;}
 .cs-status{color:#88aa88;font-size:.78rem;text-align:center;min-height:18px;}
 
 /* ── HERO CONTAINER ── */
-#heroDinoContainer{position:relative;width:150px;height:170px;margin:0 auto;}
-#heroDinoContainer svg, #heroDinoContainer img{position:absolute;inset:0;width:100%;height:100%;}
+#heroDinoContainer{position:relative;width:170px;height:155px;margin:0 auto;}
+#heroDinoContainer canvas, #heroDinoContainer img{position:absolute;inset:0;width:100%;height:100%;}
 #heroDinoCustomImg{object-fit:contain;display:none;
   animation:dinoIdle 3s ease-in-out infinite,dinoGlow 3s ease-in-out infinite;
   filter:drop-shadow(0 0 22px rgba(200,200,255,.5));}
+#heroDinoCanvas{animation:dinoIdle 3s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -738,22 +739,26 @@ canvas{display:block;}
   try {
     const cached = JSON.parse(localStorage.getItem('dt_skin_cache') || 'null');
     if (!cached) return;
-    // Wait for DOM to be ready
     function tryApply() {
-      const svg = document.getElementById('heroDinoSvg');
+      const canvas = document.getElementById('heroDinoCanvas');
       const img = document.getElementById('heroDinoCustomImg');
-      if (!svg || !img) { requestAnimationFrame(tryApply); return; }
+      if (!canvas || !img) { requestAnimationFrame(tryApply); return; }
       if (cached.type === 'custom' && cached.src) {
         img.src = cached.src;
         img.style.display = 'block';
-        svg.style.display = 'none';
-      } else if (cached.color) {
-        svg.style.setProperty('--dc', cached.color);
-        svg.style.setProperty('--ds', cached.spike || cached.color);
-        svg.style.filter = `drop-shadow(0 0 22px ${cached.color}88)`;
+        canvas.style.display = 'none';
+      } else if (cached.color && window.drawDinoCanvas) {
+        canvas.style.display = 'block';
+        window.drawDinoCanvas(canvas, cached.color);
+        canvas.style.filter = `drop-shadow(0 0 18px ${cached.color}99)`;
       }
     }
-    requestAnimationFrame(tryApply);
+    // drawDinoCanvas may not be defined yet — retry after scripts load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', tryApply);
+    } else {
+      requestAnimationFrame(tryApply);
+    }
   } catch(e) {}
 })();
 </script>
@@ -841,39 +846,7 @@ canvas{display:block;}
           <div class="hero-dino-tag" id="heroTagDisplay"></div>
           <div id="heroDinoContainer" onclick="switchLbyTab('shop')" style="cursor:pointer;">
           <img id="heroDinoCustomImg" alt="custom skin">
-          <svg class="hero-dino-svg" id="heroDinoSvg" viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
-            <!-- Tail -->
-            <path d="M38 108 Q8 122 10 100 Q17 85 40 98 Z" fill="var(--dc,#e84393)"/>
-            <!-- Body -->
-            <ellipse cx="78" cy="105" rx="44" ry="38" fill="var(--dc,#e84393)"/>
-            <!-- Neck -->
-            <ellipse cx="108" cy="75" rx="18" ry="26" fill="var(--dc,#e84393)"/>
-            <!-- Head -->
-            <circle cx="106" cy="52" r="27" fill="var(--dc,#e84393)"/>
-            <!-- Snout -->
-            <ellipse cx="126" cy="60" rx="14" ry="10" fill="var(--dc,#e84393)"/>
-            <!-- Nostril -->
-            <circle cx="133" cy="55" r="2.5" fill="rgba(0,0,0,.22)"/>
-            <!-- Spikes -->
-            <polygon points="86,57 91,35 96,57" fill="var(--ds,#c2185b)"/>
-            <polygon points="98,54 103,32 108,54" fill="var(--ds,#c2185b)"/>
-            <!-- Eye white -->
-            <circle cx="112" cy="44" r="9" fill="white"/>
-            <!-- Eye pupil -->
-            <circle cx="114" cy="45" r="6" fill="#110a0a"/>
-            <!-- Eye shine -->
-            <circle cx="111" cy="42" r="2.5" fill="white"/>
-            <!-- Small arm -->
-            <ellipse cx="88" cy="118" rx="11" ry="7" fill="var(--dc,#e84393)" transform="rotate(25 88 118)"/>
-            <!-- Claws -->
-            <path d="M93 124 L99 129 M95 126 L102 129" stroke="var(--ds,#c2185b)" stroke-width="1.8" stroke-linecap="round"/>
-            <!-- Left leg -->
-            <rect x="55" y="135" width="20" height="22" rx="10" fill="var(--dc,#e84393)"/>
-            <!-- Right leg -->
-            <rect x="80" y="138" width="18" height="20" rx="9" fill="var(--dc,#e84393)"/>
-            <!-- Belly highlight -->
-            <ellipse cx="80" cy="108" rx="22" ry="18" fill="rgba(255,255,255,.17)"/>
-          </svg>
+          <canvas id="heroDinoCanvas" width="170" height="155" style="display:block;width:100%;height:100%;"></canvas>
           </div><!-- /heroDinoContainer -->
           <div class="lby-hero-pedestal"></div>
           <button class="hero-shop-btn" onclick="switchLbyTab('shop')">🛒 SHOP</button>
@@ -2311,19 +2284,25 @@ function drawDinoCanvas(canvas, colorHex) {
 
   ctx.restore();
 }
+window.drawDinoCanvas = drawDinoCanvas;
 function dinoCanvasHtml(color, size=80) {
   return `<canvas class="shop-dino-canvas" width="${size}" height="${Math.round(size*0.9)}" data-color="${color}" style="display:block;margin:0 auto;"></canvas>`;
 }
 function renderShopDinoCanvases() {
-  document.querySelectorAll('.shop-dino-canvas').forEach(c => {
-    drawDinoCanvas(c, c.dataset.color);
-  });
+  const canvases = Array.from(document.querySelectorAll('.shop-dino-canvas'));
+  let i = 0;
+  function drawNext() {
+    if (i >= canvases.length) return;
+    drawDinoCanvas(canvases[i++], canvases[i-1].dataset.color);
+    requestAnimationFrame(drawNext);
+  }
+  requestAnimationFrame(drawNext);
 }
 
 function applyDinoSkin(skinId, customSkinData) {
-  const svg = document.getElementById('heroDinoSvg');
+  const canvas = document.getElementById('heroDinoCanvas');
   const customImg = document.getElementById('heroDinoCustomImg');
-  if (!svg || !customImg) return;
+  if (!canvas || !customImg) return;
 
   if (skinId && skinId.startsWith('custom_')) {
     const csId = skinId.slice(7);
@@ -2333,7 +2312,7 @@ function applyDinoSkin(skinId, customSkinData) {
     if (src) {
       customImg.src = src;
       customImg.style.display = 'block';
-      svg.style.display = 'none';
+      canvas.style.display = 'none';
       try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'custom', src })); } catch(e){}
       return;
     }
@@ -2341,13 +2320,12 @@ function applyDinoSkin(skinId, customSkinData) {
   }
 
   customImg.style.display = 'none';
-  svg.style.display = '';
+  canvas.style.display = 'block';
   const shop = window._lobbyShop;
-  if (!shop) return;
-  const skin = shop.skins.find(s => s.id === skinId) || shop.skins[0];
-  svg.style.setProperty('--dc', skin.color);
-  svg.style.setProperty('--ds', skin.spike);
-  svg.style.filter = `drop-shadow(0 0 22px ${skin.color}88)`;
+  const skin = shop ? (shop.skins.find(s => s.id === skinId) || shop.skins[0]) : { color:'#4caf50', spike:'#2d7a1e' };
+  drawDinoCanvas(canvas, skin.color);
+  // Glow effect via canvas filter
+  canvas.style.filter = `drop-shadow(0 0 18px ${skin.color}99)`;
   try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'color', color: skin.color, spike: skin.spike })); } catch(e){}
 }
 
