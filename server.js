@@ -1321,11 +1321,15 @@ io.on('connection', (socket) => {
     if (room.status === 'playing') return;
     room.status = 'starting';
 
-    // Initialize all players from lobby
-    for (const [sid, lp] of Object.entries(room.lobbyPlayers)) {
+    // Initialize all players from lobby — fetch all saves in parallel
+    const playerEntries = Object.entries(room.lobbyPlayers);
+    const playerSaveData = await Promise.all(playerEntries.map(async ([sid, lp]) => {
       const userDoc = await usersCol.findOne({ username: lp.username });
       const dbId = userDoc ? userDoc.id : null;
       const rawSave = dbId ? await getSave(dbId) : {};
+      return { sid, lp, dbId, rawSave };
+    }));
+    for (const { sid, lp, dbId, rawSave } of playerSaveData) {
       let save2 = room.freshStart
         ? { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0 }
         : { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, ...rawSave };

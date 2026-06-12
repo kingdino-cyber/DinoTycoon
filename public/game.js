@@ -629,11 +629,11 @@ class GameScene extends Phaser.Scene {
     obj.shadow.setPosition(x,y+22).setDepth(dep-1);
     obj.sprite.setPosition(x,y).setDepth(dep);
     if(dir!==undefined) obj.sprite.setRotation(dir);
-    obj.nameText.setPosition(x,y).setDepth(dep+2);
+    obj.nameText.setPosition(x,y-50).setDepth(dep+2);
     obj.hpBg.setPosition(x,y).setDepth(dep+2);
     obj.hpBar.setPosition(x,y).setDepth(dep+3);
     obj.targetRing.setPosition(x,y).setDepth(dep+3);
-    if(obj.presText) obj.presText.setPosition(x,y).setDepth(dep+2);
+    if(obj.presText) obj.presText.setPosition(x,y-64).setDepth(dep+2);
     if(obj.weaponGlow) obj.weaponGlow.setPosition(x,y).setDepth(dep+1);
     if(obj.customImg) obj.customImg.setPosition(x,y).setDepth(dep+0.5);
     // Update stored data

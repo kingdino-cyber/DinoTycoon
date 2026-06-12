@@ -732,6 +732,31 @@ canvas{display:block;}
 </style>
 </head>
 <body>
+<script>
+// Apply cached skin instantly on load to prevent flash
+(function() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('dt_skin_cache') || 'null');
+    if (!cached) return;
+    // Wait for DOM to be ready
+    function tryApply() {
+      const svg = document.getElementById('heroDinoSvg');
+      const img = document.getElementById('heroDinoCustomImg');
+      if (!svg || !img) { requestAnimationFrame(tryApply); return; }
+      if (cached.type === 'custom' && cached.src) {
+        img.src = cached.src;
+        img.style.display = 'block';
+        svg.style.display = 'none';
+      } else if (cached.color) {
+        svg.style.setProperty('--dc', cached.color);
+        svg.style.setProperty('--ds', cached.spike || cached.color);
+        svg.style.filter = `drop-shadow(0 0 22px ${cached.color}88)`;
+      }
+    }
+    requestAnimationFrame(tryApply);
+  } catch(e) {}
+})();
+</script>
 
 <!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
 <div id="authScreen">
@@ -2301,7 +2326,6 @@ function applyDinoSkin(skinId, customSkinData) {
   if (!svg || !customImg) return;
 
   if (skinId && skinId.startsWith('custom_')) {
-    // Find the specific custom skin slot
     const csId = skinId.slice(7);
     const allSkins = _shopData?.customSkins || [];
     const slot = allSkins.find(s => s.id === csId);
@@ -2310,6 +2334,7 @@ function applyDinoSkin(skinId, customSkinData) {
       customImg.src = src;
       customImg.style.display = 'block';
       svg.style.display = 'none';
+      try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'custom', src })); } catch(e){}
       return;
     }
     skinId = 'default';
@@ -2323,6 +2348,7 @@ function applyDinoSkin(skinId, customSkinData) {
   svg.style.setProperty('--dc', skin.color);
   svg.style.setProperty('--ds', skin.spike);
   svg.style.filter = `drop-shadow(0 0 22px ${skin.color}88)`;
+  try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'color', color: skin.color, spike: skin.spike })); } catch(e){}
 }
 
 function applyDinoTag(tagId) {
