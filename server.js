@@ -37,7 +37,13 @@ async function findUser(u) {
 }
 async function getSave(id) {
   const s = await savesCol.findOne({ userId: id });
-  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkin:null };
+  if (s && s.customSkin && !s.customSkins) {
+    // Migrate old single customSkin to array
+    s.customSkins = [{ id: 'imported', name: 'My Skin', base64: s.customSkin }];
+    s.customSkin = undefined;
+    if (s.equippedSkin === 'custom') s.equippedSkin = 'custom_imported';
+  }
+  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[] };
 }
 async function putSave(id, data) {
   await savesCol.updateOne({ userId: id }, { $set: { ...data, userId: id } }, { upsert: true });
@@ -444,7 +450,7 @@ async function persistPlayer(p) {
     lobbyItems: existing.lobbyItems || { skins:[], tags:[] },
     equippedSkin: existing.equippedSkin || 'default',
     equippedTag: existing.equippedTag || 'none',
-    customSkin: existing.customSkin || null,
+    customSkins: existing.customSkins || [],
   });
 }
 
@@ -988,7 +994,7 @@ io.on('connection', (socket) => {
       equippedSkin: save.equippedSkin || 'default',
       equippedTag: save.equippedTag || 'none',
       lobbyShop: LOBBY_SHOP,
-      customSkin: save.customSkin || null,
+      customSkins: save.customSkins || [],
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
@@ -1061,16 +1067,30 @@ io.on('connection', (socket) => {
 
   // ── Lobby Shop ──
   // ── Custom Skin ──
-  socket.on('setCustomSkin', async (base64Data) => {
+  socket.on('setCustomSkin', async ({ name, base64 }) => {
     if (!authedUser) return;
-    if (typeof base64Data !== 'string') return;
-    if (base64Data.length > 300000) { socket.emit('lobbyShopError', 'Image too large — try a smaller one'); return; }
-    if (!base64Data.startsWith('data:image/png;base64,')) return;
+    if (typeof base64 !== 'string') return;
+    if (base64.length > 300000) { socket.emit('lobbyShopError', 'Image too large — try a smaller one'); return; }
+    if (!base64.startsWith('data:image/png;base64,')) return;
     const save = await getSave(authedUser.id);
-    save.customSkin = base64Data;
-    save.equippedSkin = 'custom';
+    const customSkins = save.customSkins || [];
+    if (customSkins.length >= 9) { socket.emit('lobbyShopError', 'Max 9 custom skins — delete one first'); return; }
+    const id = 'cs_' + Date.now();
+    const slotName = (typeof name === 'string' && name.trim()) ? name.trim().slice(0,24) : 'My Skin';
+    customSkins.push({ id, name: slotName, base64 });
+    save.customSkins = customSkins;
+    save.equippedSkin = 'custom_' + id;
     await putSave(authedUser.id, save);
-    socket.emit('customSkinSet', { customSkin: base64Data });
+    socket.emit('customSkinSet', { id, name: slotName, base64, equippedSkin: save.equippedSkin, customSkins });
+  });
+
+  socket.on('deleteCustomSkin', async ({ id }) => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    save.customSkins = (save.customSkins || []).filter(s => s.id !== id);
+    if (save.equippedSkin === 'custom_' + id) save.equippedSkin = 'default';
+    await putSave(authedUser.id, save);
+    socket.emit('customSkinSet', { id: null, name: null, base64: null, equippedSkin: save.equippedSkin, customSkins: save.customSkins });
   });
 
   socket.on('getLobbyShop', async () => {
@@ -1082,6 +1102,7 @@ io.on('connection', (socket) => {
       lobbyItems: save.lobbyItems || { skins:[], tags:[] },
       equippedSkin: save.equippedSkin || 'default',
       equippedTag: save.equippedTag || 'none',
+      customSkins: save.customSkins || [],
     });
   });
 
@@ -1332,8 +1353,10 @@ io.on('connection', (socket) => {
       player.dbUserId = dbId;
       // Equipped skin — override color if a non-default skin is equipped
       const equippedSkinId = rawSave.equippedSkin || 'default';
-      if (equippedSkinId === 'custom') {
-        player.customSkin = rawSave.customSkin || null;
+      if (equippedSkinId.startsWith('custom_')) {
+        const csId = equippedSkinId.slice(7);
+        const csSlot = (rawSave.customSkins || []).find(s => s.id === csId);
+        player.customSkin = csSlot ? csSlot.base64 : null;
         player.skinColor = null;
       } else {
         const skinDef = LOBBY_SHOP.skins.find(s => s.id === equippedSkinId);
