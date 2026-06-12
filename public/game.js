@@ -38,16 +38,17 @@ function hexStr2num(s) {
 function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
   gfx.clear();
   const base = hexStr2num(colorHex);
-  const light = adjustHex(base, 70);
-  const dark  = adjustHex(base, -70);
-  const belly = 0xf5e6c8;
+  const light  = adjustHex(base,  90);
+  const dark   = adjustHex(base, -90);
+  const vlight = adjustHex(base, 140);
+  const belly  = 0xf5e6c8;
   const hasFireStaff = upgrades.includes('fireStaff') || upgrades.includes('meteorStrike');
   const hasDiamondArmor = upgrades.includes('diamondArmor');
   const hasJetBoots = upgrades.includes('jetBoots');
 
   // === GROUND SHADOW ===
-  gfx.fillStyle(0x000000, 0.22);
-  gfx.fillEllipse(4, 24, 68, 18);
+  gfx.fillStyle(0x000000, 0.30);
+  gfx.fillEllipse(4, 25, 72, 20);
 
   // === TAIL ===
   const tailPts = [[-16,-2],[-22,-5],[-28,-9],[-32,-13],[-34,-16],[-35,-18]];
@@ -56,11 +57,18 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
     gfx.fillStyle(i===0 ? base : dark, 1);
     gfx.fillCircle(tailPts[i][0], tailPts[i][1], tailSizes[i]);
   }
+  // Tail highlight (top edge)
+  gfx.fillStyle(light, 0.25);
+  gfx.fillCircle(-16, -4, 7);
 
   // === BACK LEGS ===
   gfx.fillStyle(dark, 1);
-  gfx.fillRoundedRect(-12, 14, 10, 18, 4); // left rear leg
-  gfx.fillRoundedRect(-2, 14, 10, 18, 4);  // right rear leg
+  gfx.fillRoundedRect(-12, 14, 10, 18, 4);
+  gfx.fillRoundedRect(-2, 14, 10, 18, 4);
+  // Leg front-face highlight
+  gfx.fillStyle(light, 0.3);
+  gfx.fillRoundedRect(-11, 15, 4, 12, 2);
+  gfx.fillRoundedRect(-1, 15, 4, 12, 2);
   // Feet
   gfx.fillStyle(adjustHex(base,-100), 1);
   gfx.fillRoundedRect(-14, 29, 14, 6, 3);
@@ -73,18 +81,27 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
   }
 
   // === BODY — 3D layered ===
-  // Shadow layer
+  // Outer shadow for depth separation
   gfx.fillStyle(dark, 1);
-  gfx.fillEllipse(4, 3, 58, 40);
+  gfx.fillEllipse(5, 4, 60, 42);
   // Main body
   gfx.fillStyle(base, 1);
   gfx.fillEllipse(1, 0, 54, 37);
-  // Highlight (top-left for 3D)
-  gfx.fillStyle(light, 0.55);
+  // Ambient occlusion at waist (legs meet body)
+  gfx.fillStyle(0x000000, 0.20);
+  gfx.fillEllipse(0, 18, 36, 10);
+  // Large diffuse highlight (top-left)
+  gfx.fillStyle(light, 0.50);
   gfx.fillEllipse(-8, -8, 28, 18);
+  // Specular hot-spot
+  gfx.fillStyle(vlight, 0.30);
+  gfx.fillCircle(-13, -12, 5);
   // Belly patch
-  gfx.fillStyle(belly, 0.55);
-  gfx.fillEllipse(6, 8, 26, 20);
+  gfx.fillStyle(belly, 0.65);
+  gfx.fillEllipse(6, 9, 26, 20);
+  // Subtle body outline for depth
+  gfx.lineStyle(1, dark, 0.55);
+  gfx.strokeEllipse(1, 0, 54, 37);
 
   // === BACK SPIKES ===
   gfx.fillStyle(dark, 1);
@@ -95,12 +112,19 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
     const h = spikeHeights[i];
     gfx.fillTriangle(sx-5, sy+3, sx, sy-h, sx+5, sy+3);
   }
-  // Spike highlight
-  gfx.fillStyle(0xffffff, 0.15);
+  // Spike left-face highlight
+  gfx.fillStyle(light, 0.30);
   for(let i=0; i<spikePositions.length; i++) {
     const [sx, sy] = spikePositions[i];
     const h = spikeHeights[i];
-    gfx.fillTriangle(sx-2, sy, sx, sy-h+2, sx+2, sy);
+    gfx.fillTriangle(sx-4, sy+2, sx, sy-h+1, sx, sy+2);
+  }
+  // Spike bright tip highlight
+  gfx.fillStyle(vlight, 0.20);
+  for(let i=0; i<spikePositions.length; i++) {
+    const [sx, sy] = spikePositions[i];
+    const h = spikeHeights[i];
+    gfx.fillTriangle(sx-1, sy-h+3, sx, sy-h, sx+1, sy-h+3);
   }
 
   // === DIAMOND ARMOR overlay ===
@@ -109,7 +133,6 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
     gfx.strokeEllipse(1, 0, 56, 39);
     gfx.lineStyle(1, 0x00e5ff, 0.3);
     gfx.strokeEllipse(1, 0, 48, 33);
-    // Armor gems
     gfx.fillStyle(0x00e5ff, 0.7);
     [[-10,0],[4,4],[16,0],[10,-8],[-4,-8]].forEach(([ax,ay])=>{
       gfx.fillRect(ax-3, ay-3, 6, 6);
@@ -118,8 +141,11 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
 
   // === FRONT ARMS ===
   gfx.fillStyle(dark, 1);
-  gfx.fillRoundedRect(10, -4, 8, 12, 3);  // upper arm
-  gfx.fillRoundedRect(16, 4, 7, 8, 3);    // forearm
+  gfx.fillRoundedRect(10, -4, 8, 12, 3);
+  gfx.fillRoundedRect(16, 4, 7, 8, 3);
+  // Arm highlight
+  gfx.fillStyle(light, 0.35);
+  gfx.fillRoundedRect(11, -3, 3, 7, 2);
   // Small claws on arms
   gfx.fillStyle(0x222222, 1);
   gfx.fillTriangle(16, 11, 15, 14, 20, 12);
@@ -130,64 +156,79 @@ function drawDino3D(gfx, colorHex, upgrades=[], biting=false) {
   gfx.fillEllipse(20, -10, 20, 14);
   gfx.fillStyle(base, 1);
   gfx.fillEllipse(18, -12, 17, 12);
+  gfx.fillStyle(light, 0.28);
+  gfx.fillEllipse(15, -14, 9, 6);
 
   // === HEAD ===
-  // Shadow
   gfx.fillStyle(dark, 1);
-  gfx.fillCircle(31, -16, 16);
-  // Main
+  gfx.fillCircle(31, -16, 17);
   gfx.fillStyle(base, 1);
   gfx.fillCircle(29, -18, 15);
-  // Highlight
-  gfx.fillStyle(light, 0.5);
-  gfx.fillCircle(24, -22, 7);
+  // Head outline
+  gfx.lineStyle(1, dark, 0.5);
+  gfx.strokeCircle(29, -18, 15);
+  // Large highlight
+  gfx.fillStyle(light, 0.55);
+  gfx.fillCircle(23, -23, 7);
+  // Specular hot-spot
+  gfx.fillStyle(vlight, 0.35);
+  gfx.fillCircle(21, -25, 3.5);
 
-  // === SNOUT & JAW (biting opens jaw wide) ===
+  // === SNOUT & JAW ===
   const jawDrop = biting ? 11 : 0;
 
-  // Upper jaw
   gfx.fillStyle(dark, 1);
   gfx.fillRoundedRect(38, -24, 17, 11, 4);
   gfx.fillStyle(base, 1);
   gfx.fillRoundedRect(37, -25, 15, 10, 3);
+  // Snout highlight
+  gfx.fillStyle(light, 0.30);
+  gfx.fillRoundedRect(38, -25, 7, 4, 2);
   // Nostril
-  gfx.fillStyle(adjustHex(base,-120), 1);
-  gfx.fillCircle(48, -21, 2);
-  gfx.fillCircle(43, -21, 2);
+  gfx.fillStyle(adjustHex(base,-130), 1);
+  gfx.fillCircle(48, -21, 2.2);
+  gfx.fillCircle(43, -21, 2.2);
 
   // Upper teeth
   gfx.fillStyle(0xffffff, 1);
   gfx.fillTriangle(39,-15, 42,-12-jawDrop/3, 45,-15);
   gfx.fillTriangle(45,-15, 48,-12-jawDrop/3, 51,-15);
 
-  // Lower jaw (drops when biting)
+  // Lower jaw
   gfx.fillStyle(dark, 1);
   gfx.fillRoundedRect(39, -14+jawDrop, 15, 8, 3);
   gfx.fillStyle(adjustHex(base, -40), 1);
   gfx.fillRoundedRect(40, -13+jawDrop, 13, 6, 2);
 
-  // Lower teeth (only visible when biting)
   if (biting) {
     gfx.fillStyle(0xffffff, 1);
     gfx.fillTriangle(41, -13+jawDrop, 44, -17, 47, -13+jawDrop);
     gfx.fillTriangle(47, -13+jawDrop, 50, -17, 53, -13+jawDrop);
-    // Bite glow / saliva effect
     gfx.fillStyle(0xff4400, 0.35);
     gfx.fillEllipse(45, -14+jawDrop/2, 18, jawDrop+4);
   }
 
   // === EYE ===
+  // Sclera shadow
+  gfx.fillStyle(0xdddddd, 1);
+  gfx.fillCircle(28, -23, 5.5);
   // White
   gfx.fillStyle(0xffffff, 1);
-  gfx.fillCircle(28, -23, 5);
-  // Iris
-  gfx.fillStyle(0x1a1a1a, 1);
-  gfx.fillCircle(29, -23, 3);
-  // Pupil highlight
+  gfx.fillCircle(27, -24, 5);
+  // Iris (rich dark brown)
+  gfx.fillStyle(0x2b1400, 1);
+  gfx.fillCircle(29, -23, 3.2);
+  // Pupil
+  gfx.fillStyle(0x080808, 1);
+  gfx.fillCircle(29, -23, 1.8);
+  // Bright highlight
   gfx.fillStyle(0xffffff, 1);
-  gfx.fillCircle(30, -24, 1.2);
+  gfx.fillCircle(30, -24, 1.4);
+  // Secondary micro-highlight
+  gfx.fillStyle(0xffffff, 0.6);
+  gfx.fillCircle(28, -25, 0.7);
   // Brow
-  gfx.lineStyle(2, dark, 1);
+  gfx.lineStyle(2.5, dark, 1);
   gfx.beginPath(); gfx.moveTo(23,-28); gfx.lineTo(33,-27); gfx.strokePath();
 
   // === JET BOOTS ===
