@@ -542,7 +542,7 @@ class GameScene extends Phaser.Scene {
   }
 
   spawnPlayer(data) {
-    const colorHex = data.color;
+    const colorHex = data.skinColor || data.color;
     const colorNum = hexStr2num(colorHex);
 
     // Shadow beneath dino
@@ -555,6 +555,25 @@ class GameScene extends Phaser.Scene {
     drawDino3D(sprite, colorHex, data.upgrades||[]);
     // Hardcore bots are bigger
     if (data.scale && data.scale !== 1) sprite.setScale(data.scale);
+
+    // Custom skin: overlay base64 image on top of graphics dino
+    if (data.customSkin) {
+      const texKey = 'cskin_' + data.id;
+      const applyCustomImg = () => {
+        const obj = this.playerObjs[data.id]; if (!obj) return;
+        const img = this.add.image(0, 0, texKey).setDisplaySize(72, 72);
+        if (data.scale && data.scale !== 1) img.setScale(data.scale);
+        obj.customImg = img;
+        obj.sprite.setVisible(false);
+        this.setPos(data.id, obj.data.x, obj.data.y);
+      };
+      if (!this.textures.exists(texKey)) {
+        this.textures.addBase64(texKey, data.customSkin);
+        this.textures.once('addtexture-' + texKey, applyCustomImg);
+      } else {
+        this.time.delayedCall(20, applyCustomImg);
+      }
+    }
 
     // Name label — hardcore gets skull prefix and bigger font
     const nameLabel = data.isHardcore ? `💀 ${data.username}` : data.username;
@@ -590,7 +609,7 @@ class GameScene extends Phaser.Scene {
       weaponGlow.fillCircle(36,-5,12);
     }
 
-    const obj={sprite,nameText,hpBg,hpBar,shadow,data:{...data},targetRing,presText,weaponGlow,dir:0};
+    const obj={sprite,nameText,hpBg,hpBar,shadow,data:{...data},targetRing,presText,weaponGlow,dir:0,customImg:null};
     this.playerObjs[data.id]=obj;
     this.setPos(data.id,data.x,data.y);
     return obj;
@@ -616,13 +635,14 @@ class GameScene extends Phaser.Scene {
     obj.targetRing.setPosition(x,y).setDepth(dep+3);
     if(obj.presText) obj.presText.setPosition(x,y).setDepth(dep+2);
     if(obj.weaponGlow) obj.weaponGlow.setPosition(x,y).setDepth(dep+1);
+    if(obj.customImg) obj.customImg.setPosition(x,y).setDepth(dep+0.5);
     // Update stored data
     obj.data.x=x; obj.data.y=y;
   }
 
   removePlayer(id) {
     const obj=this.playerObjs[id]; if(!obj) return;
-    [obj.sprite,obj.nameText,obj.hpBg,obj.hpBar,obj.shadow,obj.targetRing,obj.presText,obj.weaponGlow]
+    [obj.sprite,obj.nameText,obj.hpBg,obj.hpBar,obj.shadow,obj.targetRing,obj.presText,obj.weaponGlow,obj.customImg]
       .filter(Boolean).forEach(o=>o.destroy());
     delete this.playerObjs[id];
   }
@@ -630,10 +650,12 @@ class GameScene extends Phaser.Scene {
   // ── Bite animation — jaw snaps open for 280ms then closes ─────────────────
   showBite(id) {
     const obj = this.playerObjs[id]; if(!obj) return;
-    drawDino3D(obj.sprite, obj.data.color, obj.data.upgrades||[], true);
+    if(obj.customImg) return; // custom skin — no graphics bite animation needed
+    const col = obj.data.skinColor || obj.data.color;
+    drawDino3D(obj.sprite, col, obj.data.upgrades||[], true);
     this.time.delayedCall(260, () => {
       const o = this.playerObjs[id]; if(!o) return;
-      drawDino3D(o.sprite, o.data.color, o.data.upgrades||[], false);
+      drawDino3D(o.sprite, o.data.skinColor || o.data.color, o.data.upgrades||[], false);
     });
   }
 

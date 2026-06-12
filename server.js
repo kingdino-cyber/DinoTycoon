@@ -1330,6 +1330,16 @@ io.on('connection', (socket) => {
       }
       const player = createPlayerData(sid, lp.username, save2, lp.padIdx, lp.color);
       player.dbUserId = dbId;
+      // Equipped skin — override color if a non-default skin is equipped
+      const equippedSkinId = rawSave.equippedSkin || 'default';
+      if (equippedSkinId === 'custom') {
+        player.customSkin = rawSave.customSkin || null;
+        player.skinColor = null;
+      } else {
+        const skinDef = LOBBY_SHOP.skins.find(s => s.id === equippedSkinId);
+        player.skinColor = skinDef ? skinDef.color : null;
+        player.customSkin = null;
+      }
       // Base regen from difficulty — easy=6, medium=3, hard=2 HP/s
       const baseRegen = room.difficulty==='easy' ? 6 : room.difficulty==='hard' ? 2 : 3;
       player.regen = (player.regen || 0) + baseRegen;
