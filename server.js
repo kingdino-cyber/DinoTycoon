@@ -39,6 +39,11 @@ async function findUser(u) {
 const _saveCache = new Map(); // userId -> { data, ts }
 const SAVE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
+function _stripId(obj) {
+  // Remove MongoDB _id so it's never passed to $set (causes "Mod on _id not allowed")
+  const { _id, ...rest } = obj;
+  return rest;
+}
 async function getSave(id) {
   const hit = _saveCache.get(id);
   if (hit && Date.now() - hit.ts < SAVE_CACHE_TTL) return JSON.parse(JSON.stringify(hit.data));
@@ -48,13 +53,15 @@ async function getSave(id) {
     s.customSkin = undefined;
     if (s.equippedSkin === 'custom') s.equippedSkin = 'custom_imported';
   }
-  const result = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[] };
+  const raw = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[] };
+  const result = _stripId(raw);
   _saveCache.set(id, { data: result, ts: Date.now() });
   return JSON.parse(JSON.stringify(result));
 }
 async function putSave(id, data) {
-  _saveCache.set(id, { data: JSON.parse(JSON.stringify(data)), ts: Date.now() });
-  await savesCol.updateOne({ userId: id }, { $set: { ...data, userId: id } }, { upsert: true });
+  const clean = _stripId(data);
+  _saveCache.set(id, { data: JSON.parse(JSON.stringify(clean)), ts: Date.now() });
+  await savesCol.updateOne({ userId: id }, { $set: { ...clean, userId: id } }, { upsert: true });
 }
 
 // ── Game Constants ────────────────────────────────────────────────────────────
