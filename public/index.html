@@ -2234,9 +2234,11 @@ function drawDinoCanvas(canvas, colorHex) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  const scale = Math.min(W / 105, H / 88) * 0.88;
+  // Dino bounding box in game coords: x[-35..55]=90 wide, y[-25..37]=62 tall
+  // Visual center: x=10, y=6
+  const scale = Math.min(W / 96, H / 68) * 0.88;
   ctx.save();
-  ctx.translate(W/2 - 8*scale, H/2 + 6*scale);
+  ctx.translate(W/2 - 10*scale, H/2 - 6*scale);
   ctx.scale(scale, scale);
 
   const base = _hexToNum(colorHex);
@@ -2419,14 +2421,31 @@ function renderShopTab() {
 }
 
 function buyLobbyItem(type, itemId) {
-  if (!window.gameSocket) return;
-  window.SFX?.pop();
+  if (!window.gameSocket || !_shopData) return;
+  const item = (type === 'skin' ? _shopData.shop?.skins : _shopData.shop?.tags)?.find(s => s.id === itemId);
+  if (!item) return;
+  if ((_shopData.points || 0) < item.cost) { showToast('❌ Not enough Dino Points!'); return; }
+  // Optimistic update — reflect immediately, server will confirm
+  _shopData.points = (_shopData.points || 0) - item.cost;
+  const key = type === 'skin' ? 'skins' : 'tags';
+  if (!_shopData.lobbyItems) _shopData.lobbyItems = { skins:[], tags:[] };
+  if (!_shopData.lobbyItems[key].includes(itemId)) _shopData.lobbyItems[key].push(itemId);
+  _shopData.equippedSkin = itemId;
+  document.getElementById('shopPointsVal').textContent = _shopData.points;
+  document.getElementById('lobbyPoints').textContent = _shopData.points;
+  applyDinoSkin(itemId);
+  renderShopTab();
+  window.SFX?.levelUp();
   window.gameSocket.emit('buyLobbyItem', { type, itemId });
 }
 window.buyLobbyItem = buyLobbyItem;
 
 function equipLobbyItem(type, itemId) {
-  if (!window.gameSocket) return;
+  if (!window.gameSocket || !_shopData) return;
+  // Optimistic update — reflect immediately, server will confirm
+  if (type === 'skin') { _shopData.equippedSkin = itemId; applyDinoSkin(itemId); }
+  else { _shopData.equippedTag = itemId; applyDinoTag(itemId); }
+  renderShopTab();
   window.SFX?.pop();
   window.gameSocket.emit('equipLobbyItem', { type, itemId });
 }

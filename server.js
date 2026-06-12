@@ -35,17 +35,25 @@ async function connectDB() {
 async function findUser(u) {
   return usersCol.findOne({ username_lower: u.toLowerCase() });
 }
+// In-memory save cache — eliminates repeated DB round-trips per session
+const _saveCache = new Map(); // userId -> { data, ts }
+const SAVE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 async function getSave(id) {
+  const hit = _saveCache.get(id);
+  if (hit && Date.now() - hit.ts < SAVE_CACHE_TTL) return JSON.parse(JSON.stringify(hit.data));
   const s = await savesCol.findOne({ userId: id });
   if (s && s.customSkin && !s.customSkins) {
-    // Migrate old single customSkin to array
     s.customSkins = [{ id: 'imported', name: 'My Skin', base64: s.customSkin }];
     s.customSkin = undefined;
     if (s.equippedSkin === 'custom') s.equippedSkin = 'custom_imported';
   }
-  return s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[] };
+  const result = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[] };
+  _saveCache.set(id, { data: result, ts: Date.now() });
+  return JSON.parse(JSON.stringify(result));
 }
 async function putSave(id, data) {
+  _saveCache.set(id, { data: JSON.parse(JSON.stringify(data)), ts: Date.now() });
   await savesCol.updateOne({ userId: id }, { $set: { ...data, userId: id } }, { upsert: true });
 }
 
@@ -1428,8 +1436,8 @@ io.on('connection', (socket) => {
     }
     broadcastLobbyUpdate();
 
-    // 3-second countdown then start the loop
-    let count = 3;
+    // 5-second countdown then start the loop
+    let count = 5;
     emitToRoom(room, 'countdown', { count });
     const cdInterval = setInterval(() => {
       count--;
