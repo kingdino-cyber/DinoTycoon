@@ -2234,11 +2234,12 @@ function drawDinoCanvas(canvas, colorHex) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  // Dino bounding box in game coords: x[-35..55]=90 wide, y[-25..37]=62 tall
-  // Visual center: x=10, y=6
-  const scale = Math.min(W / 96, H / 68) * 0.88;
+  // Match in-game proportions: dino bbox x[-35..52]=87 wide, y[-27..37]=64 tall
+  // Use same scale as game (1px = 1 game unit), fitting tightly into canvas
+  const scale = Math.min(W / 100, H / 78);
+  // Center on dino's visual center (x=8, y=5 in game coords)
   ctx.save();
-  ctx.translate(W/2 - 10*scale, H/2 - 6*scale);
+  ctx.translate(W/2 - 8*scale, H/2 - 5*scale);
   ctx.scale(scale, scale);
 
   const base = _hexToNum(colorHex);
