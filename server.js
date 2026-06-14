@@ -1011,6 +1011,7 @@ io.on('connection', (socket) => {
       equippedTag: save.equippedTag || 'none',
       lobbyShop: LOBBY_SHOP,
       customSkins: save.customSkins || [],
+      lastDailyReward: save.lastDailyReward || 0,
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
@@ -1107,6 +1108,23 @@ io.on('connection', (socket) => {
     if (save.equippedSkin === 'custom_' + id) save.equippedSkin = 'default';
     await putSave(authedUser.id, save);
     socket.emit('customSkinSet', { id: null, name: null, base64: null, equippedSkin: save.equippedSkin, customSkins: save.customSkins });
+  });
+
+  socket.on('claimDailyReward', async () => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    const now = Date.now();
+    const last = save.lastDailyReward || 0;
+    const MS_PER_DAY = 86400000;
+    if (now - last < MS_PER_DAY) {
+      const msLeft = MS_PER_DAY - (now - last);
+      return socket.emit('dailyRewardResult', { error: true, msLeft });
+    }
+    const pts = Math.floor(Math.random() * 41) + 20; // 20–60
+    save.points = (save.points || 0) + pts;
+    save.lastDailyReward = now;
+    await putSave(authedUser.id, save);
+    socket.emit('dailyRewardResult', { pts, totalPoints: save.points });
   });
 
   socket.on('getLobbyShop', async () => {

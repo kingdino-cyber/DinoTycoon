@@ -808,11 +808,11 @@ canvas{display:block;}
     <!-- LEFT PANEL -->
     <div class="lby-left">
       <!-- Fossil Drop card -->
-      <div class="lby-drop-card" onclick="openSavedGamesModal()">
+      <div class="lby-drop-card" id="fossilDropCard" onclick="claimFossilDrop()">
         <div class="lby-drop-title">🥚 Fossil Drop</div>
-        <div class="lby-drop-subtitle">Daily reward</div>
+        <div class="lby-drop-subtitle" id="fossilDropSub">Daily reward</div>
         <span class="lby-drop-egg">🦕</span>
-        <button class="lby-drop-btn">CLAIM FREE ▶</button>
+        <button class="lby-drop-btn" id="fossilDropBtn">CLAIM FREE ▶</button>
       </div>
 
       <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">🔑 Join by Code</button>
@@ -1717,6 +1717,29 @@ function saveSettings() {
 
 // Load settings on startup
 loadSettings();
+
+function claimFossilDrop() {
+  if (!window.gameSocket) return;
+  window.gameSocket.emit('claimDailyReward');
+}
+
+function initFossilDropCard(lastDailyReward) {
+  const MS_PER_DAY = 86400000;
+  const msLeft = MS_PER_DAY - (Date.now() - (lastDailyReward || 0));
+  const btn = document.getElementById('fossilDropBtn');
+  const sub = document.getElementById('fossilDropSub');
+  const card = document.getElementById('fossilDropCard');
+  if (msLeft > 0) {
+    const hrs = Math.ceil(msLeft / 3600000);
+    if (sub) sub.textContent = `Come back in ${hrs}h`;
+    if (btn) { btn.textContent = '⏳ Already claimed'; btn.disabled = true; btn.style.opacity = '0.5'; }
+    if (card) card.style.cursor = 'default';
+  } else {
+    if (sub) sub.textContent = 'Daily reward';
+    if (btn) { btn.textContent = 'CLAIM FREE ▶'; btn.disabled = false; btn.style.opacity = '1'; }
+    if (card) card.style.cursor = 'pointer';
+  }
+}
 
 function openSavedGamesModal() {
   window.SFX?.pop();
@@ -2732,6 +2755,27 @@ function initSocket(token){
       applyDinoSkin(data.equippedSkin || 'default');
       applyDinoTag(data.equippedTag || 'none');
       document.getElementById('shopPointsVal').textContent = pts;
+    }
+    initFossilDropCard(data.lastDailyReward || 0);
+  });
+
+  s.on('dailyRewardResult', data => {
+    const sub = document.getElementById('fossilDropSub');
+    const btn = document.getElementById('fossilDropBtn');
+    const card = document.getElementById('fossilDropCard');
+    if (data.error) {
+      const hrs = Math.ceil(data.msLeft / 3600000);
+      if (sub) sub.textContent = `Come back in ${hrs}h`;
+      if (btn) { btn.textContent = '⏳ Already claimed'; btn.disabled = true; btn.style.opacity = '0.5'; }
+      if (card) card.style.cursor = 'default';
+    } else {
+      if (sub) sub.textContent = `+${data.pts} pts earned!`;
+      if (btn) { btn.textContent = '✅ Claimed!'; btn.disabled = true; btn.style.opacity = '0.5'; }
+      if (card) card.style.cursor = 'default';
+      document.getElementById('lobbyPoints').textContent = data.totalPoints;
+      document.getElementById('shopPointsVal').textContent = data.totalPoints;
+      if (_shopData) _shopData.points = data.totalPoints;
+      showToast(`🥚 Fossil Drop! +${data.pts} points!`, 3500);
     }
   });
 
