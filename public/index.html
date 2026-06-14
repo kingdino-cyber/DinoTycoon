@@ -2340,7 +2340,7 @@ document.addEventListener('mousemove', e => {
   const dx = e.clientX - cx;
   const dy = e.clientY - cy;
   if (Math.hypot(dx, dy) < 5) return;
-  _heroTargetSX = Math.cos(Math.atan2(dy, dx));
+  _heroTargetSX = -Math.cos(Math.atan2(dy, dx));
   if (!_heroAnimRafId) _heroAnimRafId = requestAnimationFrame(_heroAnimStep);
 });
 
