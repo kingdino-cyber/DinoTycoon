@@ -2232,7 +2232,7 @@ function drawDinoCanvas(canvas, colorHex, scaleXMult=1) {
   ctx.clearRect(0, 0, W, H);
   const scale = Math.min(W / 100, H / 78);
   ctx.save();
-  ctx.translate(W/2 - 8*scale, H/2 - 5*scale);
+  ctx.translate(W/2 - scaleXMult * 8 * scale, H/2 - 5*scale);
   ctx.scale(scaleXMult * scale, scale);
 
   const base = _hexToNum(colorHex);
