@@ -2187,7 +2187,7 @@ function switchLbyTab(tab) {
     document.getElementById('lbyTab-home').classList.add('active');
   } else if (tab === 'shop') {
     document.getElementById('lbyShopPanel').classList.add('active');
-    document.getElementById('lbyTab-shop').classList.add('active');
+    const _shopTab = document.getElementById('lbyTab-shop'); if (_shopTab) _shopTab.classList.add('active');
     if (window.gameSocket) window.gameSocket.emit('getLobbyShop');
   } else if (tab === 'rooms') {
     document.getElementById('lbyRoomsPanel').classList.add('active');
