@@ -1585,7 +1585,8 @@ function showScreen(name) {
 // ── Lobby logic ────────────────────────────────────────────────────────────────
 function renderRooms(rooms) {
   const grid=document.getElementById('roomGrid');
-  document.getElementById('roomCount').textContent=rooms.length ? `(${rooms.length})` : '';
+  const _rc=document.getElementById('roomCount'); if(_rc) _rc.textContent=rooms.length ? `(${rooms.length})` : '';
+  const _rc2=document.getElementById('roomCount2'); if(_rc2) _rc2.textContent=rooms.length ? `(${rooms.length})` : '';
   if(!rooms.length){grid.innerHTML='<div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>';return;}
   grid.innerHTML=rooms.map(r=>`
     <div class="room-card" onclick="joinRoom('${r.id}')">
