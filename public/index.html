@@ -849,6 +849,10 @@ canvas{display:block;}
           <canvas id="heroDinoCanvas" width="170" height="155" style="display:block;width:100%;height:100%;"></canvas>
           </div><!-- /heroDinoContainer -->
           <div class="lby-hero-pedestal"></div>
+          <button class="lby-play-btn" onclick="openPlayNowModal()" style="margin-top:10px;width:100%;">
+            ▶ PLAY NOW!
+            <span class="lby-play-sub">Start your dino empire</span>
+          </button>
         </div><!-- /flex column -->
 
         <!-- Right invite slot -->
@@ -860,27 +864,8 @@ canvas{display:block;}
       </div>
     </div>
 
-    <!-- RIGHT PANEL — Play + embedded chat -->
+    <!-- RIGHT PANEL — embedded chat -->
     <div class="lby-right">
-      <div style="color:#557755;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Select Mode</div>
-      <div class="lby-mode-row">
-        <div class="lby-mode-box">
-          <div class="lby-mode-label">Mode</div>
-          <div class="lby-mode-val">Classic 🦕</div>
-        </div>
-        <div class="lby-mode-box">
-          <div class="lby-mode-label">Map</div>
-          <div class="lby-mode-val">All Maps</div>
-        </div>
-      </div>
-
-      <button class="lby-play-btn" onclick="openPlayNowModal()" style="margin-top:10px;">
-        ▶ PLAY NOW!
-        <span class="lby-play-sub">Start your dino empire</span>
-      </button>
-
-      <div class="lby-right-divider"></div>
-
       <!-- Embedded chat -->
       <div style="color:#557755;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">💬 Lobby Chat</div>
       <div class="lobby-chat-messages" id="lobbyChatMessages" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;">
