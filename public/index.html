@@ -860,7 +860,7 @@ canvas{display:block;}
       </div>
     </div>
 
-    <!-- RIGHT PLAY PANEL -->
+    <!-- RIGHT PANEL — Play + embedded chat -->
     <div class="lby-right">
       <div style="color:#557755;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Select Mode</div>
       <div class="lby-mode-row">
@@ -874,21 +874,21 @@ canvas{display:block;}
         </div>
       </div>
 
-      <div style="flex:1;"></div>
-
-      <button class="lby-play-btn" onclick="openPlayNowModal()">
+      <button class="lby-play-btn" onclick="openPlayNowModal()" style="margin-top:10px;">
         ▶ PLAY NOW!
         <span class="lby-play-sub">Start your dino empire</span>
       </button>
 
       <div class="lby-right-divider"></div>
 
-      <button class="lby-servers-btn" onclick="switchLbyTab('rooms')">
-        ☰ SERVERS <span id="roomCount" style="color:#ffd700;font-size:.75rem;"></span>
-      </button>
-
-      <div style="color:#334433;font-size:.68rem;text-align:center;margin-top:auto;padding-top:8px;">
-        Dino Tycoon • Build your prehistoric empire
+      <!-- Embedded chat -->
+      <div style="color:#557755;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">💬 Lobby Chat</div>
+      <div class="lobby-chat-messages" id="lobbyChatMessages" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;">
+        <div class="lobby-chat-msg system-msg"><span class="chat-text">Welcome to Dino Tycoon! Be kind 🦕</span></div>
+      </div>
+      <div class="lobby-chat-input-row" style="margin-top:6px;">
+        <input class="lobby-chat-input" id="lobbyChatInput" maxlength="120" placeholder="Roar something..." onkeydown="if(event.key==='Enter')sendLobbyChat()">
+        <button class="lobby-chat-send" onclick="sendLobbyChat()">➤</button>
       </div>
     </div>
   </div>
@@ -925,18 +925,6 @@ canvas{display:block;}
     </div>
   </div>
 
-  <!-- CHAT TAB PANEL -->
-  <div class="lby-tab-panel" id="lbyChatPanel">
-    <div class="lby-chat-panel">
-      <div class="lobby-chat-messages" id="lobbyChatMessages">
-        <div class="lobby-chat-msg system-msg"><span class="chat-text">Welcome to Dino Tycoon! Be kind 🦕</span></div>
-      </div>
-      <div class="lobby-chat-input-row">
-        <input class="lobby-chat-input" id="lobbyChatInput" maxlength="120" placeholder="Roar something at the herd..." onkeydown="if(event.key==='Enter')sendLobbyChat()">
-        <button class="lobby-chat-send" onclick="sendLobbyChat()">➤</button>
-      </div>
-    </div>
-  </div>
 
   <!-- SAVED TAB PANEL -->
   <div class="lby-tab-panel" id="lbySavedPanel">
@@ -967,8 +955,8 @@ canvas{display:block;}
     <button class="lby-tab" id="lbyTab-rooms" onclick="switchLbyTab('rooms')">
       <span class="lby-tab-icon">⚔️</span> SERVERS
     </button>
-    <button class="lby-tab" id="lbyTab-chat" onclick="switchLbyTab('chat')">
-      <span class="lby-tab-icon">💬</span> CHAT
+    <button class="lby-tab" id="lbyTab-shop" onclick="switchLbyTab('shop')">
+      <span class="lby-tab-icon">🛒</span> SHOP
     </button>
     <button class="lby-tab" id="lbyTab-saves" onclick="switchLbyTab('saves')">
       <span class="lby-tab-icon">💾</span> SAVED
@@ -2202,7 +2190,6 @@ function switchLbyTab(tab) {
   document.getElementById('lbyHomeView').style.display = 'none';
   document.getElementById('lbyShopPanel').classList.remove('active');
   document.getElementById('lbyRoomsPanel').classList.remove('active');
-  document.getElementById('lbyChatPanel').classList.remove('active');
   document.getElementById('lbySavedPanel').classList.remove('active');
   document.querySelectorAll('.lby-tab').forEach(t => t.classList.remove('active'));
   if (tab === 'home') {
@@ -2215,11 +2202,6 @@ function switchLbyTab(tab) {
   } else if (tab === 'rooms') {
     document.getElementById('lbyRoomsPanel').classList.add('active');
     document.getElementById('lbyTab-rooms').classList.add('active');
-  } else if (tab === 'chat') {
-    document.getElementById('lbyChatPanel').classList.add('active');
-    document.getElementById('lbyTab-chat').classList.add('active');
-    const box = document.getElementById('lobbyChatMessages');
-    if (box) box.scrollTop = box.scrollHeight;
   } else if (tab === 'saves') {
     document.getElementById('lbySavedPanel').classList.add('active');
     document.getElementById('lbyTab-saves').classList.add('active');
