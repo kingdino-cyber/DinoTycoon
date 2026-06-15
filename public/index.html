@@ -2313,7 +2313,7 @@ let _heroAnimRafId = null;
 function _redrawHeroDino() {
   const canvas = document.getElementById('heroDinoCanvas');
   if (!canvas || canvas.style.display === 'none') return;
-  const sd = window._shopData;
+  const sd = _shopData;
   const shop = window._lobbyShop;
   const skinId = sd?.equippedSkin || 'default';
   let color = '#4caf50';
