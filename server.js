@@ -130,14 +130,14 @@ const UPGRADES = {
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
 const LOBBY_SHOP = {
   skins: [
-    { id:'default', name:'Jungle Rex',    cost:0,    color:'#4caf50', spike:'#2d7a1e', desc:'The original dino. Classic.' },
-    { id:'pink',    name:'Fringling',     cost:50,   color:'#e84393', spike:'#c2185b', desc:'The iconic pink dino from the game.' },
-    { id:'blue',    name:'Glacier Rex',   cost:150,  color:'#1e90ff', spike:'#0d47a1', desc:'Ice-cold and calculating.' },
-    { id:'gold',    name:'Dino King',     cost:400,  color:'#ffd700', spike:'#e65100', desc:'Royalty of the prehistoric world.' },
-    { id:'purple',  name:'Shadow Raptor', cost:600,  color:'#9c27b0', spike:'#4a148c', desc:'Lurks in the prehistoric shadows.' },
-    { id:'red',     name:'Lava Dino',     cost:800,  color:'#ff4757', spike:'#b71c1c', desc:'Born from the volcano\'s heart.' },
     { id:'teal',    name:'Ocean Rex',     cost:1000, color:'#00bcd4', spike:'#006064', desc:'Ruler of the ancient seas.' },
+    { id:'red',     name:'Lava Dino',     cost:800,  color:'#ff4757', spike:'#b71c1c', desc:'Born from the volcano\'s heart.' },
+    { id:'purple',  name:'Shadow Raptor', cost:600,  color:'#9c27b0', spike:'#4a148c', desc:'Lurks in the prehistoric shadows.' },
     { id:'panda',   name:'Panda Rex',     cost:500,  color:'#f5f5f5', spike:'#111111', desc:'Black and white and fierce all over.' },
+    { id:'gold',    name:'Dino King',     cost:400,  color:'#ffd700', spike:'#e65100', desc:'Royalty of the prehistoric world.' },
+    { id:'blue',    name:'Glacier Rex',   cost:150,  color:'#1e90ff', spike:'#0d47a1', desc:'Ice-cold and calculating.' },
+    { id:'pink',    name:'Fringling',     cost:50,   color:'#e84393', spike:'#c2185b', desc:'The iconic pink dino from the game.' },
+    { id:'default', name:'Jungle Rex',    cost:0,    color:'#4caf50', spike:'#2d7a1e', desc:'The original dino. Classic.' },
   ],
   tags: [
     { id:'none',   name:'No Tag',    cost:0,    prefix:'' },
@@ -999,6 +999,17 @@ io.on('connection', (socket) => {
     // Send lobby data including player's stats
     const publicRooms = Object.values(rooms).filter(r=>r.isPublic).map(getRoomPublicInfo);
     const save = await getSave(decoded.id);
+
+    // JoyfulPanda always gets the Panda Rex skin for free
+    if (decoded.username.toLowerCase() === 'joyfulpanda') {
+      if (!save.lobbyItems) save.lobbyItems = { skins:[], tags:[] };
+      if (!save.lobbyItems.skins.includes('panda')) save.lobbyItems.skins.push('panda');
+      if (save.equippedSkin !== 'panda') {
+        save.equippedSkin = 'panda';
+        await putSave(decoded.id, save);
+      }
+    }
+
     socket.emit('lobbyReady', {
       username: decoded.username,
       rooms: publicRooms,
