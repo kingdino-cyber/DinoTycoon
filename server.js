@@ -249,11 +249,20 @@ function isInsideBase(player) {
   return Math.abs(player.x - base.x) < half && Math.abs(player.y - base.y) < half;
 }
 
+const MAX_BUILDINGS_PER_OWNER = 40; // caps base sprawl — keeps server tick cost and client render cost bounded
+
+function countOwnerBuildings(room, ownerId) {
+  let c = 0;
+  for (const b of Object.values(room.buildings)) if (b.ownerId === ownerId) c++;
+  return c;
+}
+
 function placeBuilding(room, player, upgradeId) {
   const bd = BUILDING_DATA[upgradeId]; if (!bd) return;
   const isIncome  = bd.type === 'income';
   const isDefense = bd.type === 'defense';
   if (!isIncome && !isDefense) return;
+  if (countOwnerBuildings(room, player.id || player.socketId) >= MAX_BUILDINGS_PER_OWNER) return;
 
   let bx, by, wallOrientation = 'h';
   if (isDefense && isWallBuilding(upgradeId) && isInsideBase(player)) {
@@ -550,8 +559,9 @@ function tickBot(bot, room, dt, allEntitiesArr, buildingsArr, wallBuildingsArr) 
     const allIncomeBought = allIncomeIds.every(id => bot.upgrades.includes(id));
 
     // Priority: income always first → build only if all income owned → combat last
+    const atBuildingCap = countOwnerBuildings(room, bot.id) >= MAX_BUILDINGS_PER_OWNER;
     const cats = allIncomeBought
-      ? (bot.aiState === 'build' ? ['build','defense','health','attack','speed'] : ['attack','speed','health','defense'])
+      ? (bot.aiState === 'build' && !atBuildingCap ? ['build','defense','health','attack','speed'] : ['attack','speed','health','defense'])
       : ['income'];   // must buy all income upgrades first, no exceptions
 
     for (const cat of cats) {
@@ -826,8 +836,12 @@ function startRoomLoop(room) {
           kills: p.kills, isBot: p.isBot
         }));
         emitToRoom(room, 'matchOver', { leaderboard: lb });
+        // Freeze the world immediately — stop bot AI/attacks/building and money sync so
+        // nothing keeps acting (or making sound) during the post-match results screen
+        stopRoomLoop(room);
         // Clean up after 10s
         setTimeout(() => destroyRoom(room.id), 10000);
+        return;
       }
     }
   }, 50);
@@ -1527,8 +1541,9 @@ io.on('connection', (socket) => {
     const upg = UPGRADES[upgradeId]; if (!upg) return;
     const isBuild = upg.cat === 'build';
 
-    // Build items can be bought unlimited times; stat upgrades only once
+    // Build items can be bought repeatedly (up to a base-size cap); stat upgrades only once
     if (!isBuild && p.upgrades.includes(upgradeId)) return;
+    if (isBuild && countOwnerBuildings(room, socket.id) >= MAX_BUILDINGS_PER_OWNER) { socket.emit('upgradeError','Base is full — destroy old buildings to build more!'); return; }
     if (upg.req && !p.upgrades.includes(upg.req)) { socket.emit('upgradeError',`Requires ${UPGRADES[upg.req].name}!`); return; }
     const diffMult = room.difficulty==='easy' ? 0.3 : room.difficulty==='hard' ? 1.5 : 1.0;
     const actualCost = Math.max(1, Math.round(upg.cost * diffMult));
