@@ -1,4 +1,5 @@
 // ── Dino Tycoon — Phaser 3 Game Engine ───────────────────────────────────────
+(function() {
 'use strict';
 
 const WORLD_SIZE = 3200;
@@ -1394,3 +1395,4 @@ function setupGameSocketEvents() {
     window.addKillFeed(`<span style="color:#ffd700">⭐ ${obj.data.username} prestiged (★${prestige})!</span>`);
   });
 }
+})();

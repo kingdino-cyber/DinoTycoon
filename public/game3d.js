@@ -1,8 +1,5 @@
 // ── Dino Tycoon — Third-Person 3D Engine (Three.js) ──────────────────────────
-// Replaces the old Phaser top-down renderer. The server protocol is 100%
-// unchanged: it's still authoritative over a flat (x,y) plane. Here we map
-// server x,y -> three.js x,z (height/y is always ~ground level), and render
-// a real over-the-shoulder rear-view 3D world on top of the exact same socket events.
+(function() {
 'use strict';
 
 const WORLD_SIZE = 3200;
@@ -741,3 +738,4 @@ function setupGameSocketEvents() {
   });
 }
 window.setupGameSocketEvents = setupGameSocketEvents;
+})();

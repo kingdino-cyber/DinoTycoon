@@ -255,6 +255,19 @@ canvas{display:block;}
 .sidebar-divider{height:1px;background:rgba(100,200,80,.1);margin:4px 0;}
 .sidebar-title{color:#557755;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;padding:4px 0;}
 
+/* ── RENDER MODE PICKER ── */
+.rmp-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;}
+.rmp-card{
+  background:rgba(20,60,15,.5);border:2px solid rgba(100,200,80,.15);border-radius:16px;
+  padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;
+}
+.rmp-card:hover{border-color:rgba(100,200,80,.55);background:rgba(100,200,80,.08);transform:translateY(-3px);box-shadow:0 8px 28px rgba(50,200,30,.2);}
+.rmp-card.selected{border-color:#4caf50;background:rgba(76,175,80,.12);}
+.rmp-icon{font-size:3rem;display:block;margin-bottom:10px;}
+.rmp-title{font-size:1.1rem;font-weight:900;color:#e8f5e9;margin-bottom:6px;letter-spacing:.5px;}
+.rmp-desc{font-size:.78rem;color:#557755;line-height:1.4;}
+.badge-render{background:rgba(150,100,255,.15);color:#c8a0ff;border:1px solid rgba(150,100,255,.3);}
+
 /* ── CREATE ROOM MODAL ── */
 .modal-overlay{
   position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);
@@ -740,7 +753,7 @@ canvas{display:block;}
 </head>
 <body>
 <script>
-// Apply cached skin instantly on load to prevent flash
+// Apply cached skin instantly on load to prevent flash — uses 2D canvas, no Three.js needed
 (function() {
   try {
     const cached = JSON.parse(localStorage.getItem('dt_skin_cache') || 'null');
@@ -750,34 +763,15 @@ canvas{display:block;}
       const img = document.getElementById('heroDinoCustomImg');
       if (!canvas || !img) { requestAnimationFrame(tryApply); return; }
       if (cached.type === 'custom' && cached.src) {
-        img.src = cached.src;
-        img.style.display = 'block';
-        canvas.style.display = 'none';
-      } else if (cached.color && window.buildDino3DModel && window.THREE) {
+        img.src = cached.src; img.style.display = 'block'; canvas.style.display = 'none';
+      } else if (cached.color && window.drawDinoCanvas) {
         canvas.style.display = 'block';
-        // Render directly with a WebGL context on this canvas (NOT the shared 2D-blit
-        // helper) — a canvas can only ever bind one context type for its lifetime, and
-        // the live hero renderer created later also needs a WebGL context on this canvas.
-        try {
-          const scene = new THREE.Scene();
-          const camera = new THREE.PerspectiveCamera(35, canvas.width / canvas.height, 0.1, 20);
-          camera.position.set(0, 1.55, 3.4); camera.lookAt(0, 1.0, 0);
-          const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-          renderer.setSize(canvas.width, canvas.height, false);
-          scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-          const dl = new THREE.DirectionalLight(0xffffff, 0.7); dl.position.set(2, 4, 3); scene.add(dl);
-          scene.add(window.buildDino3DModel(THREE, cached.color));
-          renderer.render(scene, camera);
-        } catch (e) {}
+        window.drawDinoCanvas(canvas, cached.color);
         canvas.style.filter = `drop-shadow(0 0 18px ${cached.color}99)`;
       } else { requestAnimationFrame(tryApply); return; }
     }
-    // THREE / dino3d.js may not be defined yet — retry after scripts load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', tryApply);
-    } else {
-      requestAnimationFrame(tryApply);
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryApply);
+    else requestAnimationFrame(tryApply);
   } catch(e) {}
 })();
 </script>
@@ -966,6 +960,29 @@ canvas{display:block;}
     </button>
   </div>
 
+</div>
+
+<!-- ══ RENDER MODE PICKER ════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="renderModeModal">
+  <div class="modal" style="width:480px;">
+    <h2 style="font-size:1.4rem;letter-spacing:1px;">🦖 Choose Your Experience</h2>
+    <p style="color:#557755;font-size:.82rem;margin-bottom:16px;">Pick a game engine — you can have different rooms for each!</p>
+    <div class="rmp-cards">
+      <div class="rmp-card" id="rmpCard2d" onclick="selectRenderMode('2d')">
+        <span class="rmp-icon">🗺️</span>
+        <div class="rmp-title">2D Classic</div>
+        <div class="rmp-desc">Top-down view, Phaser engine — the original Dino Tycoon experience.</div>
+      </div>
+      <div class="rmp-card" id="rmpCard3d" onclick="selectRenderMode('3d')">
+        <span class="rmp-icon">🌐</span>
+        <div class="rmp-title">3D Immersive</div>
+        <div class="rmp-desc">Third-person 3D world — full Three.js experience with a real camera.</div>
+      </div>
+    </div>
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="modal-cancel" onclick="closeModal('renderModeModal')">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ PLAY NOW MODAL ═══════════════════════════════════════════════════════ -->
@@ -1403,12 +1420,9 @@ canvas{display:block;}
 
 <!-- socket.io is local/fast — load it now -->
 <script src="/socket.io/socket.io.js"></script>
-<!-- Three.js + shared 3D dino/building models — loaded now since the homepage hero
-     dino renders in 3D too (not just the in-game first-person world) -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js" crossorigin="anonymous"></script>
-<script src="dino3d.js?v=2"></script>
-<!-- game3d.js (the first-person 3D engine) is loaded ONLY when the game actually starts -->
-<!-- This keeps the auth screen and lobby instantly responsive -->
+<!-- Three.js, dino3d.js, and game3d.js are loaded lazily when a 3D game starts.
+     For 2D mode: Phaser + game.js are loaded lazily instead.
+     Homepage/shop use a fast 2D canvas renderer — no Three.js needed at lobby time. -->
 <script>
 // ── Sound Engine (Web Audio API — no files needed) ───────────────────────────
 window.SFX = (() => {
@@ -1496,24 +1510,51 @@ let isHost = false;
 let roomPublicFlag = true;
 let _gameScriptsLoaded = false;
 let _gameScriptsLoading = false;
+let _loadedRenderMode = null; // track which engine is loaded ('2d' or '3d')
 let _socketAuthed = false;  // true only after server confirms auth via lobbyReady
 
-// Dynamically load the first-person 3D engine ONLY when the game starts (keeps lobby fast).
-// Three.js + dino3d.js are already loaded (the homepage hero dino needs them too).
-function loadGameScripts(cb) {
-  if (_gameScriptsLoaded) { cb(); return; }
-  if (_gameScriptsLoading) { setTimeout(() => loadGameScripts(cb), 100); return; }
+// Dynamically load the appropriate game engine when a match starts.
+// 3D mode: Three.js → dino3d.js → game3d.js
+// 2D mode: Phaser → game.js
+// Both game files are wrapped in IIFEs so their const declarations don't conflict.
+function loadGameScripts(mode, cb) {
+  if (_gameScriptsLoaded && _loadedRenderMode === mode) { cb(); return; }
+  if (_gameScriptsLoading) { setTimeout(() => loadGameScripts(mode, cb), 100); return; }
+  // Different engine already loaded — need a fresh page to switch
+  if (_gameScriptsLoaded && _loadedRenderMode !== mode) {
+    showToast('🔄 Switching engine — reloading page...', 2000);
+    setTimeout(() => window.location.reload(), 2100);
+    return;
+  }
   _gameScriptsLoading = true;
-  showToast('🦕 Loading 3D world...', 8000);
-  const gameScript = document.createElement('script');
-  gameScript.src = 'game3d.js?v=' + Date.now();
-  gameScript.onerror = () => showToast('❌ Failed to load game engine (check internet)', 5000);
-  gameScript.onload = () => {
-    _gameScriptsLoaded = true;
-    _gameScriptsLoading = false;
-    cb();
-  };
-  document.head.appendChild(gameScript);
+  _loadedRenderMode = mode;
+
+  function appendScript(src, opts, onLoad, onErr) {
+    const s = document.createElement('script');
+    s.src = src;
+    if (opts?.crossOrigin) s.crossOrigin = opts.crossOrigin;
+    s.onerror = onErr || (() => showToast('❌ Failed to load game engine', 5000));
+    s.onload = onLoad;
+    document.head.appendChild(s);
+  }
+
+  if (mode === '2d') {
+    showToast('🗺️ Loading 2D world...', 8000);
+    appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
+      appendScript('game.js?v=' + Date.now(), null, () => {
+        _gameScriptsLoaded = true; _gameScriptsLoading = false; cb();
+      });
+    });
+  } else {
+    showToast('🌐 Loading 3D world...', 8000);
+    appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
+      appendScript('dino3d.js?v=2', null, () => {
+        appendScript('game3d.js?v=' + Date.now(), null, () => {
+          _gameScriptsLoaded = true; _gameScriptsLoading = false; cb();
+        });
+      });
+    });
+  }
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -1598,6 +1639,7 @@ function renderRooms(rooms) {
       <div class="room-host">Host: ${esc(r.hostName||'?')}</div>
       <div class="room-meta">
         <span class="room-badge badge-mode">${modeLabel(r.gameMode)}</span>
+        <span class="room-badge badge-render">${r.renderMode==='2d'?'🗺️ 2D':'🌐 3D'}</span>
         <span class="room-badge badge-players">🦕 ${r.playerCount}/${r.maxPlayers}</span>
         <span class="room-badge badge-status">${r.status==='playing'?'🎮 In Game':'⏳ Waiting'}</span>
       </div>
@@ -1635,8 +1677,25 @@ function setDifficulty(d) {
   window.SFX?.pop();
 }
 
+let _selectedRenderMode = '3d'; // '2d' or '3d'
+
 function openPlayNowModal() {
   window.SFX?.roar();
+  // Show mode picker first; selectRenderMode() will open the room creation form
+  document.getElementById('rmpCard2d').classList.remove('selected');
+  document.getElementById('rmpCard3d').classList.remove('selected');
+  document.getElementById('renderModeModal').classList.remove('hidden');
+}
+
+function selectRenderMode(mode) {
+  _selectedRenderMode = mode;
+  document.getElementById('rmpCard2d').classList.toggle('selected', mode === '2d');
+  document.getElementById('rmpCard3d').classList.toggle('selected', mode === '3d');
+  closeModal('renderModeModal');
+  _openCreateRoomForm();
+}
+
+function _openCreateRoomForm() {
   document.getElementById('roomName').value = currentUser + "'s Jungle";
   document.getElementById('customCode').value = '';
   for (const d of ['easy','medium','hard','hardcore']) {
@@ -1647,7 +1706,6 @@ function openPlayNowModal() {
   document.getElementById('matchDuration').value = '0';
   document.getElementById('savedGameTip').style.display = 'none';
   setDifficulty('easy');
-  // Show saved game row if player has one
   const savedRow = document.getElementById('savedGameRow');
   const saved = window._myStats?.savedGame;
   if (saved) {
@@ -1659,6 +1717,9 @@ function openPlayNowModal() {
   } else {
     savedRow.style.display = 'none';
   }
+  // Update modal title to show selected mode
+  const modeLabel = _selectedRenderMode === '2d' ? '🗺️ 2D Classic' : '🌐 3D Immersive';
+  document.querySelector('#playNowModal h2').textContent = `🦖 PLAY NOW! — ${modeLabel}`;
   document.getElementById('playNowModal').classList.remove('hidden');
 }
 
@@ -1885,7 +1946,7 @@ function submitCreateRoom() {
     const saveId = wantsLoad ? (window._loadSaveId || null) : null;
     window._loadSaveId = null;
     window.gameSocket.emit('createRoom', {
-      name, gameMode: mode, maxPlayers: max, isPublic,
+      name, gameMode: mode, renderMode: _selectedRenderMode, maxPlayers: max, isPublic,
       freshStart, matchDuration,
       difficulty: _roomDifficulty,
       loadSavedGame: saveId,
@@ -2119,11 +2180,11 @@ function renderShopItems(upgrades, owned) {
         <div class="shop-desc">${u.desc}</div>
         ${u.req&&!owned.includes(u.req)?`<div class="shop-req">Req: ${upgrades[u.req]?.name||u.req}</div>`:''}
         <div class="shop-cost">${isOwned?'✅ Owned':'💰 $'+fmt(u.cost)}</div>
-        ${placesBuilding&&!isOwned&&!isLocked?'<div style="color:#7fff6a;font-size:.68rem;">🖱️ Drag into your base to place</div>':''}
+        ${placesBuilding&&!isOwned&&!isLocked&&_loadedRenderMode!=='2d'?'<div style="color:#7fff6a;font-size:.68rem;">🖱️ Drag into your base to place</div>':''}
       </div>
-      ${!isOwned && !placesBuilding ? `<button class="buy-btn" ${isLocked?'disabled':''} onclick="window.buyUpgrade('${id}')">Buy</button>` : ''}
+      ${!isOwned && (!placesBuilding || _loadedRenderMode==='2d') ? `<button class="buy-btn" ${isLocked?'disabled':''} onclick="window.buyUpgrade('${id}')">Buy</button>` : ''}
       ${!isOwned && placesBuilding && isLocked ? `<button class="buy-btn" disabled>🔒 Locked</button>` : ''}`;
-    if (placesBuilding && !isOwned && !isLocked) {
+    if (placesBuilding && !isOwned && !isLocked && _loadedRenderMode !== '2d') {
       div.draggable = true;
       div.style.cursor = 'grab';
       div.addEventListener('dragstart', e => {
@@ -2268,131 +2329,114 @@ function switchShopTab(tab) {
 }
 window.switchShopTab = switchShopTab;
 
-// ── 3D dino rendering (Three.js) — same model used in-game and on the homepage ──
-let _heroScene = null, _heroCamera = null, _heroRenderer = null, _heroModel = null;
-
-function _initHeroRenderer() {
-  const canvas = document.getElementById('heroDinoCanvas');
-  if (!canvas || _heroRenderer) return;
-  _heroScene = new THREE.Scene();
-  _heroCamera = new THREE.PerspectiveCamera(35, canvas.width / canvas.height, 0.1, 20);
-  _heroCamera.position.set(0, 1.55, 3.4);
-  _heroCamera.lookAt(0, 1.0, 0);
-  _heroRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  _heroRenderer.setSize(canvas.width, canvas.height, false);
-  _heroScene.add(new THREE.AmbientLight(0xffffff, 0.95));
-  const dl = new THREE.DirectionalLight(0xffffff, 0.7);
-  dl.position.set(2, 4, 3);
-  _heroScene.add(dl);
+// ── 2D dino rendering — fast canvas-based drawing for homepage & shop previews ──
+function _hexToNum(h) { return parseInt(h.replace('#',''), 16); }
+function _numToRgba(n, a=1) { return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
+function _adjHex(n, amt) {
+  const clamp = v => Math.max(0, Math.min(255, v));
+  return (clamp(((n>>16)&255)+amt)<<16)|(clamp(((n>>8)&255)+amt)<<8)|clamp((n&255)+amt);
 }
 
-// Renders a static 3D dino preview onto any canvas (used for shop cards).
-// Reuses ONE shared offscreen WebGL renderer for all cards instead of creating a
-// new GL context per canvas — browsers cap concurrent WebGL contexts (~16), and the
-// shop list gets rebuilt every time the panel re-renders.
-let _sharedPreview = null;
-function _getSharedPreviewRenderer(w, h) {
-  if (!_sharedPreview) {
-    const canvas = document.createElement('canvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 20);
-    camera.position.set(1.6, 1.6, 3.0);
-    camera.lookAt(0, 1.0, 0);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.7);
-    dl.position.set(2, 4, 3);
-    scene.add(dl);
-    _sharedPreview = { canvas, renderer, scene, camera };
+function drawDinoCanvas(canvas, colorHex, scaleXMult=1) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const scale = Math.min(W / 100, H / 78);
+  ctx.save();
+  ctx.translate(W/2 - scaleXMult * 8 * scale, H/2 - 5*scale);
+  ctx.scale(scaleXMult * scale, scale);
+  const base = _hexToNum(colorHex);
+  const light = _adjHex(base, 70), dark = _adjHex(base, -70);
+  const belly = 0xf5e6c8;
+  const isPanda = colorHex === '#f5f5f5';
+  function sf(num, a=1) { ctx.fillStyle = _numToRgba(num, a); }
+  function ss(w, num, a=1) { ctx.strokeStyle = _numToRgba(num, a); ctx.lineWidth = w; }
+  function circ(x,y,r) { ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+  function scirc(x,y,r) { ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke(); }
+  function elps(cx,cy,w,h) { ctx.beginPath(); ctx.ellipse(cx,cy,w/2,h/2,0,0,Math.PI*2); ctx.fill(); }
+  function rrect(x,y,w,h,r) { ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); }
+  function tri(x1,y1,x2,y2,x3,y3) { ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.closePath(); ctx.fill(); }
+  function sline(x1,y1,x2,y2) { ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+  // Tail
+  const tpts=[[-16,-2],[-22,-5],[-28,-9],[-32,-13],[-34,-16],[-35,-18]],tsz=[12,10,8,6,4,2.5];
+  for(let i=tpts.length-1;i>=0;i--){sf(i===0?base:dark);circ(tpts[i][0],tpts[i][1],tsz[i]);}
+  sf(light,.20); circ(-16,-4,7);
+  // Back legs
+  sf(isPanda?0x111111:dark); rrect(-12,14,10,18,4); rrect(-2,14,10,18,4);
+  sf(isPanda?0x111111:_adjHex(base,-100)); rrect(-14,29,14,6,3); rrect(-4,29,14,6,3);
+  sf(0x222222); for(let c=0;c<3;c++){tri(-14+c*4,34,-13+c*4,37,-10+c*4,34);tri(-4+c*4,34,-3+c*4,37,0+c*4,34);}
+  // Body
+  sf(dark); elps(5,4,58,40); sf(base); elps(1,0,54,37);
+  sf(light,.55); elps(-6,-8,26,16);
+  sf(belly,.55); elps(6,9,26,20);
+  // Spikes
+  const sp=[[-8,-14],[-2,-16],[4,-16],[10,-15],[15,-13]],sh=[8,10,11,9,7];
+  sf(dark); for(let i=0;i<sp.length;i++){const[sx,sy]=sp[i],h=sh[i];tri(sx-5,sy+3,sx,sy-h,sx+5,sy+3);}
+  sf(0xffffff,.15); for(let i=0;i<sp.length;i++){const[sx,sy]=sp[i],h=sh[i];tri(sx-4,sy+2,sx,sy-h+1,sx,sy+2);}
+  // Arms
+  sf(isPanda?0x111111:dark); rrect(10,-4,8,12,3); rrect(16,4,7,8,3);
+  sf(0x222222); tri(16,11,15,14,20,12); tri(20,11,19,14,23,11);
+  // Neck
+  sf(dark); elps(20,-10,20,14); sf(base); elps(18,-12,17,12);
+  // Head
+  sf(dark); circ(31,-16,17); sf(base); circ(29,-18,15);
+  sf(light,.55); circ(23,-23,7);
+  // Snout
+  sf(dark); rrect(38,-24,17,11,4); sf(base); rrect(37,-25,15,10,3);
+  sf(light,.30); rrect(38,-25,7,4,2);
+  sf(_adjHex(base,-130)); circ(48,-21,2.2); circ(43,-21,2.2);
+  // Teeth + jaw
+  sf(0xffffff); tri(39,-15,42,-12,45,-15); tri(45,-15,48,-12,51,-15);
+  sf(dark); rrect(39,-14,15,8,3); sf(_adjHex(base,-40)); rrect(40,-13,13,6,2);
+  // Eye
+  sf(0xdddddd); circ(28,-23,5.5); sf(0xffffff); circ(27,-24,5);
+  sf(0x2b1400); circ(29,-23,3.2); sf(0x080808); circ(29,-23,1.8);
+  sf(0xffffff); circ(30,-24,1.4); sf(0xffffff,.6); circ(28,-25,.7);
+  ss(2.5,dark); sline(23,-28,33,-27);
+  // Panda markings
+  if (isPanda) {
+    sf(0x111111); circ(20,-32,6); circ(35,-31,6);
+    sf(0x111111,.85); elps(28,-23,15,12);
+    sf(0xffffff); circ(27,-24,5); sf(0x2b1400); circ(29,-23,3.2);
+    sf(0x080808); circ(29,-23,1.8); sf(0xffffff); circ(30,-24,1.4);
   }
-  const { canvas, renderer, camera } = _sharedPreview;
-  canvas.width = w; canvas.height = h;
-  camera.aspect = w / h; camera.updateProjectionMatrix();
-  renderer.setSize(w, h, false);
-  return _sharedPreview;
+  ctx.restore();
 }
-function render3DDinoStatic(targetCanvas, colorHex) {
-  const w = targetCanvas.width, h = targetCanvas.height;
-  const { canvas, renderer, scene, camera } = _getSharedPreviewRenderer(w, h);
-  const model = window.buildDino3DModel(THREE, colorHex);
-  model.rotation.y = -0.5;
-  scene.add(model);
-  renderer.render(scene, camera);
-  scene.remove(model);
-  const ctx2d = targetCanvas.getContext('2d');
-  ctx2d.clearRect(0, 0, w, h);
-  ctx2d.drawImage(canvas, 0, 0, w, h);
-}
+window.drawDinoCanvas = drawDinoCanvas;
 
-// ── Hero dino smooth directional tracking — real 3D rotation, not a 2D trick ──
-let _heroYawTarget = 0, _heroYawCurr = 0;
-let _heroPitchTarget = 0, _heroPitchCurr = 0;
-let _heroAnimRafId = null;
+// ── Hero dino smooth directional mirror tracking ──────────────────────────────
+let _heroCurrSX = 1, _heroTargetSX = 1, _heroAnimRafId = null;
 
 function _redrawHeroDino() {
   const canvas = document.getElementById('heroDinoCanvas');
   if (!canvas || canvas.style.display === 'none') return;
-  _initHeroRenderer();
   const sd = _shopData;
   const shop = window._lobbyShop;
   const skinId = sd?.equippedSkin || 'default';
   let color = '#4caf50';
-  if (shop) {
-    const skin = shop.skins.find(s => s.id === skinId);
-    if (skin) color = skin.color;
-  }
-  if (_heroModel && _heroModel.userData.color !== color) {
-    _heroScene.remove(_heroModel);
-    _heroModel = null;
-  }
-  if (!_heroModel) {
-    _heroModel = window.buildDino3DModel(THREE, color);
-    _heroModel.userData.color = color;
-    _heroScene.add(_heroModel);
-  }
-  _heroModel.rotation.y = _heroYawCurr;
-  _heroModel.rotation.x = _heroPitchCurr;
-  // Dynamically pull the camera back as the model turns sideways so the full body
-  // (it's much longer nose-to-tail than it is wide) always stays in frame, instead
-  // of clipping at the edges when rotated away from facing the camera.
-  const halfLength = 2.0, halfWidth = 0.65, margin = 1.3;
-  const apparentHalfWidth = Math.sqrt(
-    Math.pow(halfLength * Math.sin(_heroYawCurr), 2) + Math.pow(halfWidth * Math.cos(_heroYawCurr), 2)
-  );
-  const halfFov = (_heroCamera.fov / 2) * Math.PI / 180;
-  const dist = Math.max(3.0, (apparentHalfWidth * margin) / Math.tan(halfFov));
-  _heroCamera.position.set(0, 1.3, dist);
-  _heroCamera.lookAt(0, 0.65, 0);
-  _heroRenderer.render(_heroScene, _heroCamera);
+  if (shop) { const skin = shop.skins.find(s => s.id === skinId); if (skin) color = skin.color; }
+  drawDinoCanvas(canvas, color, _heroCurrSX);
   canvas.style.filter = `drop-shadow(0 0 18px ${color}99)`;
   try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'color', color })); } catch(e){}
 }
 window._redrawHeroDino = _redrawHeroDino;
 
 function _heroAnimStep() {
-  _heroYawCurr += (_heroYawTarget - _heroYawCurr) * 0.12;
-  _heroPitchCurr += (_heroPitchTarget - _heroPitchCurr) * 0.12;
+  _heroCurrSX += (_heroTargetSX - _heroCurrSX) * 0.12;
   _redrawHeroDino();
-  if (Math.abs(_heroYawTarget - _heroYawCurr) > 0.003 || Math.abs(_heroPitchTarget - _heroPitchCurr) > 0.003) {
+  if (Math.abs(_heroTargetSX - _heroCurrSX) > 0.004) {
     _heroAnimRafId = requestAnimationFrame(_heroAnimStep);
-  } else {
-    _heroYawCurr = _heroYawTarget; _heroPitchCurr = _heroPitchTarget;
-    _heroAnimRafId = null;
-  }
+  } else { _heroCurrSX = _heroTargetSX; _heroAnimRafId = null; }
 }
 
 document.addEventListener('mousemove', e => {
   const canvas = document.getElementById('heroDinoCanvas');
   if (!canvas || canvas.style.display === 'none') return;
   const rect = canvas.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const dx = e.clientX - cx;
-  const dy = e.clientY - cy;
+  const dx = e.clientX - (rect.left + rect.width / 2);
+  const dy = e.clientY - (rect.top + rect.height / 2);
   if (Math.hypot(dx, dy) < 5) return;
-  const maxR = 420;
-  _heroYawTarget = Math.max(-1.3, Math.min(1.3, -(dx / maxR) * 1.3));
-  _heroPitchTarget = Math.max(-0.35, Math.min(0.35, -(dy / maxR) * 0.35));
+  _heroTargetSX = -Math.cos(Math.atan2(dy, dx));
   if (!_heroAnimRafId) _heroAnimRafId = requestAnimationFrame(_heroAnimStep);
 });
 
@@ -2404,8 +2448,7 @@ function renderShopDinoCanvases() {
   let i = 0;
   function drawNext() {
     if (i >= canvases.length) return;
-    const canvas = canvases[i]; const color = canvas.dataset.color; i++;
-    render3DDinoStatic(canvas, color);
+    drawDinoCanvas(canvases[i++], canvases[i-1].dataset.color);
     requestAnimationFrame(drawNext);
   }
   requestAnimationFrame(drawNext);
@@ -2415,27 +2458,20 @@ function applyDinoSkin(skinId, customSkinData) {
   const canvas = document.getElementById('heroDinoCanvas');
   const customImg = document.getElementById('heroDinoCustomImg');
   if (!canvas || !customImg) return;
-
   if (skinId && skinId.startsWith('custom_')) {
     const csId = skinId.slice(7);
     const allSkins = _shopData?.customSkins || [];
     const slot = allSkins.find(s => s.id === csId);
     const src = slot?.base64 || customSkinData;
     if (src) {
-      customImg.src = src;
-      customImg.style.display = 'block';
-      canvas.style.display = 'none';
+      customImg.src = src; customImg.style.display = 'block'; canvas.style.display = 'none';
       try { localStorage.setItem('dt_skin_cache', JSON.stringify({ type:'custom', src })); } catch(e){}
       return;
     }
     skinId = 'default';
   }
-
   customImg.style.display = 'none';
   canvas.style.display = 'block';
-  const shop = window._lobbyShop;
-  const skin = shop ? (shop.skins.find(s => s.id === skinId) || shop.skins[0]) : { color:'#4caf50', spike:'#2d7a1e' };
-  if (_heroModel) { _heroScene.remove(_heroModel); _heroModel = null; } // force rebuild with new color
   _redrawHeroDino();
 }
 
@@ -3020,10 +3056,11 @@ function initSocket(token){
   s.on('inviteSent',u=>showToast(`📨 Invite sent to ${u}`));
   s.on('inviteDeclined',data=>showToast(`❌ ${data.username} declined your invite`));
 
-  // ── Game start → load Phaser dynamically, then start ──
+  // ── Game start → load appropriate engine, then start ──
   s.on('gameStarted', data => {
     showScreen('game');
-    loadGameScripts(() => {
+    const mode = data.renderMode || '3d';
+    loadGameScripts(mode, () => {
       window._pendingGameData = data;
       if (!window._gameInitialized) {
         window._gameInitialized = true;
