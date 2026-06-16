@@ -12,8 +12,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
-  pingTimeout: 8000,
-  pingInterval: 3000,
+  pingTimeout: 20000,
+  pingInterval: 10000,
 });
 
 const JWT_SECRET = 'dino_tycoon_secret_2024';
@@ -521,7 +521,7 @@ function createBot(room, difficulty='medium') {
   };
 }
 
-function tickBot(bot, room, dt) {
+function tickBot(bot, room, dt, allEntitiesArr, buildingsArr, wallBuildingsArr) {
   if (bot.isDead) return;
   const now = Date.now();
   bot.aiTimer -= dt;
@@ -586,11 +586,9 @@ function tickBot(bot, room, dt) {
   }
 
   // ── Find nearest enemy ──
-  const humans  = Object.values(room.players).filter(p => !p.isDead);
-  const otherBots = Object.values(room.bots).filter(b => b.id !== bot.id && !b.isDead);
-  const targets = [...humans, ...otherBots];
   let nearestEnemy = null, nearestDist = Infinity;
-  for (const p of targets) {
+  for (const p of allEntitiesArr) {
+    if (p === bot || p.isDead) continue;
     const d = dist(bot, p);
     const eff = p.isBot ? d + 150 : d; // prefer humans
     if (eff < nearestDist) { nearestDist = eff; nearestEnemy = p; }
@@ -635,8 +633,8 @@ function tickBot(bot, room, dt) {
   if (mdist > 10) {
     const nx = bot.x + (mdx/mdist) * bot.speed * dt;
     const ny = bot.y + (mdy/mdist) * bot.speed * dt;
-    const blockedByWall = Object.values(room.buildings).find(b => {
-      if (!b.hp || !isWallBuilding(b.upgradeId) || b.ownerId === bot.id) return false;
+    const blockedByWall = wallBuildingsArr.find(b => {
+      if (!b.hp || b.ownerId === bot.id) return false;
       const isH = (b.orientation||'h') === 'h';
       const hw = isH ? 28 : 9, hh = isH ? 9 : 28;
       return Math.abs(nx-b.x) < hw && Math.abs(ny-b.y) < hh;
@@ -654,7 +652,7 @@ function tickBot(bot, room, dt) {
 
   // ── Attack buildings on enemy base when hunting ──
   if (bot.aiState === 'hunt' && now - bot.lastAttack > 900) {
-    const nearBuilding = Object.values(room.buildings).find(b =>
+    const nearBuilding = buildingsArr.find(b =>
       b.ownerId !== bot.id && b.hp > 0 && dist(bot, b) < 200
     );
     if (nearBuilding) {
@@ -740,18 +738,19 @@ function startRoomLoop(room) {
     const now = Date.now();
     const dt = (now - lastTick) / 1000;
     lastTick = now;
-    const allPlayers = [...Object.values(room.players), ...Object.values(room.bots)];
-    for (const p of allPlayers) {
+    const allEntities = [...Object.values(room.players), ...Object.values(room.bots)];
+    for (const p of allEntities) {
       if (p.isDead) continue;
       p.money += p.mps * dt; p.totalEarned += p.mps * dt;
       if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
     }
-    // Tick bots
-    for (const bot of Object.values(room.bots)) tickBot(bot, room, dt);
+    // Tick bots — precompute shared arrays once per tick instead of per-bot to avoid O(bots*buildings) reallocation
+    const buildingsArr = Object.values(room.buildings);
+    const wallBuildingsArr = buildingsArr.filter(b => isWallBuilding(b.upgradeId));
+    for (const bot of Object.values(room.bots)) tickBot(bot, room, dt, allEntities, buildingsArr, wallBuildingsArr);
 
     // Tick buildings (turrets fire, traps trigger)
-    const allEntities = [...Object.values(room.players), ...Object.values(room.bots)];
-    for (const b of Object.values(room.buildings)) {
+    for (const b of buildingsArr) {
       if (b.hp <= 0) continue;
       if (b.defType === 'turret') {
         // Find nearest enemy (not the owner)
