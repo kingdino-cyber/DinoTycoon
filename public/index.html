@@ -749,7 +749,20 @@ canvas{display:block;}
         canvas.style.display = 'none';
       } else if (cached.color && window.buildDino3DModel && window.THREE) {
         canvas.style.display = 'block';
-        render3DDinoStatic(canvas, cached.color);
+        // Render directly with a WebGL context on this canvas (NOT the shared 2D-blit
+        // helper) — a canvas can only ever bind one context type for its lifetime, and
+        // the live hero renderer created later also needs a WebGL context on this canvas.
+        try {
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(35, canvas.width / canvas.height, 0.1, 20);
+          camera.position.set(0, 1.55, 3.4); camera.lookAt(0, 1.0, 0);
+          const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+          renderer.setSize(canvas.width, canvas.height, false);
+          scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+          const dl = new THREE.DirectionalLight(0xffffff, 0.7); dl.position.set(2, 4, 3); scene.add(dl);
+          scene.add(window.buildDino3DModel(THREE, cached.color));
+          renderer.render(scene, camera);
+        } catch (e) {}
         canvas.style.filter = `drop-shadow(0 0 18px ${cached.color}99)`;
       } else { requestAnimationFrame(tryApply); return; }
     }
@@ -1385,7 +1398,7 @@ canvas{display:block;}
 <script src="/socket.io/socket.io.js"></script>
 <!-- Three.js + shared 3D dino/building models — loaded now since the homepage hero
      dino renders in 3D too (not just the in-game first-person world) -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js" crossorigin="anonymous"></script>
 <script src="dino3d.js?v=2"></script>
 <!-- game3d.js (the first-person 3D engine) is loaded ONLY when the game actually starts -->
 <!-- This keeps the auth screen and lobby instantly responsive -->
