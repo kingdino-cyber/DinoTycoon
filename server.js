@@ -183,13 +183,14 @@ function isWallBuilding(upgradeId) {
 // Smart wall placement — snaps new wall adjacent to existing wall chain
 const WALL_STEP = 46;
 
-function getWallPlacement(room, player, upgradeId) {
+function getWallPlacement(room, player, upgradeId, dropX, dropY) {
   const ownerId = player.id || player.socketId;
   const myWalls = Object.values(room.buildings).filter(b =>
     b.ownerId === ownerId && isWallBuilding(b.upgradeId)
   );
 
-  const px = player.x, py = player.y;
+  const px = dropX !== undefined ? dropX : player.x;
+  const py = dropY !== undefined ? dropY : player.y;
 
   // ── Orientation: based on which direction the dino is facing ──
   // Facing left/right (horizontal) → horizontal wall (—)
@@ -249,6 +250,12 @@ function isInsideBase(player) {
   return Math.abs(player.x - base.x) < half && Math.abs(player.y - base.y) < half;
 }
 
+function isPositionInsideBase(player, x, y) {
+  const base = padCenter(player.padIdx || 0);
+  const half = PAD_SIZE / 2;
+  return Math.abs(x - base.x) < half && Math.abs(y - base.y) < half;
+}
+
 const MAX_BUILDINGS_PER_OWNER = 40; // caps base sprawl — keeps server tick cost and client render cost bounded
 
 function countOwnerBuildings(room, ownerId) {
@@ -257,14 +264,20 @@ function countOwnerBuildings(room, ownerId) {
   return c;
 }
 
-function placeBuilding(room, player, upgradeId) {
+function placeBuilding(room, player, upgradeId, targetPos) {
   const bd = BUILDING_DATA[upgradeId]; if (!bd) return;
   const isIncome  = bd.type === 'income';
   const isDefense = bd.type === 'defense';
   if (!isIncome && !isDefense) return;
 
   let bx, by, wallOrientation = 'h';
-  if (isDefense && isWallBuilding(upgradeId) && isInsideBase(player)) {
+  if (targetPos && isDefense && isWallBuilding(upgradeId)) {
+    const pos = getWallPlacement(room, player, upgradeId, targetPos.x, targetPos.y);
+    bx = pos.x; by = pos.y; wallOrientation = pos.orientation || 'h';
+  } else if (targetPos) {
+    // Dragged-and-dropped from the shop onto a specific spot in the base
+    bx = targetPos.x; by = targetPos.y;
+  } else if (isDefense && isWallBuilding(upgradeId) && isInsideBase(player)) {
     const pos = getWallPlacement(room, player, upgradeId);
     bx = pos.x; by = pos.y; wallOrientation = pos.orientation || 'h';
   } else if (isInsideBase(player)) {
@@ -1534,11 +1547,20 @@ io.on('connection', (socket) => {
     emitToRoom(room, 'dropCollected', { dropId, playerId: socket.id, money: p.money });
   });
 
-  socket.on('buyUpgrade', (upgradeId) => {
+  socket.on('buyUpgrade', (payload) => {
     const room = rooms[socketRoom[socket.id]]; if (!room) return;
     const p = room.players[socket.id]; if (!p) return;
+    const upgradeId = typeof payload === 'string' ? payload : payload?.upgradeId;
+    const targetPos = (payload && typeof payload === 'object' && payload.x !== undefined && payload.y !== undefined)
+      ? { x: payload.x, y: payload.y } : null;
     const upg = UPGRADES[upgradeId]; if (!upg) return;
     const isBuild = upg.cat === 'build';
+    const placesBuilding = isBuild || upg.cat === 'income';
+
+    // Build/income items spawn a building — dragged-and-dropped onto a spot in your own base
+    if (placesBuilding && targetPos && !isPositionInsideBase(p, targetPos.x, targetPos.y)) {
+      socket.emit('upgradeError', 'Must place inside your own base!'); return;
+    }
 
     // Build items can be bought unlimited times; stat upgrades only once
     if (!isBuild && p.upgrades.includes(upgradeId)) return;
@@ -1558,8 +1580,9 @@ io.on('connection', (socket) => {
     socket.emit('upgradeSuccess', { upgradeId, money: p.money, stats: calcStats(p.upgrades) });
     emitToRoom(room, 'playerUpgraded', { id: socket.id, upgradeId });
 
-    // Place building (income or defense) — spawns at player's feet if inside their base
-    placeBuilding(room, p, upgradeId);
+    // Place building (income or defense) — at the dropped position if dragged from the
+    // shop, otherwise falls back to the legacy "place near where you're standing" behavior
+    placeBuilding(room, p, upgradeId, targetPos);
   });
 
   socket.on('wallContact', (buildingId) => {

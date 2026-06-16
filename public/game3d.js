@@ -172,6 +172,8 @@ class Game3D {
     });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
+      const ch = document.getElementById('crosshair');
+      if (ch) ch.classList.toggle('hidden', !this.locked);
     });
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
@@ -182,6 +184,45 @@ class Game3D {
     });
     window.addEventListener('keydown', (e) => { this.keys[e.code] = true; });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
+  }
+
+  // Projects a screen point onto the ground plane (y=0) and returns server-unit (x,y).
+  // Used by the shop's drag-and-drop building placement.
+  screenToServerXY(clientX, clientY) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndcX = ((clientX - rect.left) / rect.width) * 2 - 1;
+    const ndcY = -((clientY - rect.top) / rect.height) * 2 + 1;
+    this._raycaster.setFromCamera({ x: ndcX, y: ndcY }, this.camera);
+    const ray = this._raycaster.ray;
+    if (Math.abs(ray.direction.y) < 1e-6) return null;
+    const t = -ray.origin.y / ray.direction.y;
+    if (t < 0) return null;
+    const wx = ray.origin.x + ray.direction.x * t;
+    const wz = ray.origin.z + ray.direction.z * t;
+    return { x: wx / WU, y: wz / WU };
+  }
+
+  // Semi-transparent preview of the building being dragged from the shop
+  updateBuildGhost(upgradeId, clientX, clientY) {
+    const pos = this.screenToServerXY(clientX, clientY);
+    if (!pos) return;
+    if (this._ghost && this._ghostUpgradeId !== upgradeId) {
+      this.scene.remove(this._ghost);
+      this._ghost = null;
+    }
+    if (!this._ghost) {
+      this._ghost = window.buildBuilding3DModel(THREE, upgradeId, this.myPlayer?.color || '#4caf50');
+      this._ghost.traverse(o => {
+        if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.5; }
+      });
+      this._ghostUpgradeId = upgradeId;
+      this.scene.add(this._ghost);
+    }
+    this._ghost.position.set(sx(pos.x), 0, sz(pos.y));
+  }
+
+  hideBuildGhost() {
+    if (this._ghost) { this.scene.remove(this._ghost); this._ghost = null; this._ghostUpgradeId = null; }
   }
 
   tryAttackOrCollect() {
@@ -276,7 +317,7 @@ class Game3D {
     this.scene.add(group);
 
     const hpSprite = makeHPBarSprite();
-    hpSprite.position.set(0, 1.8, 0);
+    hpSprite.position.set(0, 2.8, 0); // above the tallest structure (towers reach ~2.4)
     group.add(hpSprite);
     redrawHPSprite(hpSprite, b.hp, b.maxHp);
 

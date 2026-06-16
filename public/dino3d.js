@@ -167,8 +167,8 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       addBox(1.1, 0.4, 1.1, 0xf0e6c8, 0, 0.2, 0);
       break;
     case 'bonePile2':
-      addBox(1.4, 0.9, 1.4, 0x554433, 0, 0.45, 0);
-      addBox(0.8, 0.6, 0.8, 0x1a1a10, 0, 0.5, 0);
+      addBox(1.4, 1.2, 1.4, 0x554433, 0, 0.6, 0);
+      addBox(0.8, 0.7, 0.8, 0x1a1a10, 0, 0.65, 0);
       break;
     case 'bonePile3': {
       const dome = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xffd700 }));
@@ -176,21 +176,21 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       break;
     }
     case 'bonePile4':
-      addBox(1.8, 1.1, 1.4, 0xccbbaa, 0, 0.55, 0);
-      { const roof = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.7, 4), new THREE.MeshLambertMaterial({ color: 0x665544 })); roof.position.y = 1.45; roof.rotation.y = Math.PI / 4; group.add(roof); }
+      addBox(1.8, 1.4, 1.4, 0xccbbaa, 0, 0.7, 0);
+      { const roof = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.7, 4), new THREE.MeshLambertMaterial({ color: 0x665544 })); roof.position.y = 1.75; roof.rotation.y = Math.PI / 4; group.add(roof); }
       break;
     case 'bonePile5':
-      addBox(2.0, 1.4, 1.6, 0xaaddff, 0, 0.7, 0);
-      { const dome = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffd700 })); dome.position.y = 1.6; group.add(dome); }
+      addBox(2.0, 1.8, 1.6, 0xaaddff, 0, 0.9, 0);
+      { const dome = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffd700 })); dome.position.y = 2.0; group.add(dome); }
       break;
     case 'fossilFortress':
-      addBox(1.8, 1.3, 1.8, 0x887766, 0, 0.65, 0);
-      addBox(0.5, 1.7, 0.5, 0x887766, -0.8, 0.85, 0);
-      addBox(0.5, 1.7, 0.5, 0x887766, 0.8, 0.85, 0);
-      { const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1, 8), darkMat); barrel.rotation.z = Math.PI / 2; barrel.position.set(0.9, 0.7, 0); group.add(barrel); }
+      addBox(1.8, 1.8, 1.8, 0x887766, 0, 0.9, 0);
+      addBox(0.5, 2.4, 0.5, 0x887766, -0.8, 1.2, 0);
+      addBox(0.5, 2.4, 0.5, 0x887766, 0.8, 1.2, 0);
+      { const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1, 8), darkMat); barrel.rotation.z = Math.PI / 2; barrel.position.set(0.9, 1.0, 0); group.add(barrel); }
       break;
     case 'stoneWall':
-      addBox(1.8, 0.9, 0.45, 0x888880, 0, 0.45, 0);
+      addBox(1.8, 1.8, 0.45, 0x888880, 0, 0.9, 0);
       break;
     case 'spikeTrap':
       addBox(1.6, 0.15, 1.6, 0x444400, 0, 0.08, 0);
@@ -205,10 +205,10 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       break;
     }
     case 'dinoTurret': {
-      const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 1.3, 8), new THREE.MeshLambertMaterial({ color: 0xaa8866 }));
-      tower.position.y = 0.65; group.add(tower);
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2.0, 8), new THREE.MeshLambertMaterial({ color: 0xaa8866 }));
+      tower.position.y = 1.0; group.add(tower);
       const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.9, 8), darkMat);
-      barrel.rotation.z = Math.PI / 2; barrel.position.set(0.6, 1.0, 0); group.add(barrel);
+      barrel.rotation.z = Math.PI / 2; barrel.position.set(0.6, 1.5, 0); group.add(barrel);
       break;
     }
     case 'lavaPit': {
@@ -217,8 +217,8 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       break;
     }
     case 'iceTower': {
-      const tower = new THREE.Mesh(new THREE.ConeGeometry(0.55, 1.6, 6), new THREE.MeshLambertMaterial({ color: 0x99eeff }));
-      tower.position.y = 0.8; group.add(tower);
+      const tower = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.4, 6), new THREE.MeshLambertMaterial({ color: 0x99eeff }));
+      tower.position.y = 1.2; group.add(tower);
       break;
     }
     case 'boneCannon':
@@ -226,10 +226,10 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       { const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.3, 8), new THREE.MeshLambertMaterial({ color: 0xeeeedd })); barrel.rotation.z = Math.PI / 2; barrel.position.set(0.8, 0.5, 0); group.add(barrel); }
       break;
     case 'healingTotem': {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 6), new THREE.MeshLambertMaterial({ color: 0x8855dd }));
-      pole.position.y = 0.7; group.add(pole);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.0, 6), new THREE.MeshLambertMaterial({ color: 0x8855dd }));
+      pole.position.y = 1.0; group.add(pole);
       const orb = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshLambertMaterial({ color: 0xff66ff }));
-      orb.position.y = 1.5; group.add(orb);
+      orb.position.y = 2.1; group.add(orb);
       break;
     }
     case 'tarPit': {
