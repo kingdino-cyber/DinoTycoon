@@ -3064,7 +3064,7 @@ function initSocket(token){
       window._pendingGameData = data;
       if (!window._gameInitialized) {
         window._gameInitialized = true;
-        startPhaserGame();
+        window.startPhaserGame();
       }
       if (window._gameReady) window.onGameReady(data);
     });
