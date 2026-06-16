@@ -1072,6 +1072,8 @@ function startPhaserGame() {
   },100);
 }
 
+window.startPhaserGame = startPhaserGame;
+
 // ── Game data init ────────────────────────────────────────────────────────────
 window.onGameReady = function(data) {
   const s = window._gameScene;
