@@ -1,16 +1,17 @@
-// ── Dino Tycoon — First-Person 3D Engine (Three.js) ─────────────────────────
+// ── Dino Tycoon — Third-Person 3D Engine (Three.js) ──────────────────────────
 // Replaces the old Phaser top-down renderer. The server protocol is 100%
 // unchanged: it's still authoritative over a flat (x,y) plane. Here we map
 // server x,y -> three.js x,z (height/y is always ~ground level), and render
-// a real first-person 3D world on top of the exact same socket events.
+// a real over-the-shoulder rear-view 3D world on top of the exact same socket events.
 'use strict';
 
 const WORLD_SIZE = 3200;
 const PAD_SIZE = 620;
-const WU = 1 / 40;          // server units -> three.js units
-const EYE_HEIGHT = 1.55;    // camera height above ground, in three.js units
+const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
 const REACH = 320;          // server units — matches old click-to-attack reach
 const PICKUP_RADIUS = 95;   // server units — auto-collect drops within this range
+const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
+const CAM_BASE_HEIGHT = 2.0;// camera height above ground
 
 const PADS_DATA = [
   { x:100,  y:100,  hex:0xe84393 },
@@ -68,24 +69,25 @@ function redrawHPSprite(spr, hp, maxHp) {
 class Game3D {
   constructor(container) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0d1f0d);
-    this.scene.fog = new THREE.Fog(0x0d1f0d, 25, 70);
+    const skyColor = 0x6ec6ff; // sunny sky blue
+    this.scene.background = new THREE.Color(skyColor);
+    this.scene.fog = new THREE.Fog(skyColor, 45, 130);
 
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
+    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 300);
+    this.scene.add(this.camera);
+    // yawObject/pitchObject are NOT added to the scene — they're just lightweight
+    // rotation accumulators for mouse-look (third-person camera is positioned
+    // manually behind the player each frame in update(), see below)
     this.yawObject = new THREE.Object3D();
     this.pitchObject = new THREE.Object3D();
-    this.pitchObject.add(this.camera);
-    this.yawObject.add(this.pitchObject);
-    this.yawObject.position.set(0, EYE_HEIGHT, 0);
-    this.scene.add(this.yawObject);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(this.renderer.domElement);
 
-    // Lighting
-    this.scene.add(new THREE.AmbientLight(0x8899aa, 0.8));
-    const sun = new THREE.DirectionalLight(0xfff4dd, 0.9);
+    // Lighting — bright sunny daytime
+    this.scene.add(new THREE.AmbientLight(0xcce4ff, 1.0));
+    const sun = new THREE.DirectionalLight(0xfff8e0, 1.1);
     sun.position.set(50, 80, 30);
     this.scene.add(sun);
 
@@ -118,15 +120,15 @@ class Game3D {
 
   buildWorld() {
     const W = WORLD_SIZE * WU;
-    // Ground
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x0d2a0d });
+    // Ground — bright sunny grass
+    const groundMat = new THREE.MeshLambertMaterial({ color: 0x3cb043 });
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(W, W), groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(W / 2, 0, W / 2);
     this.scene.add(ground);
 
     // Grid lines for depth perception
-    const grid = new THREE.GridHelper(W, 32, 0x1a3a1a, 0x1a3a1a);
+    const grid = new THREE.GridHelper(W, 32, 0x2d8a35, 0x2d8a35);
     grid.position.set(W / 2, 0.01, W / 2);
     this.scene.add(grid);
 
@@ -176,7 +178,7 @@ class Game3D {
       const sens = 0.0022;
       this.yawObject.rotation.y -= e.movementX * sens;
       this.pitchObject.rotation.x -= e.movementY * sens;
-      this.pitchObject.rotation.x = Math.max(-1.3, Math.min(1.3, this.pitchObject.rotation.x));
+      this.pitchObject.rotation.x = Math.max(-0.55, Math.min(0.65, this.pitchObject.rotation.x));
     });
     window.addEventListener('keydown', (e) => { this.keys[e.code] = true; });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
@@ -243,10 +245,7 @@ class Game3D {
     const obj = { group, nameSprite, hpSprite, data: { ...data }, walkPhase: 0 };
     this.playerObjs[data.id] = obj;
     this.setPos(data.id, data.x, data.y, data.dir || 0);
-
-    if (data.id === this.myId) {
-      group.visible = false; // first-person — don't render own body
-    }
+    // Third person — own dino is visible (camera follows behind it), unlike first-person
     return obj;
   }
 
@@ -261,9 +260,6 @@ class Game3D {
     obj.group.position.set(sx(x), 0, sz(y));
     if (dir !== undefined) { obj.group.rotation.y = dirToRotY(dir); obj.data.dir = dir; }
     obj.data.x = x; obj.data.y = y;
-    if (id === this.myId) {
-      this.yawObject.position.set(sx(x), EYE_HEIGHT, sz(y));
-    }
   }
 
   redrawHP(hpSpriteOrObjId, hp, maxHp) {
@@ -365,11 +361,16 @@ class Game3D {
 
   update(dt) {
     if (typeof _paused !== 'undefined' && _paused) return;
+    const phi = this.yawObject.rotation.y;     // mouse-controlled facing yaw (also the dino model's rotation.y)
+    const pitch = this.pitchObject.rotation.x; // mouse-controlled camera pitch, clamped in setupInput
+
     if (this.myPlayer && this.myId && !this.myPlayer.isDead && this._countdown <= 0) {
       const speed = (this.myPlayer.speed || 260) * WU;
+      // forward/right use the SAME convention as the dino model's facing (rotation.y = phi
+      // means the model's front points toward (sin(phi), cos(phi)) in x,z)
+      const forward = { x: Math.sin(phi), z: Math.cos(phi) };
+      const right   = { x: Math.cos(phi), z: -Math.sin(phi) };
       let mx = 0, mz = 0;
-      const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, this.yawObject.rotation.y, 0));
-      const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, this.yawObject.rotation.y, 0));
       if (this.keys['KeyW'] || this.keys['ArrowUp'])    { mx += forward.x; mz += forward.z; }
       if (this.keys['KeyS'] || this.keys['ArrowDown'])  { mx -= forward.x; mz -= forward.z; }
       if (this.keys['KeyA'] || this.keys['ArrowLeft'])  { mx -= right.x; mz -= right.z; }
@@ -377,8 +378,8 @@ class Game3D {
       const mlen = Math.hypot(mx, mz);
       if (mlen > 0.001) {
         mx /= mlen; mz /= mlen;
-        let nx = this.yawObject.position.x + mx * speed * dt;
-        let nz = this.yawObject.position.z + mz * speed * dt;
+        let nx = sx(this.myPlayer.x) + mx * speed * dt;
+        let nz = sz(this.myPlayer.y) + mz * speed * dt;
         const W = WORLD_SIZE * WU;
         nx = Math.max(0.5, Math.min(W - 0.5, nx));
         nz = Math.max(0.5, Math.min(W - 0.5, nz));
@@ -392,18 +393,43 @@ class Game3D {
           return Math.abs(sxToServer - b.data.x) < hw && Math.abs(szToServer - b.data.y) < hh;
         });
         if (!blocked) {
-          this.yawObject.position.x = nx;
-          this.yawObject.position.z = nz;
           this.myPlayer.x = sxToServer; this.myPlayer.y = szToServer;
         }
 
-        const dir = Math.atan2(mz, mx);
+        // theta is chosen so dirToRotY(theta) === phi, keeping other clients' rendering consistent
+        const theta = Math.PI / 2 - phi;
         const now = performance.now();
         if (now - this.lastMoveEmit > 48) {
-          window.gameSocket.emit('move', { x: this.myPlayer.x, y: this.myPlayer.y, dir });
+          window.gameSocket.emit('move', { x: this.myPlayer.x, y: this.myPlayer.y, dir: theta });
           this.lastMoveEmit = now;
         }
       }
+    }
+
+    // Own dino model + rear-view camera follow every frame (even when standing still,
+    // since looking around with the mouse should still orbit the camera)
+    if (this.myPlayer) {
+      const myObj = this.playerObjs[this.myId];
+      const px = sx(this.myPlayer.x), pz = sz(this.myPlayer.y);
+      if (myObj) {
+        myObj.group.position.set(px, 0, pz);
+        myObj.group.rotation.y = phi;
+        myObj.group.visible = !this.myPlayer.isDead;
+        myObj.data.x = this.myPlayer.x; myObj.data.y = this.myPlayer.y;
+      }
+      const forwardCam = { x: Math.sin(phi), z: Math.cos(phi) };
+      const pitchLift = Math.sin(pitch) * 1.8;
+      const pitchPull = Math.cos(pitch); // pulls camera in slightly when looking far up/down
+      let shakeX = 0, shakeY = 0;
+      if (this._shakeUntil && performance.now() < this._shakeUntil) {
+        shakeX = (Math.random() - 0.5) * 0.12; shakeY = (Math.random() - 0.5) * 0.12;
+      }
+      this.camera.position.set(
+        px - forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
+        CAM_BASE_HEIGHT + pitchLift + shakeY,
+        pz - forwardCam.z * CAM_DISTANCE * pitchPull
+      );
+      this.camera.lookAt(px, 1.3, pz);
     }
 
     // Auto-collect nearby drops
@@ -461,7 +487,6 @@ window.onGameReady = function (data) {
   s._countdown = 5;
 
   s.spawnPlayer(data.myPlayer);
-  s.yawObject.position.set(sx(data.myPlayer.x), EYE_HEIGHT, sz(data.myPlayer.y));
   for (const p of data.allPlayers) if (p.id !== data.myPlayer.id) s.spawnPlayer(p);
   for (const b of data.allBots) s.spawnPlayer(b);
   for (const b of (data.buildings || [])) s.spawnBuilding(b);
@@ -525,13 +550,7 @@ function setupGameSocketEvents() {
         scene.myPlayer.x = knockback.x; scene.myPlayer.y = knockback.y;
         scene.setPos(scene.myId, knockback.x, knockback.y);
         if ((window.GAME_SETTINGS || {}).cameraShake !== false) {
-          const orig = scene.camera.position.clone();
-          let t = 0;
-          const shake = () => {
-            t++; scene.camera.position.set(orig.x + (Math.random() - 0.5) * 0.05, orig.y + (Math.random() - 0.5) * 0.05, orig.z);
-            if (t < 8) requestAnimationFrame(shake); else scene.camera.position.copy(orig);
-          };
-          shake();
+          scene._shakeUntil = performance.now() + 200; // consumed by update()'s camera positioning each frame
         }
       } else {
         scene.setPos(targetId, knockback.x, knockback.y);
