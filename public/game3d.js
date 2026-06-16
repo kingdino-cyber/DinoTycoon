@@ -148,7 +148,7 @@ class Game3D {
     for (const pad of PADS_DATA) {
       const cx = sx(pad.x + PAD_SIZE / 2), cz = sz(pad.y + PAD_SIZE / 2);
       const plat = new THREE.Mesh(
-        new THREE.CylinderGeometry(PAD_SIZE * WU * 0.55, PAD_SIZE * WU * 0.55, 0.1, 24),
+        new THREE.CylinderGeometry(PAD_SIZE * WU * 0.85, PAD_SIZE * WU * 0.85, 0.1, 24),
         new THREE.MeshLambertMaterial({ color: pad.hex, transparent: true, opacity: 0.35 })
       );
       plat.position.set(cx, 0.05, cz);
@@ -369,7 +369,7 @@ class Game3D {
       // forward/right use the SAME convention as the dino model's facing (rotation.y = phi
       // means the model's front points toward (sin(phi), cos(phi)) in x,z)
       const forward = { x: Math.sin(phi), z: Math.cos(phi) };
-      const right   = { x: Math.cos(phi), z: -Math.sin(phi) };
+      const right   = { x: -Math.cos(phi), z: Math.sin(phi) };
       let mx = 0, mz = 0;
       if (this.keys['KeyW'] || this.keys['ArrowUp'])    { mx += forward.x; mz += forward.z; }
       if (this.keys['KeyS'] || this.keys['ArrowDown'])  { mx -= forward.x; mz -= forward.z; }
