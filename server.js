@@ -262,7 +262,6 @@ function placeBuilding(room, player, upgradeId) {
   const isIncome  = bd.type === 'income';
   const isDefense = bd.type === 'defense';
   if (!isIncome && !isDefense) return;
-  if (countOwnerBuildings(room, player.id || player.socketId) >= MAX_BUILDINGS_PER_OWNER) return;
 
   let bx, by, wallOrientation = 'h';
   if (isDefense && isWallBuilding(upgradeId) && isInsideBase(player)) {
@@ -1541,9 +1540,8 @@ io.on('connection', (socket) => {
     const upg = UPGRADES[upgradeId]; if (!upg) return;
     const isBuild = upg.cat === 'build';
 
-    // Build items can be bought repeatedly (up to a base-size cap); stat upgrades only once
+    // Build items can be bought unlimited times; stat upgrades only once
     if (!isBuild && p.upgrades.includes(upgradeId)) return;
-    if (isBuild && countOwnerBuildings(room, socket.id) >= MAX_BUILDINGS_PER_OWNER) { socket.emit('upgradeError','Base is full — destroy old buildings to build more!'); return; }
     if (upg.req && !p.upgrades.includes(upg.req)) { socket.emit('upgradeError',`Requires ${UPGRADES[upg.req].name}!`); return; }
     const diffMult = room.difficulty==='easy' ? 0.3 : room.difficulty==='hard' ? 1.5 : 1.0;
     const actualCost = Math.max(1, Math.round(upg.cost * diffMult));
