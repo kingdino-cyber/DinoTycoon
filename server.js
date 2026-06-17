@@ -1553,6 +1553,19 @@ io.on('connection', (socket) => {
     handleAttack(atk, tgt, room);
   });
 
+  socket.on('collectPadDrops', () => {
+    const room = rooms[socketRoom[socket.id]]; if (!room) return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    const pad = PADS[p.padIdx]; if (!pad) return;
+    for (let i = room.moneyDrops.length - 1; i >= 0; i--) {
+      const drop = room.moneyDrops[i];
+      if (drop.x < pad.x || drop.x > pad.x + PAD_SIZE || drop.y < pad.y || drop.y > pad.y + PAD_SIZE) continue;
+      p.money += drop.amount; p.totalEarned += drop.amount;
+      room.moneyDrops.splice(i, 1);
+      emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: socket.id, money: p.money });
+    }
+  });
+
   socket.on('collectDrop', (dropId) => {
     const room = rooms[socketRoom[socket.id]]; if (!room) return;
     const p = room.players[socket.id]; if (!p||p.isDead) return;

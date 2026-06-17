@@ -30,17 +30,17 @@ function hexStr2num(s) { return parseInt(s.replace('#', ''), 16); }
 
 function makeTextSprite(text) {
   const c = document.createElement('canvas');
-  c.width = 128; c.height = 48;
+  c.width = 256; c.height = 80;
   const ctx = c.getContext('2d');
-  ctx.font = 'bold 22px sans-serif';
+  ctx.font = 'bold 44px sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
-  ctx.strokeText(text, 64, 24);
-  ctx.fillStyle = '#ffd700';
-  ctx.fillText(text, 64, 24);
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 9;
+  ctx.strokeText(text, 128, 40);
+  ctx.fillStyle = '#ffe433';
+  ctx.fillText(text, 128, 40);
   const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false });
   const sp = new THREE.Sprite(mat);
-  sp.scale.set(0.55, 0.22, 1);
+  sp.scale.set(1.1, 0.38, 1);
   return sp;
 }
 
@@ -187,8 +187,6 @@ class Game3D {
     });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
-      const ch = document.getElementById('crosshair');
-      if (ch) ch.classList.toggle('hidden', !this.locked);
     });
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
@@ -197,7 +195,13 @@ class Game3D {
       this.pitchObject.rotation.x -= e.movementY * sens;
       this.pitchObject.rotation.x = Math.max(-0.55, Math.min(0.65, this.pitchObject.rotation.x));
     });
-    window.addEventListener('keydown', (e) => { this.keys[e.code] = true; });
+    window.addEventListener('keydown', (e) => {
+      this.keys[e.code] = true;
+      if (e.code === 'Space' && this.locked && window.gameSocket) {
+        e.preventDefault();
+        window.gameSocket.emit('collectPadDrops');
+      }
+    });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
   }
 
