@@ -164,6 +164,8 @@ class Game3D {
   setupInput() {
     const canvas = this.renderer.domElement;
     canvas.addEventListener('click', () => {
+      // Don't re-acquire pointer lock while shop/pause overlay is open
+      if (typeof _paused !== 'undefined' && _paused) return;
       if (!this.locked) { canvas.requestPointerLock(); return; }
       this.tryAttackOrCollect();
     });
@@ -174,7 +176,7 @@ class Game3D {
     });
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
-      const sens = 0.0022;
+      const sens = window.GAME_SETTINGS?.sensitivity3d ?? 0.0022;
       this.yawObject.rotation.y -= e.movementX * sens;
       this.pitchObject.rotation.x -= e.movementY * sens;
       this.pitchObject.rotation.x = Math.max(-0.55, Math.min(0.65, this.pitchObject.rotation.x));
@@ -452,6 +454,7 @@ class Game3D {
       if (myObj) {
         myObj.group.position.set(px, 0, pz);
         myObj.group.rotation.y = phi;
+        myObj.group.rotation.x = -pitch * 0.4; // tilt dino body when looking up/down
         myObj.group.visible = !this.myPlayer.isDead;
         myObj.data.x = this.myPlayer.x; myObj.data.y = this.myPlayer.y;
       }

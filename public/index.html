@@ -380,7 +380,7 @@ canvas{display:block;}
 
 /* ── HUD ── */
 #hud{position:fixed;top:0;left:0;right:0;z-index:100;pointer-events:none;}
-#crosshair{position:fixed;top:50%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;
+#crosshair{position:fixed;top:38%;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;
   z-index:101;pointer-events:none;}
 #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.85);
   box-shadow:0 0 2px rgba(0,0,0,.9);}
@@ -1508,32 +1508,23 @@ let currentUser = null;
 let currentRoom = null;
 let isHost = false;
 let roomPublicFlag = true;
-let _gameScriptsLoaded = false;
-let _gameScriptsLoading = false;
-let _loadedRenderMode = null; // track which engine is loaded ('2d' or '3d')
+// Per-mode load tracking — both files are IIFEs so loading both is safe (no const conflicts)
+const _engineLoaded = { '2d': false, '3d': false };
+const _engineLoading = { '2d': false, '3d': false };
+let _loadedRenderMode = null; // most recently active engine
 let _socketAuthed = false;  // true only after server confirms auth via lobbyReady
 
-// Dynamically load the appropriate game engine when a match starts.
-// 3D mode: Three.js → dino3d.js → game3d.js
-// 2D mode: Phaser → game.js
-// Both game files are wrapped in IIFEs so their const declarations don't conflict.
 function loadGameScripts(mode, cb) {
-  if (_gameScriptsLoaded && _loadedRenderMode === mode) { cb(); return; }
-  if (_gameScriptsLoading) { setTimeout(() => loadGameScripts(mode, cb), 100); return; }
-  // Different engine already loaded — need a fresh page to switch
-  if (_gameScriptsLoaded && _loadedRenderMode !== mode) {
-    showToast('🔄 Switching engine — reloading page...', 2000);
-    setTimeout(() => window.location.reload(), 2100);
-    return;
-  }
-  _gameScriptsLoading = true;
+  if (_engineLoaded[mode]) { _loadedRenderMode = mode; cb(); return; }
+  if (_engineLoading[mode]) { setTimeout(() => loadGameScripts(mode, cb), 100); return; }
+  _engineLoading[mode] = true;
   _loadedRenderMode = mode;
 
-  function appendScript(src, opts, onLoad, onErr) {
+  function appendScript(src, opts, onLoad) {
     const s = document.createElement('script');
     s.src = src;
     if (opts?.crossOrigin) s.crossOrigin = opts.crossOrigin;
-    s.onerror = onErr || (() => showToast('❌ Failed to load game engine', 5000));
+    s.onerror = () => showToast('❌ Failed to load game engine', 5000);
     s.onload = onLoad;
     document.head.appendChild(s);
   }
@@ -1541,16 +1532,16 @@ function loadGameScripts(mode, cb) {
   if (mode === '2d') {
     showToast('🗺️ Loading 2D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
-      appendScript('game.js?v=' + Date.now(), null, () => {
-        _gameScriptsLoaded = true; _gameScriptsLoading = false; cb();
+      appendScript('game.js?v=2', null, () => {
+        _engineLoaded['2d'] = true; _engineLoading['2d'] = false; cb();
       });
     });
   } else {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=2', null, () => {
-        appendScript('game3d.js?v=' + Date.now(), null, () => {
-          _gameScriptsLoaded = true; _gameScriptsLoading = false; cb();
+        appendScript('game3d.js?v=2', null, () => {
+          _engineLoaded['3d'] = true; _engineLoading['3d'] = false; cb();
         });
       });
     });
@@ -1747,6 +1738,8 @@ function applySettings() {
 function openSettingsModal() {
   window.SFX?.pop();
   loadSettings();
+  const sensVal = GAME_SETTINGS.sensitivity3d ?? 0.0022;
+  const sensDisplay = Math.round(sensVal * 10000);
   document.getElementById('settingsContent').innerHTML = SETTINGS_DEFS.map(d => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
       <div>
@@ -1754,7 +1747,22 @@ function openSettingsModal() {
         <div style="color:#557755;font-size:.72rem;margin-top:2px;">${d.desc}</div>
       </div>
       <button class="toggle ${GAME_SETTINGS[d.key]?'on':''}" id="setting_${d.key}" onclick="this.classList.toggle('on')"></button>
-    </div>`).join('');
+    </div>`).join('') + `
+    <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">🎯 3D Mouse Sensitivity</div>
+          <div style="color:#557755;font-size:.72rem;margin-top:2px;">How fast the camera turns in 3D mode</div>
+        </div>
+        <span id="sensDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${sensDisplay}</span>
+      </div>
+      <input type="range" id="setting_sensitivity3d" min="5" max="80" value="${sensDisplay}"
+        style="width:100%;accent-color:#4caf50;"
+        oninput="document.getElementById('sensDisplay').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
+        <span>Slow</span><span>Default (22)</span><span>Fast</span>
+      </div>
+    </div>`;
   document.getElementById('settingsModal').classList.remove('hidden');
 }
 
@@ -1762,6 +1770,8 @@ function saveSettings() {
   for (const d of SETTINGS_DEFS) {
     GAME_SETTINGS[d.key] = document.getElementById('setting_'+d.key).classList.contains('on');
   }
+  const sensSlider = document.getElementById('setting_sensitivity3d');
+  if (sensSlider) GAME_SETTINGS.sensitivity3d = parseInt(sensSlider.value) / 10000;
   localStorage.setItem('dt_settings', JSON.stringify(GAME_SETTINGS));
   applySettings();
   closeModal('settingsModal');
@@ -3060,6 +3070,11 @@ function initSocket(token){
   s.on('gameStarted', data => {
     showScreen('game');
     const mode = data.renderMode || '3d';
+    // Reset init flag when engine changes so startPhaserGame runs for the new engine
+    if (_loadedRenderMode && _loadedRenderMode !== mode) {
+      window._gameInitialized = false;
+      window._gameReady = false;
+    }
     loadGameScripts(mode, () => {
       window._pendingGameData = data;
       if (!window._gameInitialized) {
