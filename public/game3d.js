@@ -6,7 +6,7 @@ const WORLD_SIZE = 3200;
 const PAD_SIZE = 620;
 const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
 const REACH = 320;          // server units — matches old click-to-attack reach
-const PICKUP_RADIUS = 95;   // server units — auto-collect drops within this range
+const PICKUP_RADIUS = 120;  // server units — auto-collect drops within this range
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
 const CAM_BASE_HEIGHT = 2.0;// camera height above ground
 
@@ -27,6 +27,22 @@ function sx(serverX) { return serverX * WU; }
 function sz(serverY) { return serverY * WU; }
 function dirToRotY(theta) { return Math.PI / 2 - theta; }
 function hexStr2num(s) { return parseInt(s.replace('#', ''), 16); }
+
+function makeTextSprite(text) {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 48;
+  const ctx = c.getContext('2d');
+  ctx.font = 'bold 22px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 5;
+  ctx.strokeText(text, 64, 24);
+  ctx.fillStyle = '#ffd700';
+  ctx.fillText(text, 64, 24);
+  const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(0.55, 0.22, 1);
+  return sp;
+}
 
 // ── Canvas-texture sprite helpers (nametags / HP bars) ──────────────────────
 function makeNameSprite(text, color) {
@@ -330,20 +346,69 @@ class Game3D {
   }
 
   spawnDrop(drop) {
+    const group = new THREE.Group();
     const coin = new THREE.Mesh(
       new THREE.CylinderGeometry(0.18, 0.18, 0.06, 12),
       new THREE.MeshLambertMaterial({ color: 0xffd700 })
     );
     coin.rotation.x = Math.PI / 2;
-    coin.position.set(sx(drop.x), 0.4, sz(drop.y));
-    this.scene.add(coin);
-    this.moneyDropObjs[drop.id] = { group: coin, data: { ...drop } };
+    group.add(coin);
+    const label = makeTextSprite('$' + (window.fmt ? window.fmt(drop.amount) : drop.amount));
+    label.position.y = 0.45;
+    group.add(label);
+    group.position.set(sx(drop.x), 0.4, sz(drop.y));
+    this.scene.add(group);
+    this.moneyDropObjs[drop.id] = { group, data: { ...drop } };
   }
 
   removeDrop(id) {
     const obj = this.moneyDropObjs[id]; if (!obj) return;
     this.scene.remove(obj.group);
     delete this.moneyDropObjs[id];
+  }
+
+  spawnCollectorHole() {
+    if (this._collectorHole) return;
+    const p = this.myPlayer;
+    if (!p || p.padIdx === undefined) return;
+    const pad = PADS_DATA[p.padIdx]; if (!pad) return;
+    const cx = sx(pad.x + PAD_SIZE / 2);
+    const cz = sz(pad.y + PAD_SIZE / 2);
+
+    const group = new THREE.Group();
+
+    const disk = new THREE.Mesh(
+      new THREE.CircleGeometry(sx(50), 32),
+      new THREE.MeshBasicMaterial({ color: 0x110022, transparent: true, opacity: 0.88, side: THREE.DoubleSide })
+    );
+    disk.rotation.x = -Math.PI / 2;
+    disk.position.y = 0.02;
+    group.add(disk);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(sx(48), sx(56), 32),
+      new THREE.MeshBasicMaterial({ color: 0x9b59b6, transparent: true, opacity: 0.95, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.04;
+    group.add(ring);
+
+    const innerRing = new THREE.Mesh(
+      new THREE.RingGeometry(sx(20), sx(26), 24),
+      new THREE.MeshBasicMaterial({ color: 0xe056fd, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+    );
+    innerRing.rotation.x = -Math.PI / 2;
+    innerRing.position.y = 0.05;
+    group.add(innerRing);
+
+    const label = makeTextSprite('🕳️ Collector');
+    label.position.y = 1.4;
+    group.add(label);
+
+    group.position.set(cx, 0, cz);
+    this.scene.add(group);
+    this._collectorHole = group;
+    this._collectorHolePos = { x: pad.x + PAD_SIZE / 2, y: pad.y + PAD_SIZE / 2 };
   }
 
   showBite(id) {
@@ -482,10 +547,28 @@ class Game3D {
           window.gameSocket.emit('collectDrop', parseInt(id));
         }
       }
-      // coin bob/spin
+      // coin bob/spin + collector hole drift
+      const holePos = this._collectorHolePos;
       for (const obj of Object.values(this.moneyDropObjs)) {
+        if (holePos) {
+          const dx = holePos.x - obj.data.x;
+          const dz = holePos.y - obj.data.y;
+          const d = Math.hypot(dx, dz);
+          if (d > 8) {
+            const spd = Math.min(d, 350 * dt);
+            obj.data.x += (dx / d) * spd;
+            obj.data.y += (dz / d) * spd;
+            obj.group.position.x = sx(obj.data.x);
+            obj.group.position.z = sz(obj.data.y);
+          }
+        }
         obj.group.rotation.z += dt * 2;
         obj.group.position.y = 0.4 + Math.sin(performance.now() * 0.003) * 0.05;
+      }
+      // animate collector hole rings
+      if (this._collectorHole) {
+        this._collectorHole.children[1].rotation.z += dt * 1.2; // outer ring spin
+        this._collectorHole.children[2].rotation.z -= dt * 2.0; // inner ring counter-spin
       }
     }
 
@@ -522,6 +605,7 @@ window.onGameReady = function (data) {
   for (const id of Object.keys(s.buildingObjs || {})) s.removeBuilding(id);
   s.playerObjs = {}; s.moneyDropObjs = {}; s.buildingObjs = {};
   s._collectedRecently = new Set();
+  if (s._collectorHole) { s.scene.remove(s._collectorHole); s._collectorHole = null; s._collectorHolePos = null; }
 
   s.myId = data.myPlayer.id;
   s.myPlayer = data.myPlayer;
@@ -531,6 +615,7 @@ window.onGameReady = function (data) {
   for (const p of data.allPlayers) if (p.id !== data.myPlayer.id) s.spawnPlayer(p);
   for (const b of data.allBots) s.spawnPlayer(b);
   for (const b of (data.buildings || [])) s.spawnBuilding(b);
+  if (data.myPlayer.upgrades?.includes('collectorsHole')) s.spawnCollectorHole();
 
   window.updateHUD(data.myPlayer);
   window.updateXPBar(data.myPlayer.xp, data.myPlayer.level);
@@ -704,6 +789,7 @@ function setupGameSocketEvents() {
     window.updateHUD(scene.myPlayer);
     window.SFX?.upgrade();
     if (window._shopUpgrades) window.buildShop(window._shopUpgrades, scene.myPlayer.upgrades);
+    if (upgradeId === 'collectorsHole') scene.spawnCollectorHole();
   });
 
   s.on('upgradeError', msg => window.showToast('❌ ' + msg, 2000));

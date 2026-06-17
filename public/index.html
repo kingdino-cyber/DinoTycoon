@@ -1539,8 +1539,8 @@ function loadGameScripts(mode, cb) {
   } else {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
-      appendScript('dino3d.js?v=3', null, () => {
-        appendScript('game3d.js?v=3', null, () => {
+      appendScript('dino3d.js?v=4', null, () => {
+        appendScript('game3d.js?v=4', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false; cb();
         });
       });
@@ -2178,7 +2178,7 @@ function renderShopItems(upgrades, owned) {
   for(const [id,u] of Object.entries(upgrades)) {
     if(u.cat !== shopCatFilter) continue;
     const isBuild  = u.cat === 'build';
-    const placesBuilding = isBuild || u.cat === 'income';
+    const placesBuilding = (isBuild || u.cat === 'income') && !u.noPlace;
     const isOwned  = !isBuild && owned.includes(id);   // build items never show as "owned"
     const isLocked = u.req && !owned.includes(u.req);
     const div=document.createElement('div');
