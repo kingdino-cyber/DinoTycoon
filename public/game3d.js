@@ -699,8 +699,11 @@ function setupGameSocketEvents() {
     const scene = gs(); if (!scene) return;
     scene.myPlayer.money = money;
     Object.assign(scene.myPlayer, stats);
+    if (!scene.myPlayer.upgrades) scene.myPlayer.upgrades = [];
+    if (!scene.myPlayer.upgrades.includes(upgradeId)) scene.myPlayer.upgrades.push(upgradeId);
     window.updateHUD(scene.myPlayer);
     window.SFX?.upgrade();
+    if (window._shopUpgrades) window.buildShop(window._shopUpgrades, scene.myPlayer.upgrades);
   });
 
   s.on('upgradeError', msg => window.showToast('❌ ' + msg, 2000));
