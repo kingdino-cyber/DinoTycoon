@@ -1544,10 +1544,25 @@ io.on('connection', (socket) => {
   socket.on('collectPadDrops', () => {
     const room = rooms[socketRoom[socket.id]]; if (!room) return;
     const p = room.players[socket.id]; if (!p || p.isDead) return;
-    const SPACE_RADIUS = 200; // only collect coins within this range when pressing Space
+    const SPACE_RADIUS = 200;
     for (let i = room.moneyDrops.length - 1; i >= 0; i--) {
       const drop = room.moneyDrops[i];
       if (dist(p, drop) > SPACE_RADIUS) continue;
+      p.money += drop.amount; p.totalEarned += drop.amount;
+      room.moneyDrops.splice(i, 1);
+      emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: socket.id, money: p.money });
+    }
+  });
+
+  // Collect every coin on the player's own pad — used by the Collector's Hole button
+  socket.on('collectHoleCoins', () => {
+    const room = rooms[socketRoom[socket.id]]; if (!room) return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    if (!p.upgrades.includes('collectorsHole')) return;
+    const pad = PADS[p.padIdx]; if (!pad) return;
+    for (let i = room.moneyDrops.length - 1; i >= 0; i--) {
+      const drop = room.moneyDrops[i];
+      if (drop.x < pad.x || drop.x > pad.x + PAD_SIZE || drop.y < pad.y || drop.y > pad.y + PAD_SIZE) continue;
       p.money += drop.amount; p.totalEarned += drop.amount;
       room.moneyDrops.splice(i, 1);
       emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: socket.id, money: p.money });
