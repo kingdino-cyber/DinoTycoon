@@ -252,9 +252,9 @@ function isInsideBase(player) {
 }
 
 function isPositionInsideBase(player, x, y) {
-  const base = padCenter(player.padIdx || 0);
-  const half = PAD_SIZE / 2;
-  return Math.abs(x - base.x) < half && Math.abs(y - base.y) < half;
+  const pad = PADS[player.padIdx || 0]; if (!pad) return false;
+  const m = 80; // lenient margin so edge placements aren't unfairly rejected
+  return x >= pad.x - m && x <= pad.x + PAD_SIZE + m && y >= pad.y - m && y <= pad.y + PAD_SIZE + m;
 }
 
 const MAX_BUILDINGS_PER_OWNER = 40; // caps base sprawl — keeps server tick cost and client render cost bounded

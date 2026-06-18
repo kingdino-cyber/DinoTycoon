@@ -2230,12 +2230,14 @@ window.buyUpgrade=function(id){if(window.gameSocket){window.SFX?.upgrade();windo
 
 // ── Drag a build/income item from the shop and drop it onto a spot in your base ──
 let _buildDragDropSetup = false;
+let _lastDragPos = null; // cache dragover position — drop event clientX/Y can be unreliable
 function setupBuildDragDrop() {
   if (_buildDragDropSetup) return; _buildDragDropSetup = true;
   const container = document.getElementById('gameContainer');
   container.addEventListener('dragover', e => {
     if (!window._draggingUpgradeId) return;
     e.preventDefault();
+    _lastDragPos = { x: e.clientX, y: e.clientY };
     window._gameScene?.updateBuildGhost?.(window._draggingUpgradeId, e.clientX, e.clientY);
   });
   container.addEventListener('drop', e => {
@@ -2245,7 +2247,11 @@ function setupBuildDragDrop() {
     window._draggingUpgradeId = null;
     const scene = window._gameScene;
     scene?.hideBuildGhost?.();
-    const pos = scene?.screenToServerXY?.(e.clientX, e.clientY);
+    // Prefer last dragover position — drop event clientX/Y is unreliable in some browsers
+    const cx = (_lastDragPos?.x ?? e.clientX);
+    const cy = (_lastDragPos?.y ?? e.clientY);
+    _lastDragPos = null;
+    const pos = scene?.screenToServerXY?.(cx, cy);
     if (!pos) { showToast('❌ Cannot place there', 1500); return; }
     window.gameSocket.emit('buyUpgrade', { upgradeId, x: pos.x, y: pos.y });
     window.SFX?.upgrade();
