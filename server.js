@@ -1571,7 +1571,7 @@ io.on('connection', (socket) => {
     const p = room.players[socket.id]; if (!p||p.isDead) return;
     const idx = room.moneyDrops.findIndex(d=>d.id===dropId); if (idx===-1) return;
     const drop = room.moneyDrops[idx];
-    if (dist(p, drop) > 130) return;
+    if (dist(p, drop) > 80) return; // generous buffer above client PICKUP_RADIUS=42
     p.money += drop.amount; p.totalEarned += drop.amount;
     room.moneyDrops.splice(idx, 1);
     emitToRoom(room, 'dropCollected', { dropId, playerId: socket.id, money: p.money });

@@ -6,7 +6,7 @@ const WORLD_SIZE = 3200;
 const PAD_SIZE = 620;
 const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
 const REACH = 320;          // server units — matches old click-to-attack reach
-const PICKUP_RADIUS = 120;  // server units — auto-collect drops within this range
+const PICKUP_RADIUS = 42;   // server units — "touch" radius for coin pickup
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
 const CAM_BASE_HEIGHT = 2.0;// camera height above ground
 
@@ -648,17 +648,22 @@ class Game3D {
       }
       // coin bob/spin + collector hole drift
       const holePos = this._collectorHolePos;
+      const myPad = holePos && this.myPlayer?.padIdx !== undefined ? PADS_DATA[this.myPlayer.padIdx] : null;
       for (const obj of Object.values(this.moneyDropObjs)) {
-        if (holePos) {
-          const dx = holePos.x - obj.data.x;
-          const dz = holePos.y - obj.data.y;
-          const d = Math.hypot(dx, dz);
-          if (d > 8) {
-            const spd = Math.min(d, 350 * dt);
-            obj.data.x += (dx / d) * spd;
-            obj.data.y += (dz / d) * spd;
-            obj.group.position.x = sx(obj.data.x);
-            obj.group.position.z = sz(obj.data.y);
+        if (holePos && myPad) {
+          const onPad = obj.data.x >= myPad.x && obj.data.x <= myPad.x + PAD_SIZE &&
+                        obj.data.y >= myPad.y && obj.data.y <= myPad.y + PAD_SIZE;
+          if (onPad) {
+            const dx = holePos.x - obj.data.x;
+            const dz = holePos.y - obj.data.y;
+            const d = Math.hypot(dx, dz);
+            if (d > 8) {
+              const spd = Math.min(d, 350 * dt);
+              obj.data.x += (dx / d) * spd;
+              obj.data.y += (dz / d) * spd;
+              obj.group.position.x = sx(obj.data.x);
+              obj.group.position.z = sz(obj.data.y);
+            }
           }
         }
         obj.group.rotation.z += dt * 2;
@@ -840,6 +845,7 @@ function setupGameSocketEvents() {
     scene.setPos(id, x, y);
     if (id === scene.myId) {
       scene.myPlayer.isDead = false; scene.myPlayer.hp = hp; scene.myPlayer.maxHp = maxHp;
+      scene.myPlayer.x = x; scene.myPlayer.y = y; // teleport camera to respawn point
       window.updateHUD(scene.myPlayer);
     }
   });
