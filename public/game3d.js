@@ -222,11 +222,12 @@ class Game3D {
       if (!this.locked) { canvas.requestPointerLock()?.catch(() => {}); return; }
       this.tryAttackOrCollect();
     });
-    document.addEventListener('pointerlockchange', () => {
+    this._onPointerLockChange = () => {
       this.locked = document.pointerLockElement === canvas;
       const ch = document.getElementById('crosshair3d');
       if (ch) ch.style.display = this.locked ? 'block' : 'none';
-    });
+    };
+    document.addEventListener('pointerlockchange', this._onPointerLockChange);
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
       const sens = window.GAME_SETTINGS?.sensitivity3d ?? 0.0022;
@@ -526,8 +527,11 @@ class Game3D {
   dispose() {
     this._stopped = true;
     this.renderer.dispose();
+    if (this._onPointerLockChange) document.removeEventListener('pointerlockchange', this._onPointerLockChange);
     const btn = document.getElementById('collectHoleBtn');
     if (btn) btn.style.display = 'none';
+    const ch = document.getElementById('crosshair3d');
+    if (ch) ch.style.display = 'none';
   }
 
   _animate() {
@@ -671,27 +675,13 @@ class Game3D {
         obj.group.rotation.z += dt * 2;
         obj.group.position.y = 0.4 + Math.sin(performance.now() * 0.003) * 0.05;
       }
-      // animate collector hole rings + position Collect button
+      // animate collector hole rings + show/hide fixed Collect button
+      const btn = document.getElementById('collectHoleBtn');
       if (this._collectorHole) {
         this._collectorHole.children[1].rotation.z += dt * 1.2;
         this._collectorHole.children[2].rotation.z -= dt * 2.0;
-        // Project hole center to screen for the floating Collect button
-        const holeWorld = new THREE.Vector3();
-        this._collectorHole.getWorldPosition(holeWorld);
-        holeWorld.y += 1.2; // float above the disk
-        const projected = holeWorld.clone().project(this.camera);
-        const btn = document.getElementById('collectHoleBtn');
-        if (btn && projected.z < 1) { // z<1 means in front of camera
-          const sx2 = (projected.x * 0.5 + 0.5) * window.innerWidth;
-          const sy2 = (-projected.y * 0.5 + 0.5) * window.innerHeight;
-          btn.style.display = 'block';
-          btn.style.left = sx2 + 'px';
-          btn.style.top = sy2 + 'px';
-        } else if (btn) {
-          btn.style.display = 'none';
-        }
+        if (btn) btn.style.display = 'block';
       } else {
-        const btn = document.getElementById('collectHoleBtn');
         if (btn) btn.style.display = 'none';
       }
     }
