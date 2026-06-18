@@ -82,6 +82,7 @@ function redrawHPSprite(spr, hp, maxHp) {
 class Game3D {
   constructor(container) {
     this._is3D = true; // guards socket events so they bail when Phaser is active
+    this._camMode = 0; // 0=third-person back, 1=first-person, 2=third-person front
     this.scene = new THREE.Scene();
     const skyColor = 0x6ec6ff; // sunny sky blue
     this.scene.background = new THREE.Color(skyColor);
@@ -201,6 +202,12 @@ class Game3D {
       if (e.code === 'Space' && this.locked && window.gameSocket) {
         e.preventDefault();
         window.gameSocket.emit('collectPadDrops');
+      }
+      if (e.code === 'F5') {
+        e.preventDefault();
+        this._camMode = (this._camMode + 1) % 3;
+        const labels = ['🎥 Third-person', '👁️ First-person', '🔄 Front-cam'];
+        window.showToast?.(labels[this._camMode], 1200);
       }
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
@@ -437,6 +444,25 @@ class Game3D {
     requestAnimationFrame(tick);
   }
 
+  showLaser(fromX, fromY, toX, toY) {
+    const start = new THREE.Vector3(sx(fromX), 1.05, sz(fromY));
+    const end   = new THREE.Vector3(sx(toX),   1.05, sz(toY));
+    const dir = new THREE.Vector3().subVectors(end, start);
+    const len = dir.length(); if (len < 0.01) return;
+    const geo = new THREE.CylinderGeometry(0.04, 0.04, len, 5);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.95 });
+    const beam = new THREE.Mesh(geo, mat);
+    beam.position.lerpVectors(start, end, 0.5);
+    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    this.scene.add(beam);
+    let t = 0;
+    const fade = () => {
+      beam.material.opacity *= 0.78;
+      if (++t < 10) requestAnimationFrame(fade); else this.scene.remove(beam);
+    };
+    requestAnimationFrame(fade);
+  }
+
   showDamageNum(x, y, amount) {
     const cv = document.createElement('canvas'); cv.width = 96; cv.height = 48;
     const ctx = cv.getContext('2d');
@@ -530,17 +556,40 @@ class Game3D {
       }
       const forwardCam = { x: Math.sin(phi), z: Math.cos(phi) };
       const pitchLift = Math.sin(pitch) * 1.8;
-      const pitchPull = Math.cos(pitch); // pulls camera in slightly when looking far up/down
+      const pitchPull = Math.cos(pitch);
       let shakeX = 0, shakeY = 0;
       if (this._shakeUntil && performance.now() < this._shakeUntil) {
         shakeX = (Math.random() - 0.5) * 0.12; shakeY = (Math.random() - 0.5) * 0.12;
       }
-      this.camera.position.set(
-        px - forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
-        CAM_BASE_HEIGHT + pitchLift + shakeY,
-        pz - forwardCam.z * CAM_DISTANCE * pitchPull
-      );
-      this.camera.lookAt(px, 1.3, pz);
+
+      if (this._camMode === 1) {
+        // ── First-person ─────────────────────────────────────────────────
+        if (myObj) myObj.group.visible = false; // hide own dino in first-person
+        const eyeH = 1.85;
+        this.camera.position.set(px + forwardCam.x * 0.25 + shakeX, eyeH + shakeY, pz + forwardCam.z * 0.25);
+        const lx = px + forwardCam.x * Math.cos(pitch) * 10;
+        const ly = eyeH + Math.sin(pitch) * 10;
+        const lz = pz + forwardCam.z * Math.cos(pitch) * 10;
+        this.camera.lookAt(lx, ly, lz);
+      } else if (this._camMode === 2) {
+        // ── Third-person front (facing camera) ────────────────────────────
+        if (myObj) myObj.group.visible = !this.myPlayer.isDead;
+        this.camera.position.set(
+          px + forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
+          CAM_BASE_HEIGHT + pitchLift + shakeY,
+          pz + forwardCam.z * CAM_DISTANCE * pitchPull
+        );
+        this.camera.lookAt(px, 1.3, pz);
+      } else {
+        // ── Third-person back (default) ───────────────────────────────────
+        if (myObj) myObj.group.visible = !this.myPlayer.isDead;
+        this.camera.position.set(
+          px - forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
+          CAM_BASE_HEIGHT + pitchLift + shakeY,
+          pz - forwardCam.z * CAM_DISTANCE * pitchPull
+        );
+        this.camera.lookAt(px, 1.3, pz);
+      }
     }
 
     // Auto-collect nearby drops
@@ -678,6 +727,8 @@ function setupGameSocketEvents() {
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
     scene.showHitEffect(tgt.data.x, tgt.data.y, hexStr2num(tgt.data.color || '#ffffff'));
     scene.showBite(attackerId);
+    const atk = scene.playerObjs[attackerId];
+    if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);
     if (knockback) {
       if (targetId === scene.myId) {
         scene.myPlayer.x = knockback.x; scene.myPlayer.y = knockback.y;
