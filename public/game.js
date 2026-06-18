@@ -1048,7 +1048,7 @@ class GameScene extends Phaser.Scene {
 }
 
 // ── Start Phaser ──────────────────────────────────────────────────────────────
-function startPhaserGame() {
+function startPhaserGame(readyCb) {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'gameContainer',
@@ -1067,7 +1067,8 @@ function startPhaserGame() {
       clearInterval(poll);
       window._gameReady=true;
       window._gameScene=scene;
-      if(window._pendingGameData) window.onGameReady(window._pendingGameData);
+      const cb = readyCb || window.onGameReady;
+      if(window._pendingGameData) cb(window._pendingGameData);
     }
   },100);
 }

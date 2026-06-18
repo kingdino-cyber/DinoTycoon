@@ -122,6 +122,7 @@ class Game3D {
     this._raycaster = new THREE.Raycaster();
 
     this.setupInput();
+    this._buildArms();
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
@@ -131,6 +132,26 @@ class Game3D {
     this._lastFrame = performance.now();
     this._animate = this._animate.bind(this);
     requestAnimationFrame(this._animate);
+  }
+
+  _buildArms() {
+    // Two box "arms" attached to the camera so they float in screen space (Minecraft style).
+    // Positioned below and to the sides at camera-space coordinates.
+    const geo = new THREE.BoxGeometry(0.12, 0.40, 0.12);
+    const mat = new THREE.MeshLambertMaterial({ color: 0x888888 }); // placeholder; recolored in onGameReady
+    this._armMat = mat;
+
+    const makeArm = (xOff) => {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(xOff, -0.32, -0.55); // near bottom of FOV
+      m.rotation.x = 0.18; // slight tilt toward player
+      this.camera.add(m);
+      return m;
+    };
+    this._armL = makeArm(-0.22);
+    this._armR = makeArm( 0.22);
+    this._armL.visible = false;
+    this._armR.visible = false;
   }
 
   buildWorld() {
@@ -184,11 +205,13 @@ class Game3D {
     canvas.addEventListener('click', () => {
       // Don't re-acquire pointer lock while shop/pause overlay is open
       if (typeof _paused !== 'undefined' && _paused) return;
-      if (!this.locked) { canvas.requestPointerLock(); return; }
+      if (!this.locked) { canvas.requestPointerLock()?.catch(() => {}); return; }
       this.tryAttackOrCollect();
     });
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
+      const ch = document.getElementById('crosshair3d');
+      if (ch) ch.style.display = this.locked ? 'block' : 'none';
     });
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
@@ -562,7 +585,9 @@ class Game3D {
         shakeX = (Math.random() - 0.5) * 0.12; shakeY = (Math.random() - 0.5) * 0.12;
       }
 
-      if (this._camMode === 1) {
+      const fp = this._camMode === 1;
+      if (this._armL) { this._armL.visible = fp; this._armR.visible = fp; }
+      if (fp) {
         // ── First-person ─────────────────────────────────────────────────
         if (myObj) myObj.group.visible = false; // hide own dino in first-person
         const eyeH = 1.85;
@@ -640,14 +665,15 @@ class Game3D {
 }
 
 // ── Bootstrapping — same global names the lobby expects (loadGameScripts callback) ──
-function startPhaserGame() {
+function startPhaserGame(readyCb) {
   const container = document.getElementById('gameContainer');
   container.innerHTML = '';
   const engine = new Game3D(container);
   window._game3D = engine;
-  window._gameScene = engine; // compat alias used throughout index.html
+  window._gameScene = engine;
   window._gameReady = true;
-  if (window._pendingGameData) window.onGameReady(window._pendingGameData);
+  // Don't call window.onGameReady directly — it may have been overwritten by the
+  // other engine's script. Caller passes the correct per-mode handler via readyCb.
 }
 window.startPhaserGame = startPhaserGame;
 
@@ -664,6 +690,7 @@ window.onGameReady = function (data) {
   s.myId = data.myPlayer.id;
   s.myPlayer = data.myPlayer;
   s._countdown = 5;
+  if (s._armMat && data.myPlayer.color) s._armMat.color.set(data.myPlayer.color);
 
   s.spawnPlayer(data.myPlayer);
   for (const p of data.allPlayers) if (p.id !== data.myPlayer.id) s.spawnPlayer(p);
