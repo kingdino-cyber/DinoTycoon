@@ -526,6 +526,8 @@ class Game3D {
   dispose() {
     this._stopped = true;
     this.renderer.dispose();
+    const btn = document.getElementById('collectHoleBtn');
+    if (btn) btn.style.display = 'none';
   }
 
   _animate() {
@@ -669,10 +671,28 @@ class Game3D {
         obj.group.rotation.z += dt * 2;
         obj.group.position.y = 0.4 + Math.sin(performance.now() * 0.003) * 0.05;
       }
-      // animate collector hole rings
+      // animate collector hole rings + position Collect button
       if (this._collectorHole) {
-        this._collectorHole.children[1].rotation.z += dt * 1.2; // outer ring spin
-        this._collectorHole.children[2].rotation.z -= dt * 2.0; // inner ring counter-spin
+        this._collectorHole.children[1].rotation.z += dt * 1.2;
+        this._collectorHole.children[2].rotation.z -= dt * 2.0;
+        // Project hole center to screen for the floating Collect button
+        const holeWorld = new THREE.Vector3();
+        this._collectorHole.getWorldPosition(holeWorld);
+        holeWorld.y += 1.2; // float above the disk
+        const projected = holeWorld.clone().project(this.camera);
+        const btn = document.getElementById('collectHoleBtn');
+        if (btn && projected.z < 1) { // z<1 means in front of camera
+          const sx2 = (projected.x * 0.5 + 0.5) * window.innerWidth;
+          const sy2 = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+          btn.style.display = 'block';
+          btn.style.left = sx2 + 'px';
+          btn.style.top = sy2 + 'px';
+        } else if (btn) {
+          btn.style.display = 'none';
+        }
+      } else {
+        const btn = document.getElementById('collectHoleBtn');
+        if (btn) btn.style.display = 'none';
       }
     }
 
