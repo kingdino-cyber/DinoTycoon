@@ -90,7 +90,7 @@ const UPGRADES = {
   bonePile3:   { name:'Amber Vault',      cost:2500,  icon:'🌿', effect:{mps:50},   req:'bonePile2',    desc:'+$50/sec',  cat:'income' },
   bonePile4:   { name:'Dino Museum',      cost:10000, icon:'🏛️', effect:{mps:200},  req:'bonePile3',    desc:'+$200/sec', cat:'income' },
   bonePile5:   { name:'Prehistoric Bank', cost:50000, icon:'💎', effect:{mps:1000}, req:'bonePile4',    desc:'+$1k/sec',  cat:'income' },
-  collectorsHole: { name:"Collector's Hole", cost:5000, icon:'🕳️', effect:{}, req:'bonePile1', desc:'All coins on your pad auto-collect — no more chasing fossils!', cat:'income', noPlace:true },
+  collectorsHole: { name:"Collector's Hole", cost:5000, icon:'🕳️', effect:{}, req:'bonePile1', desc:'Coins on your pad drift into the hole. Walk to it or click Collect to grab them all!', cat:'income', noPlace:true },
   // Speed
   swiftStride: { name:'Swift Stride',     cost:120,   icon:'👟', effect:{speed:30},  req:null,           desc:'+30 Speed (starter)', cat:'speed' },
   raptorLegs:  { name:'Raptor Legs',      cost:300,   icon:'🦵', effect:{speed:60},  req:'swiftStride',  desc:'+60 Speed', cat:'speed' },
@@ -895,19 +895,7 @@ function startRoomLoop(room) {
       }
     }
 
-    // Collector's Hole: auto-collect all coins on pad for players who own it
-    for (const p of Object.values(room.players)) {
-      if (p.isDead || !p.upgrades.includes('collectorsHole')) continue;
-      const pad = PADS[p.padIdx];
-      if (!pad) continue;
-      for (let i = room.moneyDrops.length - 1; i >= 0; i--) {
-        const drop = room.moneyDrops[i];
-        if (drop.x < pad.x || drop.x > pad.x + PAD_SIZE || drop.y < pad.y || drop.y > pad.y + PAD_SIZE) continue;
-        p.money += drop.amount; p.totalEarned += drop.amount;
-        room.moneyDrops.splice(i, 1);
-        emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: p.socketId, money: p.money });
-      }
-    }
+    // Collector's Hole: coins drift to hole visually on client; player walks there or clicks Collect button to pick them up
 
     // Persist humans
     for (const p of Object.values(room.players)) persistPlayer(p);

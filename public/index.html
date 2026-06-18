@@ -3077,6 +3077,8 @@ function initSocket(token){
       : `💰 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> richest &nbsp;|&nbsp; ⚔️ <span style="color:#ff6b6b">${esc(killsWinner.username)}</span> most kills`;
 
     document.getElementById('matchOver').classList.remove('hidden');
+    // Release pointer lock so buttons are clickable
+    if (document.pointerLockElement) document.exitPointerLock();
   });
 
   s.on('lobbyPlayerJoined',data=>{ addWaitPlayer(data.socketId,data); showToast(`🦕 ${data.username} joined!`); });
