@@ -1504,6 +1504,7 @@ let roomPublicFlag = true;
 // Per-mode load tracking — both files are IIFEs so loading both is safe (no const conflicts)
 const _engineLoaded = { '2d': false, '3d': false };
 const _engineLoading = { '2d': false, '3d': false };
+const _engineFuncs = { '2d': {}, '3d': {} }; // per-mode { startGame, onGameReady } refs
 let _loadedRenderMode = null; // most recently active engine
 let _socketAuthed = false;  // true only after server confirms auth via lobbyReady
 
@@ -1525,16 +1526,20 @@ function loadGameScripts(mode, cb) {
   if (mode === '2d') {
     showToast('🗺️ Loading 2D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
-      appendScript('game.js?v=2', null, () => {
-        _engineLoaded['2d'] = true; _engineLoading['2d'] = false; cb();
+      appendScript('game.js?v=3', null, () => {
+        _engineLoaded['2d'] = true; _engineLoading['2d'] = false;
+        _engineFuncs['2d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
+        cb();
       });
     });
   } else {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
-      appendScript('dino3d.js?v=5', null, () => {
-        appendScript('game3d.js?v=5', null, () => {
-          _engineLoaded['3d'] = true; _engineLoading['3d'] = false; cb();
+      appendScript('dino3d.js?v=6', null, () => {
+        appendScript('game3d.js?v=6', null, () => {
+          _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
+          _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
+          cb();
         });
       });
     });
@@ -3067,14 +3072,18 @@ function initSocket(token){
     if (_loadedRenderMode && _loadedRenderMode !== mode) {
       window._gameInitialized = false;
       window._gameReady = false;
+      window._gameSocketEventsSetup = false; // allow new engine to register its events
     }
     loadGameScripts(mode, () => {
       window._pendingGameData = data;
+      const funcs = _engineFuncs[mode];
+      const startFn = funcs?.startGame || window.startPhaserGame;
+      const readyFn = funcs?.onGameReady || window.onGameReady;
       if (!window._gameInitialized) {
         window._gameInitialized = true;
-        window.startPhaserGame();
+        startFn();
       }
-      if (window._gameReady) window.onGameReady(data);
+      if (window._gameReady) readyFn(data);
     });
   });
 

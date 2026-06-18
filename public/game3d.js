@@ -81,6 +81,7 @@ function redrawHPSprite(spr, hp, maxHp) {
 // ── Main engine ───────────────────────────────────────────────────────────
 class Game3D {
   constructor(container) {
+    this._is3D = true; // guards socket events so they bail when Phaser is active
     this.scene = new THREE.Scene();
     const skyColor = 0x6ec6ff; // sunny sky blue
     this.scene.background = new THREE.Color(skyColor);
@@ -636,7 +637,9 @@ window.onGameReady = function (data) {
 
 function setupGameSocketEvents() {
   const s = window.gameSocket;
-  const gs = () => window._gameScene;
+  // Only return the scene when we're actually in 3D mode — prevents 3D handlers
+  // from firing on the Phaser scene after a mode switch.
+  const gs = () => { const sc = window._gameScene; return sc?._is3D ? sc : null; };
 
   s.on('playerJoined', p => {
     const scene = gs(); if (!scene) return;

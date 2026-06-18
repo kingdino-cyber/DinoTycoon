@@ -555,7 +555,7 @@ function tickBot(bot, room, dt, allEntitiesArr, buildingsArr, wallBuildingsArr) 
 
   // ── Collect nearby drops ──
   for (const drop of room.moneyDrops) {
-    if (dist(bot, drop) < 70) {
+    if (dist(bot, drop) < 110) {
       bot.money += drop.amount; bot.totalEarned += drop.amount;
       const idx = room.moneyDrops.indexOf(drop); if (idx > -1) room.moneyDrops.splice(idx, 1);
       emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: bot.id, money: bot.money }); break;
@@ -1556,10 +1556,10 @@ io.on('connection', (socket) => {
   socket.on('collectPadDrops', () => {
     const room = rooms[socketRoom[socket.id]]; if (!room) return;
     const p = room.players[socket.id]; if (!p || p.isDead) return;
-    const pad = PADS[p.padIdx]; if (!pad) return;
+    const SPACE_RADIUS = 200; // only collect coins within this range when pressing Space
     for (let i = room.moneyDrops.length - 1; i >= 0; i--) {
       const drop = room.moneyDrops[i];
-      if (drop.x < pad.x || drop.x > pad.x + PAD_SIZE || drop.y < pad.y || drop.y > pad.y + PAD_SIZE) continue;
+      if (dist(p, drop) > SPACE_RADIUS) continue;
       p.money += drop.amount; p.totalEarned += drop.amount;
       room.moneyDrops.splice(i, 1);
       emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: socket.id, money: p.money });
@@ -1571,7 +1571,7 @@ io.on('connection', (socket) => {
     const p = room.players[socket.id]; if (!p||p.isDead) return;
     const idx = room.moneyDrops.findIndex(d=>d.id===dropId); if (idx===-1) return;
     const drop = room.moneyDrops[idx];
-    if (dist(p, drop) > 100) return;
+    if (dist(p, drop) > 130) return;
     p.money += drop.amount; p.totalEarned += drop.amount;
     room.moneyDrops.splice(idx, 1);
     emitToRoom(room, 'dropCollected', { dropId, playerId: socket.id, money: p.money });

@@ -1117,7 +1117,9 @@ window.onGameReady = function(data) {
 // ── Socket event handlers ─────────────────────────────────────────────────────
 function setupGameSocketEvents() {
   const s = window.gameSocket;
-  const gs = ()=>window._gameScene;
+  // Only return scene when we're in 2D mode — prevents 2D handlers from running
+  // on the Three.js scene when the player switches back to 3D.
+  const gs = ()=>{ const sc=window._gameScene; return (sc&&!sc._is3D)?sc:null; };
 
   s.on('playerJoined', p=>{
     const scene=gs(); if(!scene) return;
