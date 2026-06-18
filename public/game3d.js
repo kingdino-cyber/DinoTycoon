@@ -675,12 +675,24 @@ class Game3D {
         obj.group.rotation.z += dt * 2;
         obj.group.position.y = 0.4 + Math.sin(performance.now() * 0.003) * 0.05;
       }
-      // animate collector hole rings + show/hide fixed Collect button
+      // animate collector hole rings + float Collect button above hole in screen space
       const btn = document.getElementById('collectHoleBtn');
       if (this._collectorHole) {
         this._collectorHole.children[1].rotation.z += dt * 1.2;
         this._collectorHole.children[2].rotation.z -= dt * 2.0;
-        if (btn) btn.style.display = 'block';
+        if (btn) {
+          const wp = new THREE.Vector3();
+          this._collectorHole.getWorldPosition(wp);
+          wp.y += 3.5; // float well above the hole
+          const p = wp.clone().project(this.camera);
+          if (p.z < 1) { // in front of camera
+            btn.style.left = ((p.x * 0.5 + 0.5) * window.innerWidth) + 'px';
+            btn.style.top  = ((-p.y * 0.5 + 0.5) * window.innerHeight) + 'px';
+            btn.style.display = 'block';
+          } else {
+            btn.style.display = 'none';
+          }
+        }
       } else {
         if (btn) btn.style.display = 'none';
       }
