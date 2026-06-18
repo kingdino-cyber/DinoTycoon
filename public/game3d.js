@@ -523,7 +523,13 @@ class Game3D {
     window.showToast?.('⚔️ Too far!', 1200);
   }
 
+  dispose() {
+    this._stopped = true;
+    this.renderer.dispose();
+  }
+
   _animate() {
+    if (this._stopped) return;
     requestAnimationFrame(this._animate);
     const now = performance.now();
     const dt = Math.min(0.1, (now - this._lastFrame) / 1000);

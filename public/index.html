@@ -2282,6 +2282,15 @@ function _leaveGame() {
   });
   const mt=document.getElementById('matchTimer'); if(mt){mt.style.display='none';mt.classList.add('hidden');}
   if (shopOpen) toggleShop();
+  // Destroy 3D engine so its animation loop stops and its canvas is removed
+  if (window._game3D?.dispose) window._game3D.dispose();
+  window._game3D = null;
+  window._gameScene = null;
+  window._gameInitialized = false;
+  window._gameReady = false;
+  window._pendingGameData = null;
+  document.getElementById('gameContainer').innerHTML = '';
+  const ch = document.getElementById('crosshair3d'); if (ch) ch.style.display = 'none';
   showScreen('lobby');
 }
 document.addEventListener('keydown',e=>{
