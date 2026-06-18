@@ -140,7 +140,7 @@ class Game3D {
     const clawMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
     this._clawMat = clawMat;
 
-    const clawOffsets = [-0.04, 0, 0.04]; // three claws spread across the tip
+    const clawOffsets = [-0.07, 0, 0.07]; // three claws spread across the tip
 
     const makeArm = (xOff) => {
       const arm = new THREE.Group();
@@ -809,9 +809,26 @@ function setupGameSocketEvents() {
     }
     const vName = victim?.data?.username || 'A dinosaur';
     const kName = killer?.data?.username || 'something';
-    window.addKillFeed?.(
-      victimId === killerId ? `☠️ ${vName} perished` : `🦷 ${kName} chomped ${vName} into fossils!`
-    );
+    const vc = victim?.data?.color || '#ccc';
+    const kc = killer?.data?.color || '#fff';
+    const kIsBot = killer?.data?.isBot, vIsBot = victim?.data?.isBot;
+    if (victimId === killerId) {
+      window.addKillFeed?.(`☠️ <span style="color:${vc}">${vName}</span> perished`);
+      window.addChatMessage?.('⚔️ Arena', `☠️ ${vName} perished`, '#a29bfe');
+    } else {
+      window.addKillFeed?.(`<span style="color:${kc}">${kName}</span> ☄️ <span style="color:${vc}">${vName}</span> <span style="color:#ffd700">(+$${loot})</span>`);
+      const KILL_MSGS = [
+        (k,v)=>`🦷 ${k} chomped ${v} into fossils!`,
+        (k,v)=>`☄️ ${k} sent ${v} back to the Cretaceous!`,
+        (k,v)=>`💀 ${v} is now extinct — eliminated by ${k}!`,
+        (k,v)=>`🦴 ${k} turned ${v} into a bone pile!`,
+        (k,v)=>`🌋 ${k} obliterated ${v}!`,
+        (k,v)=>`🦖 ${k} devoured ${v} whole!`,
+      ];
+      const msg = KILL_MSGS[Math.floor(Math.random() * KILL_MSGS.length)](kName, vName);
+      const chatColor = kIsBot && vIsBot ? '#a29bfe' : kIsBot ? '#ff7675' : '#ffd700';
+      window.addChatMessage?.('⚔️ Arena', msg, chatColor);
+    }
   });
 
   s.on('playerRespawned', ({ id, x, y, hp, maxHp }) => {
@@ -840,7 +857,8 @@ function setupGameSocketEvents() {
   s.on('buildingDestroyed', ({ id, destroyerName, ownerName, buildingName }) => {
     const scene = gs(); if (!scene) return;
     scene.removeBuilding(id);
-    window.addKillFeed?.(`💥 ${destroyerName} destroyed ${ownerName}'s ${buildingName}!`);
+    window.addKillFeed?.(`<span style="color:#ff6b35">🏚️ ${destroyerName}</span> destroyed <span style="color:#ffd700">${ownerName}'s ${buildingName}</span>!`);
+    window.addChatMessage?.('🏚️ Destroy', `${destroyerName} destroyed ${ownerName}'s ${buildingName}!`, '#ff6b35');
     window.SFX?.crunch();
   });
 
@@ -932,6 +950,7 @@ function setupGameSocketEvents() {
     const scene = gs(); if (!scene) return;
     const obj = scene.playerObjs[id]; if (!obj) return;
     obj.data.prestige = prestige;
+    window.addKillFeed?.(`<span style="color:#ffd700">⭐ ${obj.data.username} prestiged (★${prestige})!</span>`);
   });
 }
 window.setupGameSocketEvents = setupGameSocketEvents;
