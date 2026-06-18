@@ -613,7 +613,7 @@ class Game3D {
         const eyeH = 1.85;
         this.camera.position.set(px + forwardCam.x * 0.25 + shakeX, eyeH + shakeY, pz + forwardCam.z * 0.25);
         const lx = px + forwardCam.x * Math.cos(pitch) * 10;
-        const ly = eyeH + Math.sin(pitch) * 10;
+        const ly = eyeH - Math.sin(pitch) * 10;
         const lz = pz + forwardCam.z * Math.cos(pitch) * 10;
         this.camera.lookAt(lx, ly, lz);
       } else if (this._camMode === 2) {
