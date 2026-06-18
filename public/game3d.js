@@ -135,19 +135,33 @@ class Game3D {
   }
 
   _buildArms() {
-    // Two box "arms" attached to the camera so they float in screen space (Minecraft style).
-    // Positioned below and to the sides at camera-space coordinates.
-    const geo = new THREE.BoxGeometry(0.12, 0.40, 0.12);
-    const mat = new THREE.MeshLambertMaterial({ color: 0x888888 }); // placeholder; recolored in onGameReady
+    const mat = new THREE.MeshLambertMaterial({ color: 0x888888 });
     this._armMat = mat;
+    const clawMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    this._clawMat = clawMat;
+
+    const clawOffsets = [-0.04, 0, 0.04]; // three claws spread across the tip
 
     const makeArm = (xOff) => {
-      const m = new THREE.Mesh(geo, mat);
-      m.position.set(xOff, -0.32, -0.55); // near bottom of FOV
-      m.rotation.x = 0.18; // slight tilt toward player
-      this.camera.add(m);
-      return m;
+      const arm = new THREE.Group();
+      arm.position.set(xOff, -0.32, -0.55);
+      arm.rotation.x = 0.18;
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.40, 0.12), mat);
+      arm.add(body);
+
+      // Three small curved claws at the bottom tip of the arm
+      for (const cx of clawOffsets) {
+        const claw = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.09, 5), clawMat);
+        claw.position.set(cx, -0.25, -0.03); // hang below the arm, slightly forward
+        claw.rotation.x = -0.5; // angle forward like a claw
+        arm.add(claw);
+      }
+
+      this.camera.add(arm);
+      return arm;
     };
+
     this._armL = makeArm(-0.22);
     this._armR = makeArm( 0.22);
     this._armL.visible = false;
