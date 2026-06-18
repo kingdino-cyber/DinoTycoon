@@ -30,17 +30,17 @@ function hexStr2num(s) { return parseInt(s.replace('#', ''), 16); }
 
 function makeTextSprite(text) {
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 80;
+  c.width = 320; c.height = 100;
   const ctx = c.getContext('2d');
-  ctx.font = 'bold 44px sans-serif';
+  ctx.font = 'bold 62px sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.strokeStyle = '#000'; ctx.lineWidth = 9;
-  ctx.strokeText(text, 128, 40);
+  ctx.strokeText(text, 160, 50);
   ctx.fillStyle = '#ffe433';
-  ctx.fillText(text, 128, 40);
+  ctx.fillText(text, 160, 50);
   const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false });
   const sp = new THREE.Sprite(mat);
-  sp.scale.set(1.1, 0.38, 1);
+  sp.scale.set(1.4, 0.48, 1);
   return sp;
 }
 
@@ -231,7 +231,7 @@ class Game3D {
       if (!this.locked) return;
       const sens = window.GAME_SETTINGS?.sensitivity3d ?? 0.0022;
       this.yawObject.rotation.y -= e.movementX * sens;
-      this.pitchObject.rotation.x -= e.movementY * sens;
+      this.pitchObject.rotation.x += e.movementY * sens;
       this.pitchObject.rotation.x = Math.max(-0.55, Math.min(0.65, this.pitchObject.rotation.x));
     });
     window.addEventListener('keydown', (e) => {
