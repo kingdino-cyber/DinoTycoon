@@ -672,8 +672,8 @@ function startPhaserGame(readyCb) {
   window._game3D = engine;
   window._gameScene = engine;
   window._gameReady = true;
-  // Don't call window.onGameReady directly — it may have been overwritten by the
-  // other engine's script. Caller passes the correct per-mode handler via readyCb.
+  // Call the per-mode readyCb (not window.onGameReady which may be overwritten by the other engine)
+  if (readyCb && window._pendingGameData) readyCb(window._pendingGameData);
 }
 window.startPhaserGame = startPhaserGame;
 
