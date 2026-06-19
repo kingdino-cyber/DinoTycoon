@@ -731,7 +731,8 @@ class GameScene extends Phaser.Scene {
 
     // Name label
     const icons = {bonePile1:'🦴',bonePile2:'⛏️',bonePile3:'🌿',bonePile4:'🏛️',bonePile5:'💎',
-                   stoneWall:'🪨',spikeTrap:'🔺',thornHedge:'🌵',dinoTurret:'🗼',fossilFortress:'🏰'};
+                   stoneWall:'🪨',spikeTrap:'🔺',thornHedge:'🌵',dinoTurret:'🗼',fossilFortress:'🏰',
+                   iceTower:'🧊',tarPit:'🕳️',lavaPit:'🌋',healingTotem:'✨',boneCannon:'💣'};
     const label = this.add.text(b.x, b.y-48, (icons[b.upgradeId]||'🏗️'), {
       fontSize:'18px', stroke:'#000', strokeThickness:3
     }).setOrigin(0.5).setDepth(53);
@@ -857,6 +858,42 @@ class GameScene extends Phaser.Scene {
       gfx.fillStyle(0x333333,alpha); gfx.fillRect(14,-8,24,8);
       gfx.fillStyle(0x111111,alpha); gfx.fillCircle(38,-4,5);
       gfx.fillStyle(0x222222,alpha); gfx.fillRect(-12,-4,10,18); // gate
+    } else if (upgradeId === 'tarPit') {
+      // Dark bubbling tar pool
+      gfx.fillStyle(0x0a0a0a,alpha); gfx.fillEllipse(0,4,52,28);
+      gfx.fillStyle(0x1a1a1a,alpha); gfx.fillEllipse(-2,2,42,20);
+      gfx.fillStyle(0x2a2a2a,0.7*alpha); gfx.fillCircle(-10,0,5); gfx.fillCircle(8,2,4); gfx.fillCircle(-2,-4,3);
+      gfx.fillStyle(0x111111,0.5*alpha); gfx.fillCircle(-10,0,3); gfx.fillCircle(8,2,2);
+    } else if (upgradeId === 'lavaPit') {
+      // Glowing orange lava pool
+      gfx.fillStyle(0x8b1a00,alpha); gfx.fillEllipse(0,4,54,30);
+      gfx.fillStyle(0xff4400,alpha); gfx.fillEllipse(0,2,44,22);
+      gfx.fillStyle(0xff7700,0.7*alpha); gfx.fillEllipse(-6,-2,24,12); gfx.fillEllipse(10,4,18,10);
+      gfx.fillStyle(0xffaa00,0.5*alpha); gfx.fillEllipse(-4,-4,12,6);
+      gfx.fillStyle(0xff5500,0.8*alpha); gfx.fillCircle(-8,0,4); gfx.fillCircle(10,-2,3);
+    } else if (upgradeId === 'iceTower') {
+      // Blue ice cone tower with icicles
+      gfx.fillStyle(0x2266aa,alpha); gfx.fillRect(-10,0,20,20);
+      gfx.fillStyle(0x99eeff,alpha); gfx.fillTriangle(-13,0,13,0,0,-30);
+      gfx.fillStyle(0xbbf4ff,0.55*alpha); gfx.fillTriangle(-4,-2,4,-2,0,-18);
+      gfx.fillStyle(0xaadeee,alpha);
+      gfx.fillTriangle(-8,20,-4,20,-6,30); gfx.fillTriangle(-1,20,3,20,1,27); gfx.fillTriangle(5,20,9,20,7,33);
+    } else if (upgradeId === 'healingTotem') {
+      // Purple pole with glowing healing orb
+      gfx.fillStyle(0x5533aa,alpha); gfx.fillRect(-6,-8,12,28);
+      gfx.fillStyle(0x7744cc,alpha); gfx.fillRect(-9,-14,18,8);
+      gfx.fillStyle(0xff66ff,alpha); gfx.fillCircle(0,-22,11);
+      gfx.fillStyle(0xffaaff,0.55*alpha); gfx.fillCircle(-3,-25,5);
+      gfx.fillStyle(0x00ff88,0.9*alpha); gfx.fillRect(-1,-28,2,12); gfx.fillRect(-5,-24,10,2);
+    } else if (upgradeId === 'boneCannon') {
+      // Bone-white cannon on wheels
+      gfx.fillStyle(0xbbbbaa,alpha); gfx.fillRect(-16,-6,30,22);
+      gfx.fillStyle(0xddddcc,alpha); gfx.fillRect(-14,-10,26,18);
+      gfx.fillStyle(0x998877,alpha); gfx.fillCircle(-10,12,7); gfx.fillCircle(10,12,7);
+      gfx.fillStyle(0x776655,alpha); gfx.fillCircle(-10,12,4); gfx.fillCircle(10,12,4);
+      gfx.fillStyle(0xeeeedd,alpha); gfx.fillRect(10,-4,26,10);
+      gfx.fillStyle(0xccccbb,alpha); gfx.fillCircle(36,1,7);
+      gfx.fillStyle(0xfff8e0,0.6*alpha); gfx.fillCircle(-4,2,4); gfx.fillCircle(4,2,4);
     }
   }
 

@@ -871,8 +871,18 @@ function setupGameSocketEvents() {
       scene.myPlayer.isDead = true;
       // Move camera to base immediately so player watches their base while waiting to respawn
       if (scene.myBaseX !== undefined) { scene.myPlayer.x = scene.myBaseX; scene.myPlayer.y = scene.myBaseY; }
-      window.showToast('💀 You were defeated! Respawning...', 4000);
       window.SFX?.death();
+      // Show death screen with respawn countdown (same as 2D mode)
+      document.getElementById('deathScreen').classList.add('active');
+      document.getElementById('deathMsg').textContent = 'Respawning 5...';
+      let _sec = 5;
+      const _iv = setInterval(() => {
+        _sec--;
+        if (_sec > 0) {
+          document.getElementById('deathMsg').textContent = `Respawning ${_sec}...`;
+          window.SFX?.countdown?.();
+        } else { clearInterval(_iv); }
+      }, 1000);
     } else {
       window.SFX?.kill();
     }
@@ -914,6 +924,7 @@ function setupGameSocketEvents() {
     if (id === scene.myId) {
       scene.myPlayer.isDead = false; scene.myPlayer.hp = hp; scene.myPlayer.maxHp = maxHp;
       scene.myPlayer.x = x; scene.myPlayer.y = y; // teleport camera to respawn point
+      document.getElementById('deathScreen').classList.remove('active');
       window.updateHUD(scene.myPlayer);
     }
   });
