@@ -290,6 +290,14 @@ class Game3D {
       this.scene.add(this._ghost);
     }
     this._ghost.position.set(sx(pos.x), 0, sz(pos.y));
+    // Rotate wall ghost to match the orientation the server will pick (based on player facing)
+    if (WALL_TYPES.includes(upgradeId)) {
+      const phi = this.yawObject?.rotation.y ?? 0;
+      // Server: facingH = |cos(theta)| >= |sin(theta)| where theta = PI/2 - phi
+      //       = |sin(phi)| >= |cos(phi)|
+      const facingH = Math.abs(Math.sin(phi)) >= Math.abs(Math.cos(phi));
+      this._ghost.rotation.y = facingH ? 0 : Math.PI / 2;
+    }
   }
 
   hideBuildGhost() {
@@ -762,6 +770,8 @@ window.onGameReady = function (data) {
 
   s.myId = data.myPlayer.id;
   s.myPlayer = data.myPlayer;
+  s.myBaseX = data.myPlayer.x; // store pad spawn position for death camera
+  s.myBaseY = data.myPlayer.y;
   s._countdown = 5;
   if (s._armMat && data.myPlayer.color) s._armMat.color.set(data.myPlayer.color);
 
@@ -859,6 +869,8 @@ function setupGameSocketEvents() {
     if (victim) { victim.data.isDead = true; victim.group.visible = false; }
     if (victimId === scene.myId) {
       scene.myPlayer.isDead = true;
+      // Move camera to base immediately so player watches their base while waiting to respawn
+      if (scene.myBaseX !== undefined) { scene.myPlayer.x = scene.myBaseX; scene.myPlayer.y = scene.myBaseY; }
       window.showToast('💀 You were defeated! Respawning...', 4000);
       window.SFX?.death();
     } else {
