@@ -1553,7 +1553,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=9', null, () => {
-        appendScript('game3d.js?v=17', null, () => {
+        appendScript('game3d.js?v=18', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -1736,6 +1736,7 @@ const SETTINGS_DEFS = [
   { key:'damageNumbers',   label:'💢 Damage Numbers',       desc:'Floating numbers showing damage dealt/received',   default:true },
   { key:'knockbackEffect', label:'💥 Knockback Animation',  desc:'Smooth slide when you or enemies get knocked back', default:true },
   { key:'arenaFlash',      label:'⚡ Hit Screen Flash',     desc:'Brief red flash on screen when you take damage',   default:true },
+  { key:'viewBobbing',     label:'👀 View Bobbing (3D)',    desc:'Arms and camera bob as you walk in first-person mode', default:true },
 ];
 let GAME_SETTINGS = {};
 

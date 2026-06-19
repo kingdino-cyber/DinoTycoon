@@ -122,6 +122,8 @@ class Game3D {
     this._raycaster = new THREE.Raycaster();
     this._jumpY = 0;
     this._jumpVel = 0;
+    this._walkPhase = 0;
+    this._isWalking = false;
 
     this.setupInput();
     this._buildArms();
@@ -139,7 +141,7 @@ class Game3D {
   _buildArms() {
     const mat = new THREE.MeshLambertMaterial({ color: 0x888888 });
     this._armMat = mat;
-    const clawMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const clawMat = new THREE.MeshLambertMaterial({ color: 0xfff0cc });
     this._clawMat = clawMat;
 
     const clawOffsets = [-0.07, 0, 0.07]; // three claws spread across the tip
@@ -370,6 +372,24 @@ class Game3D {
     redrawHPSprite(hpSprite, data.hp, data.maxHp);
 
     const obj = { group, nameSprite, hpSprite, data: { ...data }, walkPhase: 0 };
+
+    // Add visible claw tips to the dino's world-space arm pivots (seen by all players)
+    const wArmPivots = group.userData.arms;
+    if (wArmPivots) {
+      const wClawMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+      for (const pivot of wArmPivots) {
+        for (const cx of [-0.065, 0, 0.065]) {
+          const wClaw = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.11, 5), wClawMat);
+          wClaw.position.set(cx, -0.44, 0.06);
+          wClaw.rotation.x = -0.55;
+          pivot.add(wClaw);
+        }
+      }
+      obj.armPivots = wArmPivots;
+    }
+    obj._armSwinging = false;
+    obj._armSwingT = 0;
+
     this.playerObjs[data.id] = obj;
     this.setPos(data.id, data.x, data.y, data.dir || 0);
     // Third person — own dino is visible (camera follows behind it), unlike first-person
@@ -482,6 +502,7 @@ class Game3D {
     const obj = this.playerObjs[id]; if (!obj) return;
     obj.group.scale.set(1.08, 1.08, 1.15);
     setTimeout(() => { obj.group.scale.set(1, 1, 1); }, 160);
+    if (obj.armPivots) { obj._armSwinging = true; obj._armSwingT = 0; }
   }
 
   showHitAnim(id) {
@@ -589,6 +610,8 @@ class Game3D {
       if (this.keys['KeyA'] || this.keys['ArrowLeft'])  { mx -= right.x; mz -= right.z; }
       if (this.keys['KeyD'] || this.keys['ArrowRight']) { mx += right.x; mz += right.z; }
       const mlen = Math.hypot(mx, mz);
+      this._isWalking = mlen > 0.001;
+      if (this._isWalking) this._walkPhase += dt * 8;
       if (mlen > 0.001) {
         mx /= mlen; mz /= mlen;
         let nx = sx(this.myPlayer.x) + mx * speed * dt;
@@ -651,10 +674,11 @@ class Game3D {
       if (this._armL) { this._armL.visible = fp; this._armR.visible = fp; }
 
       // Arm animation — idle bob + attack swing
+      const viewBobOn = window.GAME_SETTINGS?.viewBobbing !== false;
       if (fp && this._armL && this._armR) {
         const now3 = performance.now();
-        const breathe = Math.sin(now3 * 0.0018) * 0.016; // gentle vertical breathe
-        const walk    = Math.sin(now3 * 0.0042);          // alternating sway
+        const breathe = viewBobOn ? Math.sin(now3 * 0.0018) * 0.016 : 0;
+        const walk    = viewBobOn ? Math.sin(now3 * 0.0042) : 0;
 
         if (this._armSwinging) {
           this._armSwingT += dt;
@@ -670,7 +694,7 @@ class Game3D {
 
           if (t >= 1) { this._armSwinging = false; this._armSwingT = 0; }
         } else {
-          // Idle: breathe + gentle alternating walk sway
+          // Idle: breathe + gentle alternating walk sway (only when view bobbing is on)
           this._armR.position.set( 0.22, -0.32 + breathe + walk * 0.018, -0.55);
           this._armR.rotation.x = 0.18 + walk * 0.04;
           this._armL.position.set(-0.22, -0.32 + breathe - walk * 0.018, -0.55);
@@ -681,7 +705,8 @@ class Game3D {
       if (fp) {
         // ── First-person ─────────────────────────────────────────────────
         if (myObj) myObj.group.visible = false;
-        const eyeH = 1.85 + jY;
+        const headBob = (viewBobOn && this._isWalking) ? Math.sin(this._walkPhase) * 0.038 : 0;
+        const eyeH = 1.85 + jY + headBob;
         this.camera.position.set(px + forwardCam.x * 0.25 + shakeX, eyeH + shakeY, pz + forwardCam.z * 0.25);
         const lx = px + forwardCam.x * Math.cos(pitch) * 10;
         const ly = eyeH - Math.sin(pitch) * 10;
@@ -763,16 +788,29 @@ class Game3D {
       }
     }
 
-    // Walk animation for all non-self players based on movement
+    // Walk animation + world arm swing for all players
     for (const [id, obj] of Object.entries(this.playerObjs)) {
-      if (id === this.myId) continue;
-      const moved = obj._lastX !== undefined ? Math.hypot(obj.data.x - obj._lastX, obj.data.y - obj._lastY) : 0;
-      obj._lastX = obj.data.x; obj._lastY = obj.data.y;
-      if (moved > 0.3) {
-        obj.walkPhase = (obj.walkPhase + moved * 0.18) % (Math.PI * 2);
-        window.animateDinoWalk(obj.group, obj.walkPhase);
-      } else {
-        window.animateDinoWalk(obj.group, 0); // reset to idle pose when still
+      if (id !== this.myId) {
+        const moved = obj._lastX !== undefined ? Math.hypot(obj.data.x - obj._lastX, obj.data.y - obj._lastY) : 0;
+        obj._lastX = obj.data.x; obj._lastY = obj.data.y;
+        if (moved > 0.3) {
+          obj.walkPhase = (obj.walkPhase + moved * 0.18) % (Math.PI * 2);
+          window.animateDinoWalk(obj.group, obj.walkPhase);
+        } else {
+          window.animateDinoWalk(obj.group, 0);
+        }
+      }
+
+      // World-space arm swing animation (visible to all players)
+      if (obj._armSwinging && obj.armPivots) {
+        obj._armSwingT += dt;
+        const t = Math.min(obj._armSwingT / 0.3, 1);
+        const sw = Math.sin(t * Math.PI);
+        for (const pivot of obj.armPivots) pivot.rotation.x = -sw * 0.85;
+        if (t >= 1) {
+          obj._armSwinging = false; obj._armSwingT = 0;
+          for (const pivot of obj.armPivots) pivot.rotation.x = 0;
+        }
       }
     }
   }
