@@ -302,11 +302,11 @@ class Game3D {
     const targets = [];
     for (const [id, obj] of Object.entries(this.playerObjs)) {
       if (id === this.myId || obj.data.isDead) continue;
-      targets.push({ id, type: 'player', group: obj.group, dist: Math.hypot(this.myPlayer.x - obj.data.x, this.myPlayer.y - obj.data.y) });
+      targets.push({ id, type: 'player', group: obj.group, data: obj.data, dist: Math.hypot(this.myPlayer.x - obj.data.x, this.myPlayer.y - obj.data.y) });
     }
     for (const [id, obj] of Object.entries(this.buildingObjs)) {
       if (obj.data.ownerId === this.myId) continue;
-      targets.push({ id, type: 'building', group: obj.group, dist: Math.hypot(this.myPlayer.x - obj.data.x, this.myPlayer.y - obj.data.y) });
+      targets.push({ id, type: 'building', group: obj.group, data: obj.data, dist: Math.hypot(this.myPlayer.x - obj.data.x, this.myPlayer.y - obj.data.y) });
     }
     // Raycast against all candidate group meshes
     const meshLookup = new Map();
@@ -323,8 +323,16 @@ class Game3D {
     if (chosen) {
       if (chosen.type === 'player') {
         window.gameSocket.emit('attack', chosen.id);
+        this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
         window.SFX?.crunch();
+        // Instant client-side prediction — no waiting for server round-trip
+        this.showLaser(this.myPlayer.x, this.myPlayer.y, chosen.data.x, chosen.data.y);
+        this.showHitEffect(chosen.data.x, chosen.data.y, 0xff2222);
+        this.showHitAnim(chosen.id);
+        const adx = chosen.data.x - this.myPlayer.x, ady = chosen.data.y - this.myPlayer.y;
+        const ad = Math.hypot(adx, ady) || 1;
+        this.setPos(chosen.id, chosen.data.x + (adx / ad) * 120, chosen.data.y + (ady / ad) * 120);
       } else {
         window.gameSocket.emit('attackBuilding', chosen.id);
         this.showBite(this.myId);
@@ -460,11 +468,22 @@ class Game3D {
 
   showBite(id) {
     const obj = this.playerObjs[id]; if (!obj) return;
-    const head = obj.group.children.find(c => c.geometry && c.geometry.type === 'BoxGeometry');
-    // Quick lunge animation
-    const origZ = obj.group.position.z;
     obj.group.scale.set(1.08, 1.08, 1.15);
     setTimeout(() => { obj.group.scale.set(1, 1, 1); }, 160);
+  }
+
+  showHitAnim(id) {
+    const obj = this.playerObjs[id]; if (!obj) return;
+    const meshes = [];
+    obj.group.traverse(o => { if (o.isMesh) meshes.push({ m: o, c: o.material.color.clone() }); });
+    meshes.forEach(({ m }) => m.material.color.set(0xff1111));
+    // Shake: nudge scale rapidly then restore
+    obj.group.scale.set(0.88, 1.12, 0.88);
+    setTimeout(() => { obj.group.scale.set(1.1, 0.9, 1.1); }, 60);
+    setTimeout(() => {
+      obj.group.scale.set(1, 1, 1);
+      meshes.forEach(({ m, c }) => m.material.color.copy(c));
+    }, 140);
   }
 
   showHitEffect(x, y, colorHex) {
@@ -805,17 +824,25 @@ function setupGameSocketEvents() {
     const tgt = scene.playerObjs[targetId]; if (!tgt) return;
     tgt.data.hp = targetHp; tgt.data.maxHp = targetMaxHp;
     redrawHPSprite(tgt.hpSprite, targetHp, targetMaxHp);
+    const predicted = attackerId === scene.myId && scene._lastAttackTargetId === targetId;
+    if (predicted) scene._lastAttackTargetId = null;
+    // Always show authoritative damage number and hit animation
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
-    scene.showHitEffect(tgt.data.x, tgt.data.y, hexStr2num(tgt.data.color || '#ffffff'));
-    scene.showBite(attackerId);
-    const atk = scene.playerObjs[attackerId];
-    if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);
+    scene.showHitAnim(targetId);
+    // Only show laser/hit-flash/bite if we didn't already predict them locally
+    if (!predicted) {
+      scene.showHitEffect(tgt.data.x, tgt.data.y, hexStr2num(tgt.data.color || '#ffffff'));
+      scene.showBite(attackerId);
+      const atk = scene.playerObjs[attackerId];
+      if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);
+    }
+    // Always apply authoritative knockback (corrects any prediction error)
     if (knockback) {
       if (targetId === scene.myId) {
         scene.myPlayer.x = knockback.x; scene.myPlayer.y = knockback.y;
         scene.setPos(scene.myId, knockback.x, knockback.y);
         if ((window.GAME_SETTINGS || {}).cameraShake !== false) {
-          scene._shakeUntil = performance.now() + 200; // consumed by update()'s camera positioning each frame
+          scene._shakeUntil = performance.now() + 200;
         }
       } else {
         scene.setPos(targetId, knockback.x, knockback.y);
