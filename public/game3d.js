@@ -168,6 +168,8 @@ class Game3D {
     this._armR = makeArm( 0.22);
     this._armL.visible = false;
     this._armR.visible = false;
+    this._armSwinging = false;
+    this._armSwingT = 0;
   }
 
   buildWorld() {
@@ -333,6 +335,7 @@ class Game3D {
         window.gameSocket.emit('attack', chosen.id);
         this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
+        this._armSwinging = true; this._armSwingT = 0;
         window.SFX?.crunch();
         // Instant client-side prediction — no waiting for server round-trip
         this.showLaser(this.myPlayer.x, this.myPlayer.y, chosen.data.x, chosen.data.y);
@@ -344,6 +347,7 @@ class Game3D {
       } else {
         window.gameSocket.emit('attackBuilding', chosen.id);
         this.showBite(this.myId);
+        this._armSwinging = true; this._armSwingT = 0;
         window.SFX?.crunch();
       }
     } else {
@@ -645,6 +649,36 @@ class Game3D {
 
       const fp = this._camMode === 1;
       if (this._armL) { this._armL.visible = fp; this._armR.visible = fp; }
+
+      // Arm animation — idle bob + attack swing
+      if (fp && this._armL && this._armR) {
+        const now3 = performance.now();
+        const breathe = Math.sin(now3 * 0.0018) * 0.016; // gentle vertical breathe
+        const walk    = Math.sin(now3 * 0.0042);          // alternating sway
+
+        if (this._armSwinging) {
+          this._armSwingT += dt;
+          const SWING_DUR = 0.25;
+          const t = Math.min(this._armSwingT / SWING_DUR, 1);
+          const sw = Math.sin(t * Math.PI); // 0 → peak → 0
+
+          // Right arm: lunge forward and tilt claw-first into the hit
+          this._armR.position.set( 0.22, -0.32 + breathe + sw * 0.10, -0.55 - sw * 0.44);
+          this._armR.rotation.x = 0.18 - sw * 1.05;
+          // Left arm: slight counter-pull for body torque feel
+          this._armL.position.set(-0.22, -0.32 + breathe - sw * 0.06, -0.55 + sw * 0.14);
+          this._armL.rotation.x = 0.18 + sw * 0.22;
+
+          if (t >= 1) { this._armSwinging = false; this._armSwingT = 0; }
+        } else {
+          // Idle: breathe + gentle alternating walk sway
+          this._armR.position.set( 0.22, -0.32 + breathe + walk * 0.018, -0.55);
+          this._armR.rotation.x = 0.18 + walk * 0.04;
+          this._armL.position.set(-0.22, -0.32 + breathe - walk * 0.018, -0.55);
+          this._armL.rotation.x = 0.18 - walk * 0.04;
+        }
+      }
+
       if (fp) {
         // ── First-person ─────────────────────────────────────────────────
         if (myObj) myObj.group.visible = false;
