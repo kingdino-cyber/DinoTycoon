@@ -120,6 +120,8 @@ class Game3D {
     this.locked = false;
     this.lastMoveEmit = 0;
     this._raycaster = new THREE.Raycaster();
+    this._jumpY = 0;
+    this._jumpVel = 0;
 
     this.setupInput();
     this._buildArms();
@@ -237,7 +239,11 @@ class Game3D {
     });
     window.addEventListener('keydown', (e) => {
       this.keys[e.code] = true;
-      if (e.code === 'Space' && this.locked && window.gameSocket) {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (this._jumpY === 0 && !this.myPlayer?.isDead) this._jumpVel = 9; // jump
+      }
+      if (e.code === 'Tab' && this.locked && window.gameSocket) {
         e.preventDefault();
         window.gameSocket.emit('collectPadDrops');
       }
@@ -590,12 +596,20 @@ class Game3D {
     // Own dino model + rear-view camera follow every frame (even when standing still,
     // since looking around with the mouse should still orbit the camera)
     if (this.myPlayer) {
+      // Jump physics
+      if (this._jumpVel !== 0 || this._jumpY > 0) {
+        this._jumpVel -= 22 * dt; // gravity
+        this._jumpY = Math.max(0, this._jumpY + this._jumpVel * dt);
+        if (this._jumpY === 0) this._jumpVel = 0; // landed
+      }
+      const jY = this._jumpY;
+
       const myObj = this.playerObjs[this.myId];
       const px = sx(this.myPlayer.x), pz = sz(this.myPlayer.y);
       if (myObj) {
-        myObj.group.position.set(px, 0, pz);
+        myObj.group.position.set(px, jY, pz);
         myObj.group.rotation.y = phi;
-        myObj.group.rotation.x = -pitch * 0.4; // tilt dino body when looking up/down
+        myObj.group.rotation.x = -pitch * 0.4;
         myObj.group.visible = !this.myPlayer.isDead;
         myObj.data.x = this.myPlayer.x; myObj.data.y = this.myPlayer.y;
       }
@@ -611,8 +625,8 @@ class Game3D {
       if (this._armL) { this._armL.visible = fp; this._armR.visible = fp; }
       if (fp) {
         // ── First-person ─────────────────────────────────────────────────
-        if (myObj) myObj.group.visible = false; // hide own dino in first-person
-        const eyeH = 1.85;
+        if (myObj) myObj.group.visible = false;
+        const eyeH = 1.85 + jY;
         this.camera.position.set(px + forwardCam.x * 0.25 + shakeX, eyeH + shakeY, pz + forwardCam.z * 0.25);
         const lx = px + forwardCam.x * Math.cos(pitch) * 10;
         const ly = eyeH - Math.sin(pitch) * 10;
@@ -623,19 +637,19 @@ class Game3D {
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
         this.camera.position.set(
           px + forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
-          CAM_BASE_HEIGHT + pitchLift + shakeY,
+          CAM_BASE_HEIGHT + pitchLift + shakeY + jY,
           pz + forwardCam.z * CAM_DISTANCE * pitchPull
         );
-        this.camera.lookAt(px, 1.3, pz);
+        this.camera.lookAt(px, 1.3 + jY, pz);
       } else {
         // ── Third-person back (default) ───────────────────────────────────
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
         this.camera.position.set(
           px - forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
-          CAM_BASE_HEIGHT + pitchLift + shakeY,
+          CAM_BASE_HEIGHT + pitchLift + shakeY + jY,
           pz - forwardCam.z * CAM_DISTANCE * pitchPull
         );
-        this.camera.lookAt(px, 1.3, pz);
+        this.camera.lookAt(px, 1.3 + jY, pz);
       }
     }
 
