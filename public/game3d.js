@@ -352,8 +352,6 @@ class Game3D {
         this._armSwinging = true; this._armSwingT = 0;
         window.SFX?.crunch();
       }
-    } else {
-      window.showToast?.('⚔️ Nothing in range!', 1200);
     }
   }
 
