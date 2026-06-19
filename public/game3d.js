@@ -662,12 +662,11 @@ class Game3D {
           const t = Math.min(this._armSwingT / SWING_DUR, 1);
           const sw = Math.sin(t * Math.PI); // 0 → peak → 0
 
-          // Right arm: lunge forward and tilt claw-first into the hit
-          this._armR.position.set( 0.22, -0.32 + breathe + sw * 0.10, -0.55 - sw * 0.44);
+          // Both arms swing up and forward together
+          this._armR.position.set( 0.22, -0.32 + breathe + sw * 0.14, -0.55 - sw * 0.42);
           this._armR.rotation.x = 0.18 - sw * 1.05;
-          // Left arm: slight counter-pull for body torque feel
-          this._armL.position.set(-0.22, -0.32 + breathe - sw * 0.06, -0.55 + sw * 0.14);
-          this._armL.rotation.x = 0.18 + sw * 0.22;
+          this._armL.position.set(-0.22, -0.32 + breathe + sw * 0.14, -0.55 - sw * 0.42);
+          this._armL.rotation.x = 0.18 - sw * 1.05;
 
           if (t >= 1) { this._armSwinging = false; this._armSwingT = 0; }
         } else {
