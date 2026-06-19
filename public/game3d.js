@@ -1025,9 +1025,14 @@ function setupGameSocketEvents() {
   s.on('chatMessage', ({ username, message, color }) => window.addChatMessage(username, message, color));
 
   s.on('prestigeSuccess', ({ prestige }) => {
-    const scene = gs(); if (!scene) return;
+    const scene = gs(); if (!scene || !scene.myPlayer) return;
     scene.myPlayer.prestige = prestige;
-    window.showToast(`⭐ Prestige ${prestige}!`, 3000);
+    scene.myPlayer.money = 0;
+    scene.myPlayer.upgrades = [];
+    window.updateHUD(scene.myPlayer);
+    const shopList = window._shopUpgrades || window._allUpgrades;
+    if (shopList) window.buildShop(shopList, []);
+    window.showToast(`⭐ Prestige ${prestige}! Permanent boosts unlocked! Shop reset.`, 4000);
     window.SFX?.levelUp();
   });
 

@@ -1064,7 +1064,7 @@ io.on('connection', (socket) => {
     const p = room.players[socket.id]; if (!p) return;
     const myBuildings = Object.values(room.buildings)
       .filter(b => b.ownerId === socket.id)
-      .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp }));
+      .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
 
     // Snapshot every guest's state so they can be restored next session
     const guestStates = {};
@@ -1072,7 +1072,7 @@ io.on('connection', (socket) => {
       if (sid === socket.id) continue; // skip host, handled above
       const gBuildings = Object.values(room.buildings)
         .filter(b => b.ownerId === sid)
-        .map(b => ({ upgradeId: b.upgradeId, dx: b.x - gp.baseX, dy: b.y - gp.baseY, hp: b.hp, maxHp: b.maxHp }));
+        .map(b => ({ upgradeId: b.upgradeId, dx: b.x - gp.baseX, dy: b.y - gp.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
       guestStates[gp.username.toLowerCase()] = {
         money: Math.floor(gp.money), upgrades: [...gp.upgrades],
         buildings: gBuildings, kills: gp.kills, level: gp.level,
@@ -1475,6 +1475,7 @@ io.on('connection', (socket) => {
             x: player.baseX + sb.dx, y: player.baseY + sb.dy,
             hp: sb.hp, maxHp: sb.maxHp,
             type: bd.type, defType: bd.defType||null,
+            orientation: sb.orientation || 'h',
             damage: bd.damage||0, range: bd.range||0,
             cooldown: bd.cooldown||2000, lastFired: 0,
             mps: bd.mps||0, slow: bd.slow||false, slowAmt: bd.slowAmt||0, healRate: bd.healRate||0,
