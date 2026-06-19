@@ -451,10 +451,6 @@ class Game3D {
     innerRing.position.y = 0.05;
     group.add(innerRing);
 
-    const label = makeTextSprite('🕳️ Collector');
-    label.position.y = 1.4;
-    group.add(label);
-
     group.position.set(cx, 0, cz);
     this.scene.add(group);
     this._collectorHole = group;
@@ -706,6 +702,8 @@ class Game3D {
       if (moved > 0.3) {
         obj.walkPhase = (obj.walkPhase + moved * 0.18) % (Math.PI * 2);
         window.animateDinoWalk(obj.group, obj.walkPhase);
+      } else {
+        window.animateDinoWalk(obj.group, 0); // reset to idle pose when still
       }
     }
   }
