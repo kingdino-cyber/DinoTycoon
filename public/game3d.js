@@ -320,11 +320,6 @@ class Game3D {
       const t = meshLookup.get(hits[0].object);
       if (t && t.dist <= REACH) chosen = t;
     }
-    if (!chosen) {
-      // Fallback: nearest target within reach (aiming precisely in FP is hard)
-      const inReach = targets.filter(t => t.dist <= REACH).sort((a, b) => a.dist - b.dist);
-      chosen = inReach[0] || null;
-    }
     if (chosen) {
       if (chosen.type === 'player') {
         window.gameSocket.emit('attack', chosen.id);
@@ -598,7 +593,7 @@ class Game3D {
     if (this.myPlayer) {
       // Jump physics
       if (this._jumpVel !== 0 || this._jumpY > 0) {
-        this._jumpVel -= 22 * dt; // gravity
+        this._jumpVel -= 38 * dt; // gravity
         this._jumpY = Math.max(0, this._jumpY + this._jumpVel * dt);
         if (this._jumpY === 0) this._jumpVel = 0; // landed
       }

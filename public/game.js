@@ -540,12 +540,8 @@ class GameScene extends Phaser.Scene {
       }
     });
     this.keys.space.on('down',()=>{
-      if(!this.myPlayer||this.myPlayer.isDead) return;
-      for(const [id,d] of Object.entries(this.moneyDropObjs)) {
-        if(Phaser.Math.Distance.Between(this.myPlayer.x,this.myPlayer.y,d.data.x,d.data.y)<110) {
-          window.gameSocket.emit('collectDrop',parseInt(id)); break;
-        }
-      }
+      if(!this.myPlayer||this.myPlayer.isDead||!window.gameSocket) return;
+      window.gameSocket.emit('collectPadDrops');
     });
   }
 
