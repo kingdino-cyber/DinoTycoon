@@ -1109,6 +1109,65 @@ io.on('connection', (socket) => {
     socket.emit('savedGamesList', { games: save.savedGames });
   });
 
+  socket.on('setAutoUpdate', async (saveId) => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    if (!Array.isArray(save.savedGames)) return;
+    const idx = save.savedGames.findIndex(g => g.id === saveId);
+    if (idx === -1) return;
+    save.savedGames[idx].autoUpdate = true;
+    await putSave(authedUser.id, save);
+    socket.emit('savedGamesList', { games: save.savedGames });
+  });
+
+  socket.on('autoSaveGame', async () => {
+    if (!authedUser) return;
+    const room = rooms[socketRoom[socket.id]]; if (!room || room.status !== 'playing') return;
+    const p = room.players[socket.id]; if (!p) return;
+    const saveSlotId = room.loadSavedGame; if (!saveSlotId) return;
+
+    const myBuildings = Object.values(room.buildings)
+      .filter(b => b.ownerId === socket.id)
+      .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
+
+    const guestStates = {};
+    for (const [sid, gp] of Object.entries(room.players)) {
+      if (sid === socket.id) continue;
+      const gBuildings = Object.values(room.buildings)
+        .filter(b => b.ownerId === sid)
+        .map(b => ({ upgradeId: b.upgradeId, dx: b.x - gp.baseX, dy: b.y - gp.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
+      guestStates[gp.username.toLowerCase()] = {
+        money: Math.floor(gp.money), upgrades: [...gp.upgrades],
+        buildings: gBuildings, kills: gp.kills, level: gp.level,
+      };
+    }
+
+    const save = await getSave(authedUser.id);
+    if (!Array.isArray(save.savedGames)) return;
+    const idx = save.savedGames.findIndex(g => g.id === saveSlotId);
+    if (idx === -1) return;
+    const old = save.savedGames[idx];
+    save.savedGames[idx] = {
+      ...old,
+      money: Math.floor(p.money), upgrades: [...p.upgrades],
+      buildings: myBuildings, savedAt: new Date().toISOString(),
+      kills: p.kills, level: p.level,
+      guestStates,
+    };
+    await putSave(authedUser.id, save);
+    socket.emit('gameSaved', { entry: save.savedGames[idx] });
+  });
+
+  socket.on('markSavePlayed', async (saveId) => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    if (!Array.isArray(save.savedGames)) return;
+    const idx = save.savedGames.findIndex(g => g.id === saveId);
+    if (idx === -1) return;
+    save.savedGames[idx].lastPlayedAt = new Date().toISOString();
+    await putSave(authedUser.id, save);
+  });
+
   // ── Stats ──
   socket.on('getStats', async () => {
     if (!authedUser) return;
