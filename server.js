@@ -1155,7 +1155,7 @@ io.on('connection', (socket) => {
       guestStates,
     };
     await putSave(authedUser.id, save);
-    socket.emit('gameSaved', { entry: save.savedGames[idx] });
+    socket.emit('gameSaved', { entry: save.savedGames[idx], auto: true });
   });
 
   socket.on('markSavePlayed', async (saveId) => {

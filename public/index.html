@@ -2935,14 +2935,27 @@ function initSocket(token){
     if (!document.getElementById('statsModal').classList.contains('hidden')) renderStats(data);
   });
 
-  s.on('gameSaved', ({entry}) => {
-    showToast(`💾 "${entry.name}" saved!`, 3000);
-    window.SFX?.levelUp();
-    if (window._myStats) {
-      if (!Array.isArray(window._myStats.savedGames)) window._myStats.savedGames = [];
-      window._myStats.savedGames.unshift(entry);
-      window._myStats.savedGames = window._myStats.savedGames.slice(0,5);
-    }
+  s.on('gameSaved', ({entry, auto}) => {
+    if (auto) { showToast('🔄 Auto-saved!', 2000); }
+    else { showToast(`💾 "${entry.name}" saved!`, 3000); window.SFX?.levelUp(); }
+
+    // Replace existing entry in all caches (auto-save overwrites same slot),
+    // or prepend if it's a brand-new save.
+    const upsert = (arr) => {
+      if (!Array.isArray(arr)) return [entry];
+      const i = arr.findIndex(g => g.id === entry.id);
+      if (i >= 0) { const a = [...arr]; a[i] = entry; return a; }
+      return [entry, ...arr].slice(0, 5);
+    };
+    if (window._myStats) window._myStats.savedGames = upsert(window._myStats.savedGames);
+    window._savedGames    = upsert(window._savedGames    || []);
+    window._allSavedGames = upsert(window._allSavedGames || []);
+
+    // Re-render any open save panels immediately with fresh stats
+    if (!document.getElementById('savedGamesModal').classList.contains('hidden'))
+      renderSavedGamesList(window._savedGames);
+    const lbyPanel = document.getElementById('lbySavedList');
+    if (lbyPanel) renderSavedGamesPanel(window._savedGames, lbyPanel);
   });
 
   s.on('savedGamesList', ({games}) => {
