@@ -1414,9 +1414,9 @@ function setupGameSocketEvents() {
   s.on('leaderboard', lb=>{ window.updateLeaderboard(lb); window.updateXPBar(window._gameScene?.myPlayer?.xp||0,window._gameScene?.myPlayer?.level||1); });
   s.on('chatMessage', ({username,message,color})=>window.addChatMessage(username,message,color));
 
-  s.on('prestigeSuccess', ({prestige})=>{
+  s.on('prestigeSuccess', ({prestige, speed, damage, defense, maxHp, hp, mps, regen})=>{
     const scene=gs(); if(!scene||!scene.myPlayer) return;
-    scene.myPlayer.prestige=prestige; scene.myPlayer.money=0; scene.myPlayer.upgrades=[];
+    Object.assign(scene.myPlayer, { prestige, money:0, upgrades:[], speed, damage, defense, maxHp, hp, mps, regen });
     window.updateHUD(scene.myPlayer);
     window.buildShop(window._allUpgrades,[]);
     const obj=scene.playerObjs[scene.myId];

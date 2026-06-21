@@ -1730,7 +1730,12 @@ io.on('connection', (socket) => {
     p.mps = stats.mps + p.prestige*25; p.speed = stats.speed;
     p.damage = stats.damage + p.prestige*6; p.defense = stats.defense + p.prestige*3;
     p.maxHp = stats.maxHp + p.prestige*60; p.hp = p.maxHp;
-    socket.emit('prestigeSuccess', { prestige: p.prestige });
+    p.regen = stats.regen || 0;
+    socket.emit('prestigeSuccess', {
+      prestige: p.prestige,
+      speed: p.speed, damage: p.damage, defense: p.defense,
+      maxHp: p.maxHp, hp: p.hp, mps: p.mps, regen: p.regen,
+    });
     emitToRoom(room, 'playerPrestiged', { id: socket.id, prestige: p.prestige });
     persistPlayer(p);
   });

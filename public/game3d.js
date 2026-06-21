@@ -1101,11 +1101,12 @@ function setupGameSocketEvents() {
 
   s.on('chatMessage', ({ username, message, color }) => window.addChatMessage(username, message, color));
 
-  s.on('prestigeSuccess', ({ prestige }) => {
+  s.on('prestigeSuccess', ({ prestige, speed, damage, defense, maxHp, hp, mps, regen }) => {
     const scene = gs(); if (!scene || !scene.myPlayer) return;
-    scene.myPlayer.prestige = prestige;
-    scene.myPlayer.money = 0;
-    scene.myPlayer.upgrades = [];
+    Object.assign(scene.myPlayer, {
+      prestige, money: 0, upgrades: [],
+      speed, damage, defense, maxHp, hp, mps, regen,
+    });
     window.updateHUD(scene.myPlayer);
     const shopList = window._shopUpgrades || window._allUpgrades;
     if (shopList) window.buildShop(shopList, []);
