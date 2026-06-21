@@ -124,6 +124,9 @@ class Game3D {
     this._jumpVel = 0;
     this._walkPhase = 0;
     this._isWalking = false;
+    this._kbDur = 0; this._kbT = 0;
+    this._kbFromX = 0; this._kbFromY = 0;
+    this._kbToX   = 0; this._kbToY   = 0;
 
     this.setupInput();
     this._buildArms();
@@ -345,7 +348,13 @@ class Game3D {
         this.showHitAnim(chosen.id);
         const adx = chosen.data.x - this.myPlayer.x, ady = chosen.data.y - this.myPlayer.y;
         const ad = Math.hypot(adx, ady) || 1;
-        this.setPos(chosen.id, chosen.data.x + (adx / ad) * 120, chosen.data.y + (ady / ad) * 120);
+        const ptgt = this.playerObjs[chosen.id];
+        if (ptgt) {
+          ptgt._kbFromX = chosen.data.x; ptgt._kbFromY = chosen.data.y;
+          ptgt._kbToX = chosen.data.x + (adx / ad) * 120;
+          ptgt._kbToY = chosen.data.y + (ady / ad) * 120;
+          ptgt._kbT = 0; ptgt._kbDur = 0.22;
+        }
       } else {
         window.gameSocket.emit('attackBuilding', chosen.id);
         this.showBite(this.myId);
@@ -607,6 +616,16 @@ class Game3D {
     const phi = this.yawObject.rotation.y;     // mouse-controlled facing yaw (also the dino model's rotation.y)
     const pitch = this.pitchObject.rotation.x; // mouse-controlled camera pitch, clamped in setupInput
 
+    // Smooth self knockback — ease-out cubic lerp toward knockback target
+    if (this._kbDur > 0 && this.myPlayer) {
+      this._kbT += dt;
+      const t = Math.min(this._kbT / this._kbDur, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      this.myPlayer.x = this._kbFromX + (this._kbToX - this._kbFromX) * ease;
+      this.myPlayer.y = this._kbFromY + (this._kbToY - this._kbFromY) * ease;
+      if (t >= 1) this._kbDur = 0;
+    }
+
     if (this.myPlayer && this.myId && !this.myPlayer.isDead && this._countdown <= 0) {
       const speed = (this.myPlayer.speed || 260) * WU;
       // forward/right use the SAME convention as the dino model's facing (rotation.y = phi
@@ -799,6 +818,17 @@ class Game3D {
 
     // Walk animation + world arm swing for all players
     for (const [id, obj] of Object.entries(this.playerObjs)) {
+      // Smooth knockback lerp for this player (ease-out cubic)
+      if (obj._kbDur > 0) {
+        obj._kbT += dt;
+        const t = Math.min(obj._kbT / obj._kbDur, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const nx = obj._kbFromX + (obj._kbToX - obj._kbFromX) * ease;
+        const ny = obj._kbFromY + (obj._kbToY - obj._kbFromY) * ease;
+        this.setPos(id, nx, ny);
+        if (t >= 1) obj._kbDur = 0;
+      }
+
       if (id !== this.myId) {
         const moved = obj._lastX !== undefined ? Math.hypot(obj.data.x - obj._lastX, obj.data.y - obj._lastY) : 0;
         obj._lastX = obj.data.x; obj._lastY = obj.data.y;
@@ -926,16 +956,22 @@ function setupGameSocketEvents() {
       const atk = scene.playerObjs[attackerId];
       if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);
     }
-    // Always apply authoritative knockback (corrects any prediction error)
+    // Always apply authoritative knockback — smoothly lerped (Minecraft-style ease-out)
     if (knockback) {
+      const KB_DUR = 0.22;
       if (targetId === scene.myId) {
-        scene.myPlayer.x = knockback.x; scene.myPlayer.y = knockback.y;
-        scene.setPos(scene.myId, knockback.x, knockback.y);
-        if ((window.GAME_SETTINGS || {}).cameraShake !== false) {
+        scene._kbFromX = scene.myPlayer.x; scene._kbFromY = scene.myPlayer.y;
+        scene._kbToX = knockback.x; scene._kbToY = knockback.y;
+        scene._kbT = 0; scene._kbDur = KB_DUR;
+        if ((window.GAME_SETTINGS || {}).cameraShake !== false)
           scene._shakeUntil = performance.now() + 200;
-        }
       } else {
-        scene.setPos(targetId, knockback.x, knockback.y);
+        const kbObj = scene.playerObjs[targetId];
+        if (kbObj) {
+          kbObj._kbFromX = kbObj.data.x; kbObj._kbFromY = kbObj.data.y;
+          kbObj._kbToX = knockback.x; kbObj._kbToY = knockback.y;
+          kbObj._kbT = 0; kbObj._kbDur = KB_DUR;
+        }
       }
     }
     if (targetId === scene.myId) window.updateHUD(scene.myPlayer);
