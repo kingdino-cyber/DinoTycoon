@@ -352,6 +352,9 @@ class Game3D {
         this._armSwinging = true; this._armSwingT = 0;
         window.SFX?.crunch();
       }
+    } else {
+      // Nothing in crosshair — still swing arms so the attack feels responsive
+      this._armSwinging = true; this._armSwingT = 0;
     }
   }
 
