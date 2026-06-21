@@ -1510,6 +1510,10 @@ io.on('connection', (socket) => {
         player.skinColor = skinDef ? skinDef.color : null;
         player.customSkin = null;
       }
+      // Equipped nametag prefix — sent to all clients so it shows above the dino
+      const equippedTagId = rawSave.equippedTag || 'none';
+      const tagDef = LOBBY_SHOP.tags.find(t => t.id === equippedTagId);
+      player.tagPrefix = (tagDef && tagDef.prefix) || '';
       // Base regen from difficulty — easy=6, medium=3, hard=2 HP/s
       const baseRegen = room.difficulty==='easy' ? 6 : room.difficulty==='hard' ? 2 : 3;
       player.regen = (player.regen || 0) + baseRegen;

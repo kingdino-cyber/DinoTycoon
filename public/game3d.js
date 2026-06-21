@@ -369,6 +369,12 @@ class Game3D {
     group.add(hpSprite);
     redrawHPSprite(hpSprite, data.hp, data.maxHp);
 
+    // Snapshot original mesh colors so showHitAnim can always restore correctly
+    // even when called repeatedly before the previous restore fires.
+    const origColors = new Map();
+    group.traverse(o => { if (o.isMesh) origColors.set(o.uuid, o.material.color.clone()); });
+    group.userData.origColors = origColors;
+
     const obj = { group, nameSprite, hpSprite, data: { ...data }, walkPhase: 0 };
 
     // Add visible claw tips to the dino's world-space arm pivots (seen by all players)
@@ -505,15 +511,17 @@ class Game3D {
 
   showHitAnim(id) {
     const obj = this.playerObjs[id]; if (!obj) return;
-    const meshes = [];
-    obj.group.traverse(o => { if (o.isMesh) meshes.push({ m: o, c: o.material.color.clone() }); });
-    meshes.forEach(({ m }) => m.material.color.set(0xff1111));
-    // Shake: nudge scale rapidly then restore
+    // Turn red
+    obj.group.traverse(o => { if (o.isMesh) o.material.color.set(0xff1111); });
     obj.group.scale.set(0.88, 1.12, 0.88);
-    setTimeout(() => { obj.group.scale.set(1.1, 0.9, 1.1); }, 60);
-    setTimeout(() => {
+    // Cancel any in-flight restore so rapid hits don't compound
+    clearTimeout(obj._hitT1); clearTimeout(obj._hitT2);
+    obj._hitT1 = setTimeout(() => obj.group.scale.set(1.1, 0.9, 1.1), 60);
+    obj._hitT2 = setTimeout(() => {
       obj.group.scale.set(1, 1, 1);
-      meshes.forEach(({ m, c }) => m.material.color.copy(c));
+      // Always restore from the snapshot taken at spawn, never from current (red) state
+      const oc = obj.group.userData.origColors;
+      if (oc) obj.group.traverse(o => { if (o.isMesh && oc.has(o.uuid)) o.material.color.copy(oc.get(o.uuid)); });
     }, 140);
   }
 
