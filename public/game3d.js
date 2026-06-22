@@ -418,11 +418,27 @@ class Game3D {
     delete this.playerObjs[id];
   }
 
+  // Instant teleport — snaps the visual group AND resyncs the interpolation
+  // target so a following setNetPos doesn't slide back from a stale target.
   setPos(id, x, y, dir) {
     const obj = this.playerObjs[id]; if (!obj) return;
     obj.group.position.set(sx(x), 0, sz(y));
     if (dir !== undefined) { obj.group.rotation.y = dirToRotY(dir); obj.data.dir = dir; }
     obj.data.x = x; obj.data.y = y;
+    obj._netTargetX = x; obj._netTargetY = y;
+    if (dir !== undefined) obj._netTargetDir = dir;
+  }
+
+  // Network position update — updates logical data immediately (for raycasting/
+  // distance checks) but only sets an interpolation target; the visual group
+  // smoothly eases toward it each frame in update(), avoiding the teleport-y
+  // "glitching" look from snapping directly to each 50ms server tick.
+  setNetPos(id, x, y, dir) {
+    const obj = this.playerObjs[id]; if (!obj) return;
+    obj.data.x = x; obj.data.y = y;
+    if (dir !== undefined) obj.data.dir = dir;
+    obj._netTargetX = x; obj._netTargetY = y;
+    if (dir !== undefined) obj._netTargetDir = dir;
   }
 
   redrawHP(hpSpriteOrObjId, hp, maxHp) {
@@ -674,12 +690,24 @@ class Game3D {
     // since looking around with the mouse should still orbit the camera)
     if (this.myPlayer) {
       // Jump physics
+      const wasAirborne = this._jumpY > 0;
       if (this._jumpVel !== 0 || this._jumpY > 0) {
         this._jumpVel -= 38 * dt; // gravity
         this._jumpY = Math.max(0, this._jumpY + this._jumpVel * dt);
-        if (this._jumpY === 0) this._jumpVel = 0; // landed
+        if (this._jumpY === 0 && wasAirborne) { this._jumpVel = 0; this._landSquashT = 0; } // just landed
       }
       const jY = this._jumpY;
+
+      // Subtle squash-and-stretch: stretch tall while rising/falling fast, squash on landing
+      let jumpScaleY = 1, jumpScaleXZ = 1;
+      if (jY > 0) {
+        const stretch = Math.max(-0.05, Math.min(0.07, this._jumpVel * 0.006));
+        jumpScaleY = 1 + stretch; jumpScaleXZ = 1 - stretch * 0.5;
+      } else if (this._landSquashT !== undefined && this._landSquashT < 0.12) {
+        this._landSquashT += dt;
+        const squash = (1 - this._landSquashT / 0.12) * 0.1;
+        jumpScaleY = 1 - squash; jumpScaleXZ = 1 + squash * 0.5;
+      }
 
       const myObj = this.playerObjs[this.myId];
       const px = sx(this.myPlayer.x), pz = sz(this.myPlayer.y);
@@ -687,6 +715,7 @@ class Game3D {
         myObj.group.position.set(px, jY, pz);
         myObj.group.rotation.y = phi;
         myObj.group.rotation.x = -pitch * 0.4;
+        myObj.group.scale.set(jumpScaleXZ, jumpScaleY, jumpScaleXZ);
         myObj.group.visible = !this.myPlayer.isDead;
         myObj.data.x = this.myPlayer.x; myObj.data.y = this.myPlayer.y;
       }
@@ -733,7 +762,9 @@ class Game3D {
       if (fp) {
         // ── First-person ─────────────────────────────────────────────────
         if (myObj) myObj.group.visible = false;
-        const headBob = (viewBobOn && this._isWalking) ? Math.sin(this._walkPhase) * 0.038 : 0;
+        // Suppress head-bob while airborne — combining the walk-bob sine wave with
+        // the jump arc made jumping look jittery instead of a clean smooth curve
+        const headBob = (viewBobOn && this._isWalking && jY === 0) ? Math.sin(this._walkPhase) * 0.038 : 0;
         const eyeH = 1.85 + jY + headBob;
         this.camera.position.set(px + forwardCam.x * 0.25 + shakeX, eyeH + shakeY, pz + forwardCam.z * 0.25);
         const lx = px + forwardCam.x * Math.cos(pitch) * 10;
@@ -818,7 +849,7 @@ class Game3D {
 
     // Walk animation + world arm swing for all players
     for (const [id, obj] of Object.entries(this.playerObjs)) {
-      // Smooth knockback lerp for this player (ease-out cubic)
+      // Smooth knockback lerp for this player (ease-out cubic) takes priority
       if (obj._kbDur > 0) {
         obj._kbT += dt;
         const t = Math.min(obj._kbT / obj._kbDur, 1);
@@ -827,6 +858,18 @@ class Game3D {
         const ny = obj._kbFromY + (obj._kbToY - obj._kbFromY) * ease;
         this.setPos(id, nx, ny);
         if (t >= 1) obj._kbDur = 0;
+      } else if (id !== this.myId && obj._netTargetX !== undefined) {
+        // Smoothly ease the visual model toward the latest network position/rotation
+        // instead of snapping every ~50ms server tick — removes the "glitchy" teleport look
+        const tx = sx(obj._netTargetX), tz = sz(obj._netTargetY);
+        const smooth = 1 - Math.pow(0.0001, dt); // frame-rate independent exponential smoothing
+        obj.group.position.x += (tx - obj.group.position.x) * smooth;
+        obj.group.position.z += (tz - obj.group.position.z) * smooth;
+        if (obj._netTargetDir !== undefined) {
+          const targetRotY = dirToRotY(obj._netTargetDir);
+          let diff = ((targetRotY - obj.group.rotation.y + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+          obj.group.rotation.y += diff * smooth;
+        }
       }
 
       if (id !== this.myId) {
@@ -927,7 +970,7 @@ function setupGameSocketEvents() {
   s.on('playerMoved', ({ id, x, y, dir }) => {
     const scene = gs(); if (!scene) return;
     const obj = scene.playerObjs[id]; if (!obj) return;
-    scene.setPos(id, x, y, dir || 0);
+    scene.setNetPos(id, x, y, dir || 0);
   });
 
   s.on('botPositions', positions => {
@@ -935,7 +978,7 @@ function setupGameSocketEvents() {
     for (const { id, x, y } of positions) {
       const obj = scene.playerObjs[id]; if (!obj) continue;
       const dir = Math.atan2(y - obj.data.y, x - obj.data.x);
-      scene.setPos(id, x, y, dir);
+      scene.setNetPos(id, x, y, dir);
     }
   });
 
