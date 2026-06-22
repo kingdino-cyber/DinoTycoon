@@ -2109,7 +2109,7 @@ function kickPlayer(sid){ window.gameSocket.emit('kickPlayer',sid); }
 function addBot(diff){ window.gameSocket.emit('addBot',diff); }
 function removeBot(id){ window.gameSocket.emit('removeBot',id); }
 function startGame(){ window.gameSocket.emit('startGame'); }
-function leaveRoom(){ window.gameSocket.emit('leaveRoom'); showScreen('lobby'); currentRoom=null; }
+function leaveRoom(){ window.gameSocket.emit('leaveRoom'); showScreen('lobby'); currentRoom=null; document.getElementById('countdownOverlay')?.classList.add('hidden'); }
 
 function copyCode() {
   if(currentRoom) { navigator.clipboard?.writeText(currentRoom.inviteCode); showToast('📋 Code copied: '+currentRoom.inviteCode); }
@@ -2333,6 +2333,8 @@ function _leaveGame() {
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
   const mt=document.getElementById('matchTimer'); if(mt){mt.style.display='none';mt.classList.add('hidden');}
+  // Hide the countdown overlay if it was still showing (e.g. quit during the 5-sec pre-match countdown)
+  document.getElementById('countdownOverlay')?.classList.add('hidden');
   if (shopOpen) toggleShop();
   // Destroy 3D engine so its animation loop stops and its canvas is removed
   if (window._game3D?.dispose) window._game3D.dispose();
@@ -3062,9 +3064,10 @@ function initSocket(token){
     }
     const mt = document.getElementById('matchTimer');
     if (mt) { mt.style.display='none'; mt.classList.add('hidden'); }
+    document.getElementById('countdownOverlay')?.classList.add('hidden');
     showScreen('lobby'); currentRoom=null;
   });
-  s.on('kicked',msg=>{ showToast('👢 '+msg,4000); showScreen('lobby'); currentRoom=null; });
+  s.on('kicked',msg=>{ showToast('👢 '+msg,4000); showScreen('lobby'); currentRoom=null; document.getElementById('countdownOverlay')?.classList.add('hidden'); });
 
   // ── Countdown ──
   const cdColors = ['#ff4757','#ff6348','#ffa502','#2ed573','#7fff6a'];
