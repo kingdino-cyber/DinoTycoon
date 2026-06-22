@@ -173,14 +173,33 @@ canvas{display:block;}
 
 .land-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;}
 .land-feature{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.12);border-radius:16px;
-  padding:22px 20px;text-align:center;transition:transform .2s ease,border-color .2s ease;}
-.land-feature:hover{transform:translateY(-3px);border-color:rgba(100,200,80,.3);}
+  padding:22px 20px;text-align:center;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+  cursor:pointer;}
+.land-feature:hover{transform:translateY(-5px) scale(1.02);border-color:rgba(100,200,80,.4);
+  box-shadow:0 10px 30px rgba(0,0,0,.3);}
+.land-feature:active{transform:translateY(-2px) scale(.99);}
 .land-feature span{font-size:2rem;display:block;margin-bottom:10px;}
 .land-feature h3{font-size:1rem;color:#e8f5e9;margin-bottom:6px;}
 .land-feature p{font-size:.82rem;color:#88aa88;line-height:1.5;}
+.land-feature-more{display:block;margin-top:12px;font-size:.72rem;color:#5a9a5a;font-weight:bold;letter-spacing:.3px;}
+.land-feature:hover .land-feature-more{color:#7fff6a;}
 
 .land-footer-cta{position:relative;z-index:2;text-align:center;padding:50px 24px 70px;}
 .land-footer-cta h2{font-size:1.8rem;color:#e8f5e9;font-weight:900;margin-bottom:22px;}
+
+/* ── LANDING FEATURE DETAIL MODAL ── */
+#landFeatureModal{position:fixed;inset:0;z-index:2200;background:rgba(0,0,0,.72);
+  display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.land-feature-modal-box{position:relative;max-width:480px;width:100%;
+  background:rgba(10,30,10,.96);border:2px solid rgba(100,200,80,.3);border-radius:24px;
+  padding:42px 36px;text-align:center;box-shadow:0 0 60px rgba(50,200,50,.18);animation:slideIn .25s ease;}
+.land-feature-modal-close{position:absolute;top:14px;right:18px;background:none;border:none;
+  color:#557755;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px;}
+.land-feature-modal-close:hover{color:#ff8888;}
+.land-feature-modal-icon{font-size:3rem;margin-bottom:10px;}
+.land-feature-modal-box h2{color:#7fff6a;font-size:1.4rem;font-weight:900;margin-bottom:16px;
+  text-shadow:0 0 16px rgba(100,255,80,.4);}
+.land-feature-modal-box p{color:#b8d8b8;font-size:.92rem;line-height:1.7;margin-bottom:6px;text-align:left;}
 
 /* ── LOBBY (Overtide-style) ── */
 @keyframes dinoIdle{0%,100%{transform:translateY(0) scaleX(-1)}50%{transform:translateY(-12px) scaleX(-1)}}
@@ -1002,12 +1021,24 @@ canvas{display:block;}
   <div class="land-section">
     <div class="land-section-title">🌴 Why You'll Love It</div>
     <div class="land-features">
-      <div class="land-feature"><span>🎮</span><h3>2D &amp; 3D Modes</h3><p>Switch between the classic top-down tycoon view and full first/third-person 3D combat.</p></div>
-      <div class="land-feature"><span>🏗️</span><h3>Build Your Base</h3><p>Income towers, turrets, walls, traps &amp; healing totems defend what's yours.</p></div>
-      <div class="land-feature"><span>👥</span><h3>Multiplayer Rooms</h3><p>Public or private rooms, invite codes, friends, and AI bots at any difficulty.</p></div>
-      <div class="land-feature"><span>⭐</span><h3>Prestige System</h3><p>Cash in for permanent stat bonuses and climb the ranks all over again.</p></div>
-      <div class="land-feature"><span>🎁</span><h3>Daily Rewards</h3><p>Free Fossil Drops every day, plus Dino Points to spend on skins &amp; tags.</p></div>
-      <div class="land-feature"><span>💾</span><h3>Save &amp; Resume</h3><p>Save mid-match and continue your empire later — even auto-update it.</p></div>
+      <div class="land-feature" onclick="showLandFeature('modes')"><span>🎮</span><h3>2D &amp; 3D Modes</h3><p>Switch between the classic top-down tycoon view and full first/third-person 3D combat.</p><span class="land-feature-more">Learn more →</span></div>
+      <div class="land-feature" onclick="showLandFeature('build')"><span>🏗️</span><h3>Build Your Base</h3><p>Income towers, turrets, walls, traps &amp; healing totems defend what's yours.</p><span class="land-feature-more">Learn more →</span></div>
+      <div class="land-feature" onclick="showLandFeature('multiplayer')"><span>👥</span><h3>Multiplayer Rooms</h3><p>Public or private rooms, invite codes, friends, and AI bots at any difficulty.</p><span class="land-feature-more">Learn more →</span></div>
+      <div class="land-feature" onclick="showLandFeature('prestige')"><span>⭐</span><h3>Prestige System</h3><p>Cash in for permanent stat bonuses and climb the ranks all over again.</p><span class="land-feature-more">Learn more →</span></div>
+      <div class="land-feature" onclick="showLandFeature('rewards')"><span>🎁</span><h3>Daily Rewards</h3><p>Free Fossil Drops every day, plus Dino Points to spend on skins &amp; tags.</p><span class="land-feature-more">Learn more →</span></div>
+      <div class="land-feature" onclick="showLandFeature('save')"><span>💾</span><h3>Save &amp; Resume</h3><p>Save mid-match and continue your empire later — even auto-update it.</p><span class="land-feature-more">Learn more →</span></div>
+    </div>
+  </div>
+
+  <div id="landFeatureModal" class="hidden" onclick="if(event.target===this) closeLandFeature()">
+    <div class="land-feature-modal-box">
+      <button class="land-feature-modal-close" onclick="closeLandFeature()">✕</button>
+      <div class="land-feature-modal-icon" id="lfmIcon"></div>
+      <h2 id="lfmTitle"></h2>
+      <p id="lfmBody"></p>
+      <div class="land-hero-ctas" style="margin-top:24px;">
+        <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now</button>
+      </div>
     </div>
   </div>
 
@@ -1833,6 +1864,52 @@ function backToLanding() {
   document.getElementById('landingScreen').classList.remove('hidden');
 }
 window.backToLanding = backToLanding;
+
+// ── Landing page feature detail modal ──────────────────────────────────────────
+const LAND_FEATURES = {
+  modes: {
+    icon: '🎮', title: '2D & 3D Modes',
+    body: "Play your way. Drop into the classic top-down tycoon view for fast, bird's-eye base management — or jump into full first/third-person 3D combat with mouse-look, jumping, and crosshair-based attacks. Switch modes per match, no separate account needed — every build, upgrade, and stat carries over between them.",
+  },
+  build: {
+    icon: '🏗️', title: 'Build Your Base',
+    body: "Your home pad is your fortress. Place income generators to keep the money flowing even while you're off fighting, then ring your base with walls, turrets, and traps to make raiders regret it. A few buildings even heal you or slow down anyone careless enough to walk through them — mix and match a defense layout that fits how you like to play.",
+  },
+  multiplayer: {
+    icon: '👥', title: 'Multiplayer Rooms',
+    body: 'Host a public room and meet new rivals, or go private with a custom invite code just for your friends. Pick your difficulty, set a match timer, and fill empty slots with AI bots ranging from easy practice dummies to genuinely dangerous hardcore opponents. Chat, invite, and squad up — every room is built for playing together.',
+  },
+  prestige: {
+    icon: '⭐', title: 'Prestige System',
+    body: "Once your empire is big enough, you can cash it all in. Prestiging resets your shop — but locks in permanent bonuses that stack with every future run, making each prestige noticeably stronger than the last. It's a loop built for players who want long-term progression, not just one good match.",
+  },
+  rewards: {
+    icon: '🎁', title: 'Daily Rewards',
+    body: 'Log in and claim a free Fossil Drop every single day — no purchase required. Earn Dino Points just by playing and getting kills, then spend them in the lobby shop on cosmetic skins and nametags that show off your reputation to everyone else in the room.',
+  },
+  save: {
+    icon: '💾', title: 'Save & Resume',
+    body: "Mid-match and need to go? Save your progress and pick the exact same base back up later — buildings, upgrades, and all. Want it effortless? Flip on auto-update for a save and it'll silently re-save itself every time you quit, so your empire is always exactly where you left it.",
+  },
+};
+
+function showLandFeature(key) {
+  const f = LAND_FEATURES[key]; if (!f) return;
+  window.SFX?.pop();
+  document.getElementById('lfmIcon').textContent = f.icon;
+  document.getElementById('lfmTitle').textContent = f.title;
+  document.getElementById('lfmBody').textContent = f.body;
+  document.getElementById('landFeatureModal').classList.remove('hidden');
+}
+window.showLandFeature = showLandFeature;
+
+function closeLandFeature() {
+  document.getElementById('landFeatureModal').classList.add('hidden');
+}
+window.closeLandFeature = closeLandFeature;
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('landFeatureModal').classList.contains('hidden')) closeLandFeature();
+});
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function switchTab(m) {
