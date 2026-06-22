@@ -118,38 +118,58 @@ canvas{display:block;}
   background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 45%,#3cb043 45%,#2d8a35 100%);}
 .land-shot-caption{font-size:.8rem;color:#9bc99b;text-align:center;}
 
-/* combat preview mockup */
+/* combat preview mockup — mirrors the real floating world-space HP bar/nametag/crosshair */
 .land-mock-hpbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:90px;height:8px;
-  border-radius:4px;background:rgba(0,0,0,.4);overflow:hidden;}
-.land-mock-hpbar i{display:block;width:70%;height:100%;background:#44dd44;}
+  border-radius:4px;background:rgba(0,0,0,.6);overflow:hidden;}
+.land-mock-hpbar i{display:block;width:72%;height:100%;background:#44dd44;}
 .land-mock-name{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:.7rem;font-weight:900;
   color:#fff;text-shadow:0 0 4px #000,1px 1px 0 #000;white-space:nowrap;}
-.land-mock-dino{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:54px;height:48px;
-  background:linear-gradient(135deg,#4dd0c8,#26a69a);border-radius:6px 6px 3px 3px;}
-.land-mock-dino::before{content:'';position:absolute;top:-15px;left:8px;width:24px;height:18px;
-  background:#4dd0c8;border-radius:4px;}
-.land-mock-crosshair{position:absolute;top:46%;left:50%;width:18px;height:18px;transform:translate(-50%,-50%);
-  border:2px solid #fff;border-radius:1px;opacity:.9;}
-.land-mock-crosshair::before,.land-mock-crosshair::after{content:'';position:absolute;background:#fff;}
-.land-mock-crosshair::before{top:50%;left:-6px;width:4px;height:2px;}
-.land-mock-crosshair::after{top:-6px;left:50%;width:2px;height:4px;}
+.land-mock-crosshair{position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);opacity:.95;}
 
-/* leaderboard mockup */
-.land-shot-board{background:#0d1f0d;}
+/* Blocky low-poly dino built from stacked divs, mirroring buildDino3DModel's box geometry
+   (body/tail/legs/spikes/neck/head) — uses the real "Ocean Rex" teal skin palette */
+.land-mock-dino3d{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:86px;height:62px;}
+.land-mock-dino3d .d3-tail{position:absolute;background:#0097a7;border-radius:2px;}
+.land-mock-dino3d .d3-tail-1{width:15px;height:15px;left:-6px;bottom:18px;}
+.land-mock-dino3d .d3-tail-2{width:11px;height:11px;left:-15px;bottom:20px;}
+.land-mock-dino3d .d3-tail-3{width:7px;height:7px;left:-22px;bottom:22px;}
+.land-mock-dino3d .d3-leg{position:absolute;bottom:0;width:12px;height:20px;background:#006064;border-radius:0 0 2px 2px;}
+.land-mock-dino3d .d3-body{position:absolute;bottom:16px;left:8px;width:48px;height:32px;
+  background:linear-gradient(160deg,#26c6da 0%,#00acc1 55%,#0097a7 100%);border-radius:6px 6px 3px 3px;}
+.land-mock-dino3d .d3-belly{position:absolute;bottom:18px;left:20px;width:22px;height:14px;
+  background:rgba(245,230,200,.55);border-radius:5px;}
+.land-mock-dino3d .d3-spike{position:absolute;bottom:46px;width:0;height:0;
+  border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:9px solid #006064;}
+.land-mock-dino3d .d3-arm{position:absolute;bottom:14px;width:8px;height:14px;background:#00838f;border-radius:2px;}
+.land-mock-dino3d .d3-neck{position:absolute;bottom:36px;left:48px;width:18px;height:16px;background:#00acc1;border-radius:3px;}
+.land-mock-dino3d .d3-head{position:absolute;bottom:44px;left:56px;width:22px;height:20px;background:#26c6da;border-radius:5px;}
+.land-mock-dino3d .d3-head-hi{position:absolute;bottom:54px;left:58px;width:10px;height:6px;background:rgba(255,255,255,.4);border-radius:2px;}
+.land-mock-dino3d .d3-snout{position:absolute;bottom:46px;left:74px;width:13px;height:10px;background:#00bcd4;border-radius:3px;}
+.land-mock-dino3d .d3-eye{position:absolute;bottom:54px;left:62px;width:5px;height:5px;background:#fff;border-radius:50%;}
+.land-mock-dino3d .d3-eye::after{content:'';position:absolute;top:1px;left:1.5px;width:2px;height:2px;background:#111;border-radius:50%;}
+
+/* leaderboard mockup — literally reuses the real #lbPanel / .lb-row classes for 1:1 fidelity */
+.land-shot-board{background:rgba(0,15,0,.92);border:1px solid rgba(100,200,80,.12);}
 .land-mock-board{padding:16px;}
-.land-mock-board-title{font-size:.78rem;font-weight:900;color:#ffd700;margin-bottom:10px;}
-.land-mock-board-row{display:flex;align-items:center;gap:6px;font-size:.72rem;color:#e8f5e9;padding:4px 0;}
-.land-mock-board-row b{color:#ffd700;width:14px;}
-.land-mock-board-row span.amt{margin-left:auto;color:#88aa88;}
+.land-mock-board h3{color:#ffd700;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;}
 
-/* base-building mockup */
+/* base-building mockup — mirrors buildBuilding3DModel's real colors (stoneWall/dinoTurret/healingTotem) */
 .land-shot-build{background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 35%,#3cb043 35%,#2d8a35 100%);}
-.land-mock-wall{position:absolute;bottom:30px;width:14px;height:34px;background:#e84393;border-radius:2px;}
-.land-mock-turret{position:absolute;bottom:30px;width:18px;height:24px;background:#888;border-radius:3px;}
-.land-mock-totem{position:absolute;bottom:30px;width:12px;height:30px;background:#a29bfe;border-radius:3px 3px 0 0;}
+.land-mock-wall{position:absolute;bottom:30px;width:13px;height:32px;background:linear-gradient(160deg,#a0a098,#888880);
+  border-radius:2px;}
+.land-mock-turret{position:absolute;bottom:30px;width:16px;height:28px;
+  background:linear-gradient(160deg,#c4a878,#aa8866);border-radius:5px 5px 2px 2px;}
+.land-mock-turret::after{content:'';position:absolute;top:6px;right:-11px;width:13px;height:4px;
+  background:#2a2a2a;border-radius:2px;}
+.land-mock-totem{position:absolute;bottom:30px;width:6px;height:34px;background:#8855dd;border-radius:2px;}
+.land-mock-totem::after{content:'';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffaaff,#ff66ff);
+  box-shadow:0 0 8px #ff66ff;}
 
 /* skins mockup */
-.land-shot-skins{display:flex;align-items:center;justify-content:center;gap:6px;background:#0d1f0d;}
+.land-shot-skins{display:flex;align-items:center;justify-content:center;gap:8px;background:#0d1f0d;flex-wrap:wrap;}
+.land-skin-item{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.land-skin-item span{font-size:.62rem;color:#88aa88;}
 
 .land-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;}
 .land-feature{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.12);border-radius:16px;
@@ -910,8 +930,37 @@ canvas{display:block;}
         <div class="land-shot-frame">
           <div class="land-mock-hpbar"><i></i></div>
           <div class="land-mock-name">BrachBot50</div>
-          <div class="land-mock-dino"></div>
-          <div class="land-mock-crosshair"></div>
+          <div class="land-mock-dino3d">
+            <div class="d3-tail d3-tail-1"></div>
+            <div class="d3-tail d3-tail-2"></div>
+            <div class="d3-tail d3-tail-3"></div>
+            <div class="d3-leg" style="left:14px;"></div>
+            <div class="d3-leg" style="left:30px;"></div>
+            <div class="d3-body"></div>
+            <div class="d3-belly"></div>
+            <div class="d3-spike" style="left:16px;"></div>
+            <div class="d3-spike" style="left:25px;"></div>
+            <div class="d3-spike" style="left:34px;"></div>
+            <div class="d3-arm" style="left:42px;"></div>
+            <div class="d3-neck"></div>
+            <div class="d3-head"></div>
+            <div class="d3-head-hi"></div>
+            <div class="d3-eye"></div>
+            <div class="d3-snout"></div>
+          </div>
+          <div class="land-mock-crosshair">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="14" y1="4" x2="14" y2="11" stroke="black" stroke-width="3" stroke-linecap="round"/>
+              <line x1="14" y1="17" x2="14" y2="24" stroke="black" stroke-width="3" stroke-linecap="round"/>
+              <line x1="4" y1="14" x2="11" y2="14" stroke="black" stroke-width="3" stroke-linecap="round"/>
+              <line x1="17" y1="14" x2="24" y2="14" stroke="black" stroke-width="3" stroke-linecap="round"/>
+              <line x1="14" y1="4" x2="14" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="14" y1="17" x2="14" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="4" y1="14" x2="11" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="17" y1="14" x2="24" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="14" cy="14" r="2" fill="white" stroke="black" stroke-width="1"/>
+            </svg>
+          </div>
         </div>
         <div class="land-shot-caption">Real-time 3D combat with crosshair aiming</div>
       </div>
@@ -919,11 +968,11 @@ canvas{display:block;}
       <div class="land-shot">
         <div class="land-shot-frame land-shot-board">
           <div class="land-mock-board">
-            <div class="land-mock-board-title">🏆 FOSSIL LEADERS</div>
-            <div class="land-mock-board-row">🥇<b>1</b><span>🩷 You</span><span class="amt">$17.4K</span></div>
-            <div class="land-mock-board-row">🥈<b>2</b><span>🤖 T-RexBot3</span><span class="amt">$404</span></div>
-            <div class="land-mock-board-row">🥉<b>3</b><span>🤖 ParaBot40</span><span class="amt">$377</span></div>
-            <div class="land-mock-board-row">&nbsp;<b>4</b><span>🤖 ParaBot47</span><span class="amt">$162</span></div>
+            <h3>🏆 Fossil Leaders</h3>
+            <div class="lb-row"><span class="lb-rank">🥇</span><div class="lb-dot" style="background:#e84393"></div><span class="lb-name">You</span><span class="lb-money">$17.4K</span></div>
+            <div class="lb-row lb-bot"><span class="lb-rank">🥈</span><div class="lb-dot" style="background:#1e90ff"></div><span class="lb-name">T-RexBot3 🤖</span><span class="lb-money">$404</span></div>
+            <div class="lb-row lb-bot"><span class="lb-rank">🥉</span><div class="lb-dot" style="background:#ff4757"></div><span class="lb-name">ParaBot40 🤖</span><span class="lb-money">$377</span></div>
+            <div class="lb-row lb-bot"><span class="lb-rank">4</span><div class="lb-dot" style="background:#ff4757"></div><span class="lb-name">ParaBot47 🤖</span><span class="lb-money">$162</span></div>
           </div>
         </div>
         <div class="land-shot-caption">Climb the live leaderboard every match</div>
@@ -931,19 +980,19 @@ canvas{display:block;}
 
       <div class="land-shot">
         <div class="land-shot-frame land-shot-build">
-          <div class="land-mock-wall" style="left:30%;"></div>
-          <div class="land-mock-wall" style="left:38%;"></div>
+          <div class="land-mock-wall" style="left:26%;"></div>
+          <div class="land-mock-wall" style="left:35%;"></div>
           <div class="land-mock-turret" style="left:55%;"></div>
-          <div class="land-mock-totem" style="left:68%;"></div>
+          <div class="land-mock-totem" style="left:74%;"></div>
         </div>
         <div class="land-shot-caption">Build defenses &amp; income on your home base</div>
       </div>
 
       <div class="land-shot">
         <div class="land-shot-frame land-shot-skins">
-          <canvas id="landSkinCanvas1" width="70" height="64"></canvas>
-          <canvas id="landSkinCanvas2" width="70" height="64"></canvas>
-          <canvas id="landSkinCanvas3" width="70" height="64"></canvas>
+          <div class="land-skin-item"><canvas id="landSkinCanvas1" width="62" height="56"></canvas><span>Ocean Rex</span></div>
+          <div class="land-skin-item"><canvas id="landSkinCanvas2" width="62" height="56"></canvas><span>Lava Dino</span></div>
+          <div class="land-skin-item"><canvas id="landSkinCanvas3" width="62" height="56"></canvas><span>Dino King</span></div>
         </div>
         <div class="land-shot-caption">Unlock skins, nametags &amp; prestige stars</div>
       </div>
