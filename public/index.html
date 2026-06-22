@@ -61,6 +61,106 @@ canvas{display:block;}
   font-size:1.05rem;font-weight:bold;transition:all .2s;margin-top:4px;}
 .auth-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(76,175,80,.4);}
 .auth-err{color:#ff6b6b;font-size:.82rem;margin-top:10px;min-height:18px;}
+.auth-back{position:absolute;top:18px;left:20px;color:#557755;font-size:.8rem;cursor:pointer;
+  background:none;border:none;padding:4px;z-index:2;}
+.auth-back:hover{color:#7fff6a;}
+
+/* ── LANDING PAGE ── */
+#landingScreen{
+  position:fixed;inset:0;z-index:2100;overflow-y:auto;
+  background:radial-gradient(ellipse at 50% 0%,#16401a 0%,#0a1a08 55%,#060f05 100%);
+  color:var(--text);
+}
+.land-bg-fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;opacity:.45;}
+.land-bg-fx span{position:absolute;font-size:3rem;animation:float 4s ease-in-out infinite;}
+.land-bg-fx span:nth-child(1){left:4%;top:10%;}
+.land-bg-fx span:nth-child(2){right:6%;top:18%;animation-delay:1s;font-size:4rem;}
+.land-bg-fx span:nth-child(3){left:10%;top:68%;animation-delay:.4s;}
+.land-bg-fx span:nth-child(4){right:9%;top:76%;animation-delay:1.3s;font-size:2.5rem;}
+.land-bg-fx span:nth-child(5){left:46%;top:4%;animation-delay:.7s;font-size:2rem;}
+
+.land-nav{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  padding:22px 40px;flex-wrap:wrap;gap:12px;}
+.land-logo{font-size:1.3rem;font-weight:900;color:#7fff6a;text-shadow:0 0 16px rgba(100,255,80,.5);
+  letter-spacing:1px;display:flex;align-items:center;gap:8px;}
+.land-nav-btns{display:flex;gap:10px;}
+.land-nav-login{padding:9px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.06);color:#e8f5e9;font-size:.85rem;cursor:pointer;}
+.land-nav-signup{padding:9px 18px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;font-size:.85rem;cursor:pointer;}
+.land-nav-login:hover,.land-nav-signup:hover{transform:translateY(-1px);filter:brightness(1.1);}
+
+.land-hero{position:relative;z-index:2;max-width:780px;margin:0 auto;text-align:center;padding:50px 24px 30px;}
+.land-hero-badge{display:inline-block;padding:6px 16px;border-radius:20px;background:rgba(100,255,80,.1);
+  border:1px solid rgba(100,255,80,.3);color:#7fff6a;font-size:.78rem;font-weight:bold;letter-spacing:.5px;
+  margin-bottom:18px;animation:pulse 2.4s ease-in-out infinite;}
+.land-hero-title{font-size:2.6rem;font-weight:900;line-height:1.18;color:#e8f5e9;margin-bottom:18px;letter-spacing:-1px;}
+.land-hero-title-accent{color:#7fff6a;text-shadow:0 0 30px rgba(100,255,80,.5);}
+.land-hero-sub{color:#9bc99b;font-size:1rem;line-height:1.6;max-width:600px;margin:0 auto 30px;}
+.land-hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:26px;}
+.land-cta{padding:16px 30px;border-radius:14px;font-size:1.05rem;font-weight:900;cursor:pointer;border:none;
+  transition:transform .15s cubic-bezier(.2,1.6,.4,1),box-shadow .15s ease,filter .15s ease;}
+.land-cta-primary{background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;
+  box-shadow:0 8px 26px rgba(76,175,80,.4);}
+.land-cta-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e8f5e9;}
+.land-cta:hover{transform:scale(1.05) translateY(-2px);filter:brightness(1.08);}
+.land-cta:active{transform:scale(.97) translateY(0);}
+.land-hero-stats{display:flex;gap:28px;justify-content:center;color:#668866;font-size:.8rem;flex-wrap:wrap;}
+.land-hero-stats b{color:#7fff6a;}
+
+.land-section{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:30px 24px;}
+.land-section-title{text-align:center;font-size:1.5rem;font-weight:900;color:#e8f5e9;margin-bottom:26px;}
+.land-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;}
+.land-shot{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.15);border-radius:18px;
+  padding:14px;transition:transform .2s ease,border-color .2s ease;}
+.land-shot:hover{transform:translateY(-4px);border-color:rgba(100,200,80,.4);}
+.land-shot-frame{position:relative;border-radius:12px;overflow:hidden;height:160px;margin-bottom:12px;
+  background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 45%,#3cb043 45%,#2d8a35 100%);}
+.land-shot-caption{font-size:.8rem;color:#9bc99b;text-align:center;}
+
+/* combat preview mockup */
+.land-mock-hpbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:90px;height:8px;
+  border-radius:4px;background:rgba(0,0,0,.4);overflow:hidden;}
+.land-mock-hpbar i{display:block;width:70%;height:100%;background:#44dd44;}
+.land-mock-name{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:.7rem;font-weight:900;
+  color:#fff;text-shadow:0 0 4px #000,1px 1px 0 #000;white-space:nowrap;}
+.land-mock-dino{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:54px;height:48px;
+  background:linear-gradient(135deg,#4dd0c8,#26a69a);border-radius:6px 6px 3px 3px;}
+.land-mock-dino::before{content:'';position:absolute;top:-15px;left:8px;width:24px;height:18px;
+  background:#4dd0c8;border-radius:4px;}
+.land-mock-crosshair{position:absolute;top:46%;left:50%;width:18px;height:18px;transform:translate(-50%,-50%);
+  border:2px solid #fff;border-radius:1px;opacity:.9;}
+.land-mock-crosshair::before,.land-mock-crosshair::after{content:'';position:absolute;background:#fff;}
+.land-mock-crosshair::before{top:50%;left:-6px;width:4px;height:2px;}
+.land-mock-crosshair::after{top:-6px;left:50%;width:2px;height:4px;}
+
+/* leaderboard mockup */
+.land-shot-board{background:#0d1f0d;}
+.land-mock-board{padding:16px;}
+.land-mock-board-title{font-size:.78rem;font-weight:900;color:#ffd700;margin-bottom:10px;}
+.land-mock-board-row{display:flex;align-items:center;gap:6px;font-size:.72rem;color:#e8f5e9;padding:4px 0;}
+.land-mock-board-row b{color:#ffd700;width:14px;}
+.land-mock-board-row span.amt{margin-left:auto;color:#88aa88;}
+
+/* base-building mockup */
+.land-shot-build{background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 35%,#3cb043 35%,#2d8a35 100%);}
+.land-mock-wall{position:absolute;bottom:30px;width:14px;height:34px;background:#e84393;border-radius:2px;}
+.land-mock-turret{position:absolute;bottom:30px;width:18px;height:24px;background:#888;border-radius:3px;}
+.land-mock-totem{position:absolute;bottom:30px;width:12px;height:30px;background:#a29bfe;border-radius:3px 3px 0 0;}
+
+/* skins mockup */
+.land-shot-skins{display:flex;align-items:center;justify-content:center;gap:6px;background:#0d1f0d;}
+
+.land-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;}
+.land-feature{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.12);border-radius:16px;
+  padding:22px 20px;text-align:center;transition:transform .2s ease,border-color .2s ease;}
+.land-feature:hover{transform:translateY(-3px);border-color:rgba(100,200,80,.3);}
+.land-feature span{font-size:2rem;display:block;margin-bottom:10px;}
+.land-feature h3{font-size:1rem;color:#e8f5e9;margin-bottom:6px;}
+.land-feature p{font-size:.82rem;color:#88aa88;line-height:1.5;}
+
+.land-footer-cta{position:relative;z-index:2;text-align:center;padding:50px 24px 70px;}
+.land-footer-cta h2{font-size:1.8rem;color:#e8f5e9;font-weight:900;margin-bottom:22px;}
 
 /* ── LOBBY (Overtide-style) ── */
 @keyframes dinoIdle{0%,100%{transform:translateY(0) scaleX(-1)}50%{transform:translateY(-12px) scaleX(-1)}}
@@ -771,14 +871,115 @@ canvas{display:block;}
 })();
 </script>
 
+<!-- ══ LANDING PAGE ═════════════════════════════════════════════════════════ -->
+<div id="landingScreen">
+  <div class="land-bg-fx">
+    <span>🦕</span><span>🦖</span><span>🦴</span><span>🌿</span><span>⛰️</span>
+  </div>
+
+  <div class="land-nav">
+    <div class="land-logo"><span>🦕</span>DINO TYCOON</div>
+    <div class="land-nav-btns">
+      <button class="land-nav-login" onclick="goToAuth('login')">Log In</button>
+      <button class="land-nav-signup" onclick="goToAuth('register')">Sign Up</button>
+    </div>
+  </div>
+
+  <div class="land-hero">
+    <div class="land-hero-badge">🔥 FREE MULTIPLAYER DINO BATTLER</div>
+    <h1 class="land-hero-title">BUILD. BATTLE.<br><span class="land-hero-title-accent">BECOME A DINO LEGEND.</span></h1>
+    <p class="land-hero-sub">
+      Hatch your prehistoric empire, fight rival dinosaurs in real 3D combat, defend your base with
+      turrets &amp; walls, and prestige your way to the top of the leaderboard — live, with friends.
+    </p>
+    <div class="land-hero-ctas">
+      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now — It's Free</button>
+      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
+    </div>
+    <div class="land-hero-stats">
+      <div><b>🦖</b> Multiplayer dino battles</div>
+      <div><b>2D + 3D</b> game modes</div>
+      <div><b>100%</b> free to play</div>
+    </div>
+  </div>
+
+  <div class="land-section">
+    <div class="land-section-title">⚔️ See It In Action</div>
+    <div class="land-gallery">
+      <div class="land-shot">
+        <div class="land-shot-frame">
+          <div class="land-mock-hpbar"><i></i></div>
+          <div class="land-mock-name">BrachBot50</div>
+          <div class="land-mock-dino"></div>
+          <div class="land-mock-crosshair"></div>
+        </div>
+        <div class="land-shot-caption">Real-time 3D combat with crosshair aiming</div>
+      </div>
+
+      <div class="land-shot">
+        <div class="land-shot-frame land-shot-board">
+          <div class="land-mock-board">
+            <div class="land-mock-board-title">🏆 FOSSIL LEADERS</div>
+            <div class="land-mock-board-row">🥇<b>1</b><span>🩷 You</span><span class="amt">$17.4K</span></div>
+            <div class="land-mock-board-row">🥈<b>2</b><span>🤖 T-RexBot3</span><span class="amt">$404</span></div>
+            <div class="land-mock-board-row">🥉<b>3</b><span>🤖 ParaBot40</span><span class="amt">$377</span></div>
+            <div class="land-mock-board-row">&nbsp;<b>4</b><span>🤖 ParaBot47</span><span class="amt">$162</span></div>
+          </div>
+        </div>
+        <div class="land-shot-caption">Climb the live leaderboard every match</div>
+      </div>
+
+      <div class="land-shot">
+        <div class="land-shot-frame land-shot-build">
+          <div class="land-mock-wall" style="left:30%;"></div>
+          <div class="land-mock-wall" style="left:38%;"></div>
+          <div class="land-mock-turret" style="left:55%;"></div>
+          <div class="land-mock-totem" style="left:68%;"></div>
+        </div>
+        <div class="land-shot-caption">Build defenses &amp; income on your home base</div>
+      </div>
+
+      <div class="land-shot">
+        <div class="land-shot-frame land-shot-skins">
+          <canvas id="landSkinCanvas1" width="70" height="64"></canvas>
+          <canvas id="landSkinCanvas2" width="70" height="64"></canvas>
+          <canvas id="landSkinCanvas3" width="70" height="64"></canvas>
+        </div>
+        <div class="land-shot-caption">Unlock skins, nametags &amp; prestige stars</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="land-section">
+    <div class="land-section-title">🌴 Why You'll Love It</div>
+    <div class="land-features">
+      <div class="land-feature"><span>🎮</span><h3>2D &amp; 3D Modes</h3><p>Switch between the classic top-down tycoon view and full first/third-person 3D combat.</p></div>
+      <div class="land-feature"><span>🏗️</span><h3>Build Your Base</h3><p>Income towers, turrets, walls, traps &amp; healing totems defend what's yours.</p></div>
+      <div class="land-feature"><span>👥</span><h3>Multiplayer Rooms</h3><p>Public or private rooms, invite codes, friends, and AI bots at any difficulty.</p></div>
+      <div class="land-feature"><span>⭐</span><h3>Prestige System</h3><p>Cash in for permanent stat bonuses and climb the ranks all over again.</p></div>
+      <div class="land-feature"><span>🎁</span><h3>Daily Rewards</h3><p>Free Fossil Drops every day, plus Dino Points to spend on skins &amp; tags.</p></div>
+      <div class="land-feature"><span>💾</span><h3>Save &amp; Resume</h3><p>Save mid-match and continue your empire later — even auto-update it.</p></div>
+    </div>
+  </div>
+
+  <div class="land-footer-cta">
+    <h2>Ready to dominate the Jurassic? 🦖</h2>
+    <div class="land-hero-ctas">
+      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now</button>
+      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
-<div id="authScreen">
+<div id="authScreen" class="hidden">
   <div class="auth-dinos">
     <span class="auth-dino">🦕</span><span class="auth-dino">🦖</span>
     <span class="auth-dino">🦴</span><span class="auth-dino">🌿</span>
     <span class="auth-dino">⛰️</span>
   </div>
   <div class="auth-box">
+    <button class="auth-back" onclick="backToLanding()">‹ Back</button>
     <div class="auth-logo">🦕</div>
     <div class="auth-title">DINO TYCOON</div>
     <div class="auth-sub">Build your prehistoric empire. Dominate the Jurassic.</div>
@@ -1566,6 +1767,24 @@ function loadGameScripts(mode, cb) {
   }
 }
 
+// ── Landing page ──────────────────────────────────────────────────────────────
+function goToAuth(mode) {
+  window.SFX?.pop();
+  document.getElementById('landingScreen').classList.add('hidden');
+  const auth = document.getElementById('authScreen');
+  auth.style.display = ''; // clear any stale inline override
+  auth.classList.remove('hidden');
+  switchTab(mode);
+}
+window.goToAuth = goToAuth;
+
+function backToLanding() {
+  window.SFX?.click();
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('landingScreen').classList.remove('hidden');
+}
+window.backToLanding = backToLanding;
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function switchTab(m) {
   authMode = m;
@@ -1600,6 +1819,7 @@ function doLogout() {
 }
 
 function enterGame(token) {
+  document.getElementById('landingScreen')?.classList.add('hidden');
   // Immediately kill pointer events on auth screen so lobby buttons work during fade
   const auth = document.getElementById('authScreen');
   auth.style.pointerEvents = 'none';
@@ -1617,6 +1837,13 @@ function enterGame(token) {
 window.addEventListener('load', () => {
   const tok = localStorage.getItem('dt_token'), u = localStorage.getItem('dt_user');
   if (tok && u) { currentUser = u; enterGame(tok); }
+
+  // Draw the landing page's skin showcase using the same renderer as the real game
+  const landColors = ['#00bcd4', '#ff4757', '#ffd700'];
+  ['landSkinCanvas1', 'landSkinCanvas2', 'landSkinCanvas3'].forEach((id, i) => {
+    const c = document.getElementById(id);
+    if (c && window.drawDinoCanvas) window.drawDinoCanvas(c, landColors[i]);
+  });
 });
 
 // ── Screen management — fully explicit, no clever logic ───────────────────────
