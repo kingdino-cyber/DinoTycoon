@@ -22,6 +22,7 @@ const PADS_DATA = [
 ];
 
 const WALL_TYPES = ['stoneWall', 'fossilFortress'];
+const INCOME_UPGRADE_IDS = ['bonePile1', 'bonePile2', 'bonePile3', 'bonePile4', 'bonePile5'];
 
 function sx(serverX) { return serverX * WU; }
 function sz(serverY) { return serverY * WU; }
@@ -88,7 +89,7 @@ class Game3D {
     this.scene.background = new THREE.Color(skyColor);
     this.scene.fog = new THREE.Fog(skyColor, 45, 130);
 
-    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 300);
+    this.camera = new THREE.PerspectiveCamera(window.GAME_SETTINGS?.fov ?? 70, window.innerWidth / window.innerHeight, 0.1, 300);
     this.scene.add(this.camera);
     // yawObject/pitchObject are NOT added to the scene — they're just lightweight
     // rotation accumulators for mouse-look (third-person camera is positioned
@@ -239,7 +240,7 @@ class Game3D {
     document.addEventListener('pointerlockchange', this._onPointerLockChange);
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
-      const sens = window.GAME_SETTINGS?.sensitivity3d ?? 0.0022;
+      const sens = 0.0008 + ((window.GAME_SETTINGS?.mouseSensitivity ?? 50) / 100) * 0.004;
       this.yawObject.rotation.y -= e.movementX * sens;
       this.pitchObject.rotation.x += e.movementY * sens;
       this.pitchObject.rotation.x = Math.max(-0.55, Math.min(0.65, this.pitchObject.rotation.x));
@@ -293,6 +294,7 @@ class Game3D {
       this._ghost.traverse(o => {
         if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.5; }
       });
+      if (INCOME_UPGRADE_IDS.includes(upgradeId)) this._ghost.scale.setScalar(2);
       this._ghostUpgradeId = upgradeId;
       this.scene.add(this._ghost);
     }
@@ -449,13 +451,19 @@ class Game3D {
   }
 
   spawnBuilding(b) {
-    const group = window.buildBuilding3DModel(THREE, b.upgradeId, b.ownerColor);
-    if (b.orientation === 'v') group.rotation.y = Math.PI / 2;
+    const model = window.buildBuilding3DModel(THREE, b.upgradeId, b.ownerColor);
+    if (b.orientation === 'v') model.rotation.y = Math.PI / 2;
+    const isIncome = b.type === 'income';
+    if (isIncome) model.scale.setScalar(2); // income structures stand out twice as large
+    // Wrap in an unscaled outer group so the HP bar sprite (added below) stays
+    // normal-sized instead of also being doubled by the model's scale.
+    const group = new THREE.Group();
+    group.add(model);
     group.position.set(sx(b.x), 0, sz(b.y));
     this.scene.add(group);
 
     const hpSprite = makeHPBarSprite();
-    hpSprite.position.set(0, 2.8, 0); // above the tallest structure (towers reach ~2.4)
+    hpSprite.position.set(0, isIncome ? 5.4 : 2.8, 0); // above the (now taller) structure
     group.add(hpSprite);
     redrawHPSprite(hpSprite, b.hp, b.maxHp);
 
@@ -926,7 +934,14 @@ window.onGameReady = function (data) {
   s.myBaseX = data.myPlayer.x; // store pad spawn position for death camera
   s.myBaseY = data.myPlayer.y;
   s._countdown = 5;
-  if (s._armMat && data.myPlayer.color) s._armMat.color.set(data.myPlayer.color);
+  if (s._armMat) {
+    // Match the same color the dino body actually renders with — not just the raw
+    // player.color, which ignores an equipped skin/custom skin override and caused
+    // the arms to show the wrong color (e.g. pink arms on a green-skinned dino).
+    const mp = data.myPlayer;
+    const armColor = mp.customSkin ? '#4caf50' : (mp.skinColor || mp.color);
+    if (armColor) s._armMat.color.set(armColor);
+  }
 
   s.spawnPlayer(data.myPlayer);
   for (const p of data.allPlayers) if (p.id !== data.myPlayer.id) s.spawnPlayer(p);

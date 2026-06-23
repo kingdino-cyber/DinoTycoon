@@ -1837,7 +1837,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=10', null, () => {
-        appendScript('game3d.js?v=24', null, () => {
+        appendScript('game3d.js?v=25', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -2099,19 +2099,26 @@ let GAME_SETTINGS = {};
 function loadSettings() {
   try { GAME_SETTINGS = JSON.parse(localStorage.getItem('dt_settings') || '{}'); } catch { GAME_SETTINGS = {}; }
   for (const d of SETTINGS_DEFS) if (GAME_SETTINGS[d.key] === undefined) GAME_SETTINGS[d.key] = d.default;
+  if (GAME_SETTINGS.mouseSensitivity === undefined) GAME_SETTINGS.mouseSensitivity = 50; // 1-100 scale
+  if (GAME_SETTINGS.fov === undefined) GAME_SETTINGS.fov = 70;
+  delete GAME_SETTINGS.sensitivity3d; // old system, fully replaced
   applySettings();
 }
 
 function applySettings() {
   window.GAME_SETTINGS = GAME_SETTINGS;
   if (window.SFX) window.SFX._muted = !GAME_SETTINGS.soundEnabled;
+  // Apply FOV live if a 3D scene is already running
+  const cam = window._gameScene?.camera;
+  if (cam && cam.isPerspectiveCamera) {
+    cam.fov = GAME_SETTINGS.fov;
+    cam.updateProjectionMatrix();
+  }
 }
 
 function openSettingsModal() {
   window.SFX?.pop();
   loadSettings();
-  const sensVal = GAME_SETTINGS.sensitivity3d ?? 0.0022;
-  const sensDisplay = Math.round(sensVal * 10000);
   document.getElementById('settingsContent').innerHTML = SETTINGS_DEFS.map(d => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
       <div>
@@ -2126,13 +2133,28 @@ function openSettingsModal() {
           <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">🎯 3D Mouse Sensitivity</div>
           <div style="color:#557755;font-size:.72rem;margin-top:2px;">How fast the camera turns in 3D mode</div>
         </div>
-        <span id="sensDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${sensDisplay}</span>
+        <span id="sensDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.mouseSensitivity}</span>
       </div>
-      <input type="range" id="setting_sensitivity3d" min="5" max="80" value="${sensDisplay}"
+      <input type="range" id="setting_mouseSensitivity" min="1" max="100" value="${GAME_SETTINGS.mouseSensitivity}"
         style="width:100%;accent-color:#4caf50;"
         oninput="document.getElementById('sensDisplay').textContent=this.value">
       <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
-        <span>Slow</span><span>Default (22)</span><span>Fast</span>
+        <span>Slow</span><span>Default (50)</span><span>Fast</span>
+      </div>
+    </div>
+    <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">🔭 3D Field of View</div>
+          <div style="color:#557755;font-size:.72rem;margin-top:2px;">How wide the camera sees in 3D mode</div>
+        </div>
+        <span id="fovDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.fov}°</span>
+      </div>
+      <input type="range" id="setting_fov" min="60" max="110" value="${GAME_SETTINGS.fov}"
+        style="width:100%;accent-color:#4caf50;"
+        oninput="document.getElementById('fovDisplay').textContent=this.value+'°'">
+      <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
+        <span>Narrow</span><span>Default (70°)</span><span>Wide</span>
       </div>
     </div>`;
   document.getElementById('settingsModal').classList.remove('hidden');
@@ -2142,8 +2164,10 @@ function saveSettings() {
   for (const d of SETTINGS_DEFS) {
     GAME_SETTINGS[d.key] = document.getElementById('setting_'+d.key).classList.contains('on');
   }
-  const sensSlider = document.getElementById('setting_sensitivity3d');
-  if (sensSlider) GAME_SETTINGS.sensitivity3d = parseInt(sensSlider.value) / 10000;
+  const sensSlider = document.getElementById('setting_mouseSensitivity');
+  if (sensSlider) GAME_SETTINGS.mouseSensitivity = parseInt(sensSlider.value);
+  const fovSlider = document.getElementById('setting_fov');
+  if (fovSlider) GAME_SETTINGS.fov = parseInt(fovSlider.value);
   localStorage.setItem('dt_settings', JSON.stringify(GAME_SETTINGS));
   applySettings();
   closeModal('settingsModal');
