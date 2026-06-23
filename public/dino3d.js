@@ -187,19 +187,59 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       break;
     }
     case 'bonePile2': {
-      // Mine shaft entrance — stone frame, dark opening, ore cart on rails
+      // Fossil Mine — long receding tunnel shaft with wooden support frames,
+      // a stone entrance arch, rail track, and an ore cart out front
+      const postMat = new THREE.MeshLambertMaterial({ color: 0x6b6354 });
+      const beamMat = new THREE.MeshLambertMaterial({ color: 0x8b7355 });
+      const tieMat = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+      const railMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
+
+      // Entrance arch (stone posts + top beam) at the mouth of the shaft
       addBox(0.28, 1.3, 0.3, 0x6b6354, -0.68, 0.65, 0);
       addBox(0.28, 1.3, 0.3, 0x6b6354,  0.68, 0.65, 0);
       addBox(1.65, 0.3, 0.34, 0x8b7355, 0, 1.45, 0);
-      addBox(1.05, 1.05, 0.22, 0x0a0a08, 0, 0.6, 0.08);
-      const cart = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.28, 0.38), new THREE.MeshLambertMaterial({ color: 0x4a3a2a }));
-      cart.position.set(0.5, 0.24, 0.52); group.add(cart);
-      const ore = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), new THREE.MeshLambertMaterial({ color: 0xd4af37 }));
-      ore.position.set(0.5, 0.44, 0.52); group.add(ore);
-      for (const wx of [0.32, 0.68]) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.08, 8), new THREE.MeshLambertMaterial({ color: 0x222222 }));
-        wheel.rotation.x = Math.PI / 2; wheel.position.set(wx, 0.09, 0.52); group.add(wheel);
+
+      // Long dark tunnel boring back into the hill, front face flush with the entrance
+      const tunnel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.0, 1.7), new THREE.MeshLambertMaterial({ color: 0x0a0a08 }));
+      tunnel.position.set(0, 0.55, -0.85); group.add(tunnel);
+
+      // Wooden support frames spaced along the shaft's length, getting visibly
+      // further away — sells the depth/length of the mine
+      for (const bz of [-0.35, -0.85, -1.35]) {
+        const frame = new THREE.Group();
+        const leftPost = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.92, 0.14), beamMat);
+        leftPost.position.set(-0.4, 0.46, 0); frame.add(leftPost);
+        const rightPost = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.92, 0.14), beamMat);
+        rightPost.position.set(0.4, 0.46, 0); frame.add(rightPost);
+        const topBeam = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.14, 0.16), beamMat);
+        topBeam.position.set(0, 0.92, 0); frame.add(topBeam);
+        frame.position.z = bz;
+        group.add(frame);
       }
+
+      // Rail track running from inside the shaft out past the entrance
+      for (const rx of [-0.18, 0.18]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 2.3), railMat);
+        rail.position.set(rx, 0.04, -0.15); group.add(rail);
+      }
+      for (let i = 0; i < 6; i++) {
+        const tie = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.08), tieMat);
+        tie.position.set(0, 0.02, -1.3 + i * 0.4); group.add(tie);
+      }
+
+      // Ore cart parked on the rails just outside the entrance
+      const cart = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.28, 0.38), tieMat);
+      cart.position.set(0, 0.24, 0.85); group.add(cart);
+      const ore = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), new THREE.MeshLambertMaterial({ color: 0xd4af37 }));
+      ore.position.set(0, 0.44, 0.85); group.add(ore);
+      for (const wx of [-0.18, 0.18]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.08, 8), new THREE.MeshLambertMaterial({ color: 0x222222 }));
+        wheel.rotation.x = Math.PI / 2; wheel.position.set(wx, 0.09, 0.85); group.add(wheel);
+      }
+
+      // Small lantern glowing above the entrance
+      const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), new THREE.MeshLambertMaterial({ color: 0xffcc44, emissive: 0xffaa00, emissiveIntensity: 0.6 }));
+      lantern.position.set(0, 1.2, 0.05); group.add(lantern);
       break;
     }
     case 'bonePile3': {
