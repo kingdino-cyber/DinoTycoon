@@ -163,26 +163,93 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
   }
 
   switch (upgradeId) {
-    case 'bonePile1':
-      addBox(1.1, 0.4, 1.1, 0xf0e6c8, 0, 0.2, 0);
-      break;
-    case 'bonePile2':
-      addBox(1.4, 1.2, 1.4, 0x554433, 0, 0.6, 0);
-      addBox(0.8, 0.7, 0.8, 0x1a1a10, 0, 0.65, 0);
-      break;
-    case 'bonePile3': {
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xffd700 }));
-      dome.position.y = 0.45; group.add(dome);
+    case 'bonePile1': {
+      // Dirt mound with three crossed bones on top — mirrors the 2D "pile of bones" art
+      const mound = new THREE.Mesh(
+        new THREE.SphereGeometry(0.62, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: 0x8b7355 })
+      );
+      mound.position.y = 0.05; mound.scale.set(1, 0.4, 1); group.add(mound);
+      const boneMat = new THREE.MeshLambertMaterial({ color: 0xf0e6c8 });
+      const boneAngles = [0.4, -0.7, 1.4];
+      for (let i = 0; i < 3; i++) {
+        const bone = new THREE.Group();
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.7, 6), boneMat);
+        shaft.rotation.z = Math.PI / 2; bone.add(shaft);
+        for (const ex of [-0.35, 0.35]) {
+          const knob = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), boneMat);
+          knob.position.x = ex; bone.add(knob);
+        }
+        bone.position.set((i - 1) * 0.16, 0.16 + i * 0.1, (i - 1) * 0.08);
+        bone.rotation.y = boneAngles[i];
+        group.add(bone);
+      }
       break;
     }
-    case 'bonePile4':
-      addBox(1.8, 1.4, 1.4, 0xccbbaa, 0, 0.7, 0);
-      { const roof = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.7, 4), new THREE.MeshLambertMaterial({ color: 0x665544 })); roof.position.y = 1.75; roof.rotation.y = Math.PI / 4; group.add(roof); }
+    case 'bonePile2': {
+      // Mine shaft entrance — stone frame, dark opening, ore cart on rails
+      addBox(0.28, 1.3, 0.3, 0x6b6354, -0.68, 0.65, 0);
+      addBox(0.28, 1.3, 0.3, 0x6b6354,  0.68, 0.65, 0);
+      addBox(1.65, 0.3, 0.34, 0x8b7355, 0, 1.45, 0);
+      addBox(1.05, 1.05, 0.22, 0x0a0a08, 0, 0.6, 0.08);
+      const cart = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.28, 0.38), new THREE.MeshLambertMaterial({ color: 0x4a3a2a }));
+      cart.position.set(0.5, 0.24, 0.52); group.add(cart);
+      const ore = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 6), new THREE.MeshLambertMaterial({ color: 0xd4af37 }));
+      ore.position.set(0.5, 0.44, 0.52); group.add(ore);
+      for (const wx of [0.32, 0.68]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.08, 8), new THREE.MeshLambertMaterial({ color: 0x222222 }));
+        wheel.rotation.x = Math.PI / 2; wheel.position.set(wx, 0.09, 0.52); group.add(wheel);
+      }
       break;
-    case 'bonePile5':
-      addBox(2.0, 1.8, 1.6, 0xaaddff, 0, 0.9, 0);
-      { const dome = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 8), new THREE.MeshLambertMaterial({ color: 0xffd700 })); dome.position.y = 2.0; group.add(dome); }
+    }
+    case 'bonePile3': {
+      // Amber vault — glowing dome on a pedestal with an embedded fossil silhouette
+      addBox(0.95, 0.28, 0.95, 0x554433, 0, 0.14, 0);
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(0.68, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: 0xffb300 })
+      );
+      dome.position.y = 0.3; group.add(dome);
+      const hi = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: 0xffe680, transparent: true, opacity: 0.5 })
+      );
+      hi.position.set(-0.2, 0.62, -0.15); group.add(hi);
+      const fossil = new THREE.Mesh(new THREE.SphereGeometry(0.17, 6, 6), new THREE.MeshLambertMaterial({ color: 0x4a3520 }));
+      fossil.position.set(0.05, 0.52, 0.1); fossil.scale.set(1.4, 0.6, 1); group.add(fossil);
       break;
+    }
+    case 'bonePile4': {
+      // Dino Museum — columned building with a triangular pediment roof
+      addBox(1.75, 1.15, 1.35, 0xccbbaa, 0, 0.58, 0);
+      addBox(1.95, 0.14, 1.55, 0xddccbb, 0, 0.07, 0.08);
+      const colMat = new THREE.MeshLambertMaterial({ color: 0xeee0cc });
+      for (const cx of [-0.62, -0.21, 0.21, 0.62]) {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 1.25, 8), colMat);
+        col.position.set(cx, 0.62, 0.75); group.add(col);
+      }
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.6, 4), new THREE.MeshLambertMaterial({ color: 0x8a6d4f }));
+      roof.position.y = 1.45; roof.rotation.y = Math.PI / 4; group.add(roof);
+      break;
+    }
+    case 'bonePile5': {
+      // Prehistoric Bank — glass-blue vault, marble columns, gold dome + spire
+      addBox(1.95, 1.55, 1.55, 0xaaddff, 0, 0.78, 0);
+      addBox(2.05, 0.2, 1.65, 0xd4af37, 0, 0.1, 0);
+      const colMat2 = new THREE.MeshLambertMaterial({ color: 0xfafafa });
+      for (const cx of [-0.78, -0.26, 0.26, 0.78]) {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.45, 8), colMat2);
+        col.position.set(cx, 0.73, 0.82); group.add(col);
+      }
+      const dome2 = new THREE.Mesh(
+        new THREE.SphereGeometry(0.54, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: 0xffd700 })
+      );
+      dome2.position.y = 1.6; group.add(dome2);
+      const spire = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.4, 6), new THREE.MeshLambertMaterial({ color: 0xffd700 }));
+      spire.position.y = 2.18; group.add(spire);
+      break;
+    }
     case 'fossilFortress':
       addBox(1.8, 1.8, 1.8, 0x887766, 0, 0.9, 0);
       addBox(0.5, 2.4, 0.5, 0x887766, -0.8, 1.2, 0);
