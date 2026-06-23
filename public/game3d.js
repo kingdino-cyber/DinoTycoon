@@ -310,7 +310,17 @@ class Game3D {
     if (!this._ghost) {
       this._ghost = window.buildBuilding3DModel(THREE, upgradeId, this.myPlayer?.color || '#4caf50');
       this._ghost.traverse(o => {
-        if (o.material) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.5; }
+        if (!o.material) return;
+        // Some buildings (Fossil Mine cave walls, Conveyor Belt) use a per-face
+        // material array instead of a single material — clone() doesn't exist
+        // on arrays, so handle both shapes.
+        if (Array.isArray(o.material)) {
+          o.material = o.material.map(m => { const c = m.clone(); c.transparent = true; c.opacity = 0.5; return c; });
+        } else {
+          o.material = o.material.clone();
+          o.material.transparent = true;
+          o.material.opacity = 0.5;
+        }
       });
       if (INCOME_UPGRADE_IDS.includes(upgradeId)) this._ghost.scale.setScalar(2);
       this._ghostUpgradeId = upgradeId;
