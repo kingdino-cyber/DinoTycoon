@@ -1360,11 +1360,15 @@ io.on('connection', (socket) => {
     const roomId = socketRoom[socket.id]; if (!roomId) return;
     const room = rooms[roomId]; if (!room) return;
     delete room.lobbyPlayers[socket.id];
-    delete room.players[socket.id];
     delete socketRoom[socket.id];
 
-    // Persist if was playing
-    if (room.players[socket.id]) persistPlayer(room.players[socket.id]);
+    // Persist if was playing — must happen BEFORE deleting from room.players below,
+    // otherwise this check always sees it already gone and never actually persists
+    // (money/points/kills earned in the final seconds before quitting were lost
+    // until the next periodic sync tick happened to fire first).
+    const leavingPlayer = room.players[socket.id];
+    if (leavingPlayer) persistPlayer(leavingPlayer);
+    delete room.players[socket.id];
 
     emitToRoom(room, 'roomPlayerLeft', { socketId: socket.id });
 

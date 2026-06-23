@@ -3443,6 +3443,10 @@ function initSocket(token){
     if (mt) { mt.style.display='none'; mt.classList.add('hidden'); }
     document.getElementById('countdownOverlay')?.classList.add('hidden');
     showScreen('lobby'); currentRoom=null;
+    // Refresh Dino Points (and shop data) immediately on returning to the lobby —
+    // points earned from kills during the match were previously only reflected in
+    // the nav bar after manually opening the Shop tab.
+    if (window.gameSocket) window.gameSocket.emit('getLobbyShop');
   });
   s.on('kicked',msg=>{ showToast('👢 '+msg,4000); showScreen('lobby'); currentRoom=null; document.getElementById('countdownOverlay')?.classList.add('hidden'); });
 
