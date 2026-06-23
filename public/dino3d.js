@@ -203,13 +203,28 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       // instead of a solid box, so the front entrance actually opens onto a dark
       // interior instead of showing a flat black wall right behind the arch.
       // A second opening is left in the right-hand wall partway along the shaft.
-      addBox(1.0, 0.06, 1.7, 0x0a0a08, 0, 0.05, -0.85);   // floor
-      addBox(1.0, 0.06, 1.7, 0x0a0a08, 0, 1.05, -0.85);   // ceiling
-      addBox(1.0, 1.0,  0.06, 0x0a0a08, 0, 0.55, -1.7);   // back wall (closes the far end)
-      addBox(0.06, 1.0, 1.7, 0x0a0a08, -0.5, 0.55, -0.85); // left wall — fully enclosed
-      // Right wall, split in two so a gap remains for the second entrance
-      addBox(0.06, 1.0, 0.5, 0x0a0a08, 0.5, 0.55, -0.25);  // near segment (z: 0 to -0.5)
-      addBox(0.06, 1.0, 0.7, 0x0a0a08, 0.5, 0.55, -1.35);  // far segment (z: -1.0 to -1.7)
+      //
+      // Each panel gets a PER-FACE material: only the single face that actually
+      // faces the cave interior is black — every other face (what you see from
+      // outside the structure) is the same stone color as the entrance arch, so
+      // the mine doesn't read as a giant black box from any other angle.
+      const rockHex = 0x6b6354;
+      const darkHex = 0x0a0a08;
+      function addCaveWall(w, h, d, x, y, z, darkFaceIdx) {
+        const mats = [];
+        for (let i = 0; i < 6; i++) mats.push(new THREE.MeshLambertMaterial({ color: i === darkFaceIdx ? darkHex : rockHex }));
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats);
+        mesh.position.set(x, y, z);
+        group.add(mesh);
+      }
+      // BoxGeometry material face order: 0:+x 1:-x 2:+y 3:-y 4:+z 5:-z
+      addCaveWall(1.0, 0.06, 1.7,  0,    0.05, -0.85, 2); // floor   — top (+y) faces inside
+      addCaveWall(1.0, 0.06, 1.7,  0,    1.05, -0.85, 3); // ceiling — bottom (-y) faces inside
+      addCaveWall(1.0, 1.0,  0.06, 0,    0.55, -1.7,  4); // back wall — +z faces inside (toward entrance)
+      addCaveWall(0.06, 1.0, 1.7, -0.5,  0.55, -0.85, 0); // left wall — +x faces inside
+      // Right wall, split in two so a gap remains for the second entrance — -x faces inside
+      addCaveWall(0.06, 1.0, 0.5,  0.5,  0.55, -0.25, 1); // near segment (z: 0 to -0.5)
+      addCaveWall(0.06, 1.0, 0.7,  0.5,  0.55, -1.35, 1); // far segment (z: -1.0 to -1.7)
       // Small frame around the side entrance (the gap between the two right-wall segments)
       addBox(0.14, 1.0, 0.14, 0x6b6354, 0.5, 0.55, -0.5);
       addBox(0.14, 1.0, 0.14, 0x6b6354, 0.5, 0.55, -1.0);
