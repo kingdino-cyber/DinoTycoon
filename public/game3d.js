@@ -97,6 +97,22 @@ class Game3D {
     this.yawObject = new THREE.Object3D();
     this.pitchObject = new THREE.Object3D();
 
+    // First-person arms render through a SEPARATE camera with a fixed FOV — classic
+    // FPS "decoupled view-model" trick. The arms sit at a fixed offset from the eye, so
+    // when the main camera's FOV changes (e.g. to a wide 110°), that same offset projects
+    // to a very different on-screen size/position than the rest of the world, making the
+    // arms look like they're floating disconnected from the body. Keeping their own
+    // camera fixed at 70° avoids that regardless of what the player sets world FOV to.
+    this.viewmodelScene = new THREE.Scene();
+    this.viewmodelCamera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 10);
+    this.viewmodelScene.add(this.viewmodelCamera);
+    // Mirror the main scene's lighting recipe so the arms shade the same way they did
+    // when they were lit by the world scene's lights.
+    this.viewmodelScene.add(new THREE.AmbientLight(0xcce4ff, 1.0));
+    const vmSun = new THREE.DirectionalLight(0xfff8e0, 1.1);
+    vmSun.position.set(50, 80, 30);
+    this.viewmodelScene.add(vmSun);
+
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(this.renderer.domElement);
@@ -134,6 +150,8 @@ class Game3D {
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
+      this.viewmodelCamera.aspect = window.innerWidth / window.innerHeight;
+      this.viewmodelCamera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
@@ -166,7 +184,7 @@ class Game3D {
         arm.add(claw);
       }
 
-      this.camera.add(arm);
+      this.viewmodelCamera.add(arm);
       return arm;
     };
 
@@ -632,7 +650,20 @@ class Game3D {
     const dt = Math.min(0.1, (now - this._lastFrame) / 1000);
     this._lastFrame = now;
     this.update(dt);
+
+    // Main world pass — uses the player's chosen FOV
     this.renderer.render(this.scene, this.camera);
+
+    // View-model pass — fixed-FOV camera mirrors the main camera's pose so the
+    // first-person arms still follow look/bob, just without the wide-FOV distortion.
+    // clearDepth() (not a full clear) lets the arms draw over the world without
+    // erasing what was just rendered.
+    this.viewmodelCamera.position.copy(this.camera.position);
+    this.viewmodelCamera.quaternion.copy(this.camera.quaternion);
+    this.renderer.autoClear = false;
+    this.renderer.clearDepth();
+    this.renderer.render(this.viewmodelScene, this.viewmodelCamera);
+    this.renderer.autoClear = true;
   }
 
   update(dt) {
