@@ -199,9 +199,21 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       addBox(0.28, 1.3, 0.3, 0x6b6354,  0.68, 0.65, 0);
       addBox(1.65, 0.3, 0.34, 0x8b7355, 0, 1.45, 0);
 
-      // Long dark tunnel boring back into the hill, front face flush with the entrance
-      const tunnel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.0, 1.7), new THREE.MeshLambertMaterial({ color: 0x0a0a08 }));
-      tunnel.position.set(0, 0.55, -0.85); group.add(tunnel);
+      // Hollow tunnel shell boring back into the hill — built from floor/ceiling/walls
+      // instead of a solid box, so the front entrance actually opens onto a dark
+      // interior instead of showing a flat black wall right behind the arch.
+      // A second opening is left in the right-hand wall partway along the shaft.
+      addBox(1.0, 0.06, 1.7, 0x0a0a08, 0, 0.05, -0.85);   // floor
+      addBox(1.0, 0.06, 1.7, 0x0a0a08, 0, 1.05, -0.85);   // ceiling
+      addBox(1.0, 1.0,  0.06, 0x0a0a08, 0, 0.55, -1.7);   // back wall (closes the far end)
+      addBox(0.06, 1.0, 1.7, 0x0a0a08, -0.5, 0.55, -0.85); // left wall — fully enclosed
+      // Right wall, split in two so a gap remains for the second entrance
+      addBox(0.06, 1.0, 0.5, 0x0a0a08, 0.5, 0.55, -0.25);  // near segment (z: 0 to -0.5)
+      addBox(0.06, 1.0, 0.7, 0x0a0a08, 0.5, 0.55, -1.35);  // far segment (z: -1.0 to -1.7)
+      // Small frame around the side entrance (the gap between the two right-wall segments)
+      addBox(0.14, 1.0, 0.14, 0x6b6354, 0.5, 0.55, -0.5);
+      addBox(0.14, 1.0, 0.14, 0x6b6354, 0.5, 0.55, -1.0);
+      addBox(0.14, 0.16, 0.62, 0x8b7355, 0.5, 1.08, -0.75);
 
       // Wooden support frames spaced along the shaft's length, getting visibly
       // further away — sells the depth/length of the mine
