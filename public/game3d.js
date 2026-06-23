@@ -471,6 +471,7 @@ class Game3D {
   spawnBuilding(b) {
     const model = window.buildBuilding3DModel(THREE, b.upgradeId, b.ownerColor);
     if (b.orientation === 'v') model.rotation.y = Math.PI / 2;
+    if (b.dir !== undefined) model.rotation.y = dirToRotY(b.dir); // conveyor belts face their pull direction
     const isIncome = b.type === 'income';
     if (isIncome) model.scale.setScalar(2); // income structures stand out twice as large
     // Wrap in an unscaled outer group so the HP bar sprite (added below) stays
@@ -485,7 +486,7 @@ class Game3D {
     group.add(hpSprite);
     redrawHPSprite(hpSprite, b.hp, b.maxHp);
 
-    this.buildingObjs[b.id] = { group, hpSprite, data: { ...b } };
+    this.buildingObjs[b.id] = { group, hpSprite, data: { ...b }, beltTexture: model.userData.beltTexture || null };
   }
 
   removeBuilding(id) {
@@ -505,9 +506,24 @@ class Game3D {
     const label = makeTextSprite('$' + (window.fmt ? window.fmt(drop.amount) : drop.amount));
     label.position.y = 0.45;
     group.add(label);
-    group.position.set(sx(drop.x), 0.4, sz(drop.y));
+
+    // If the server tagged this drop with where it actually popped out from (an
+    // owned income building), toss it from there to its landing spot instead of
+    // just appearing — the "coin pops out of the dropper" Roblox-tycoon feel.
+    const hasArc = drop.srcX !== undefined && drop.srcY !== undefined &&
+                   (drop.srcX !== drop.x || drop.srcY !== drop.y);
+    const startX = hasArc ? drop.srcX : drop.x;
+    const startY = hasArc ? drop.srcY : drop.y;
+    group.position.set(sx(startX), 0.4, sz(startY));
     this.scene.add(group);
-    this.moneyDropObjs[drop.id] = { group, data: { ...drop } };
+
+    const obj = { group, data: { ...drop, x: startX, y: startY } };
+    if (hasArc) {
+      obj._arcT = 0; obj._arcDur = 0.55;
+      obj._arcFromX = drop.srcX; obj._arcFromY = drop.srcY;
+      obj._arcToX = drop.x; obj._arcToY = drop.y;
+    }
+    this.moneyDropObjs[drop.id] = obj;
   }
 
   removeDrop(id) {
@@ -844,6 +860,20 @@ class Game3D {
       const holePos = this._collectorHolePos;
       const myPad = holePos && this.myPlayer?.padIdx !== undefined ? PADS_DATA[this.myPlayer.padIdx] : null;
       for (const obj of Object.values(this.moneyDropObjs)) {
+        if (obj._arcT !== undefined) {
+          // Mid-toss — fly from the source structure to the landing spot on an arc
+          obj._arcT += dt;
+          const t = Math.min(obj._arcT / obj._arcDur, 1);
+          const ease = 1 - Math.pow(1 - t, 2);
+          const nx = obj._arcFromX + (obj._arcToX - obj._arcFromX) * ease;
+          const ny = obj._arcFromY + (obj._arcToY - obj._arcFromY) * ease;
+          obj.data.x = nx; obj.data.y = ny;
+          const arcHeight = Math.sin(t * Math.PI) * 1.1;
+          obj.group.position.set(sx(nx), 0.4 + arcHeight, sz(ny));
+          obj.group.rotation.z += dt * 6;
+          if (t >= 1) delete obj._arcT;
+          continue;
+        }
         if (holePos && myPad) {
           const onPad = obj.data.x >= myPad.x && obj.data.x <= myPad.x + PAD_SIZE &&
                         obj.data.y >= myPad.y && obj.data.y <= myPad.y + PAD_SIZE;
@@ -884,6 +914,11 @@ class Game3D {
       } else {
         if (btn) btn.style.display = 'none';
       }
+    }
+
+    // Scroll conveyor belt stripe textures so they visibly look like they're moving
+    for (const obj of Object.values(this.buildingObjs)) {
+      if (obj.beltTexture) obj.beltTexture.offset.y -= dt * 1.4;
     }
 
     // Walk animation + world arm swing for all players
@@ -1176,6 +1211,17 @@ function setupGameSocketEvents() {
   });
 
   s.on('moneyDropSpawned', drop => { const scene = gs(); if (scene) scene.spawnDrop(drop); });
+
+  s.on('dropsMoved', moved => {
+    // Coin drops nudged along a conveyor belt this tick
+    const scene = gs(); if (!scene) return;
+    for (const { id, x, y } of moved) {
+      const obj = scene.moneyDropObjs[id]; if (!obj) continue;
+      if (obj._arcT !== undefined) continue; // still mid-toss, let that finish first
+      obj.data.x = x; obj.data.y = y;
+      obj.group.position.x = sx(x); obj.group.position.z = sz(y);
+    }
+  });
 
   s.on('dropCollected', ({ dropId, playerId, money }) => {
     const scene = gs(); if (!scene) return;

@@ -126,6 +126,7 @@ const UPGRADES = {
   boneCannon:    { name:'Bone Cannon',     cost:2000,  icon:'💣', effect:{}, req:null, desc:'Long range cannon (55 dmg, slow fire rate)', cat:'build' },
   healingTotem:  { name:'Healing Totem',   cost:800,   icon:'🪄', effect:{}, req:null, desc:'Heals YOU when you stand near it (+20 HP/s)', cat:'build' },
   tarPit:        { name:'Tar Pit',         cost:500,   icon:'🕳️', effect:{}, req:null, desc:'Severely slows enemies who walk through it', cat:'build' },
+  conveyorBelt:  { name:'Conveyor Belt',   cost:1500,  icon:'➡️', effect:{}, req:'bonePile1', desc:'Pulls nearby coin drops toward your base — automate collection!', cat:'build' },
 };
 
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
@@ -169,6 +170,7 @@ const BUILDING_DATA = {
   boneCannon:    { maxHp:350,  type:'defense', defType:'turret',  damage:55, range:520, cooldown:3500 },
   healingTotem:  { maxHp:200,  type:'defense', defType:'totem',   healRate:20, range:120 },
   tarPit:        { maxHp:100,  type:'defense', defType:'trap',    damage:5,  range:90,  slow:true, slowAmt:0.25 },
+  conveyorBelt:  { maxHp:150,  type:'defense', defType:'conveyor', range:180, beltSpeed:140 },
 };
 // Slot offsets from player's base (income slots then defense slots)
 const INCOME_OFFSETS  = [{dx:-90,dy:-70},{dx:0,dy:-90},{dx:90,dy:-70},{dx:-50,dy:60},{dx:50,dy:60}];
@@ -297,6 +299,14 @@ function placeBuilding(room, player, upgradeId, targetPos) {
   }
   const bid = 'b_' + (buildingIdCounter++);
 
+  // Conveyor belts visually face the direction they actually pull coins in —
+  // toward the owner's base center — using the same angle convention as player.dir
+  let beltDir;
+  if (bd.defType === 'conveyor') {
+    const tx = player.baseX || player.x, ty = player.baseY || player.y;
+    beltDir = Math.atan2(tx - bx, ty - by);
+  }
+
   const building = {
     id: bid, upgradeId, ownerId: player.id || player.socketId,
     ownerColor: player.color, ownerName: player.username,
@@ -304,12 +314,14 @@ function placeBuilding(room, player, upgradeId, targetPos) {
     hp: bd.maxHp, maxHp: bd.maxHp,
     type: bd.type, defType: bd.defType || null,
     orientation: isWallBuilding(upgradeId) ? wallOrientation : undefined,
+    dir: beltDir,
     damage: bd.damage || 0, range: bd.range || 0,
     cooldown: bd.cooldown || 2000, lastFired: 0,
     mps: bd.mps || 0,
     slow: bd.slow || false,
     slowAmt: bd.slowAmt || 0,
     healRate: bd.healRate || 0,
+    beltSpeed: bd.beltSpeed || 0,
   };
   room.buildings[bid] = building;
   emitToRoom(room, 'buildingPlaced', building);
@@ -774,6 +786,7 @@ function startRoomLoop(room) {
     for (const bot of Object.values(room.bots)) tickBot(bot, room, dt, allEntities, buildingsArr, wallBuildingsArr);
 
     // Tick buildings (turrets fire, traps trigger)
+    const movedDrops = []; // coin drops nudged by conveyor belts this tick, broadcast once below
     for (const b of buildingsArr) {
       if (b.hp <= 0) continue;
       if (b.defType === 'turret') {
@@ -826,8 +839,25 @@ function startRoomLoop(room) {
             if (sock) sock.emit('healed', { hp: owner.hp, source: 'totem' });
           }
         }
+      } else if (b.defType === 'conveyor') {
+        // Pull any coin drop within range toward the owner's base center, riding
+        // the belt instead of teleporting — this is what makes it feel automated
+        const owner = allEntities.find(e => (e.id||e.socketId) === b.ownerId);
+        if (owner) {
+          const tx = owner.baseX || owner.x, ty = owner.baseY || owner.y;
+          for (const drop of room.moneyDrops) {
+            if (dist(b, drop) >= b.range) continue;
+            const dx = tx - drop.x, dy = ty - drop.y;
+            const dd = Math.hypot(dx, dy) || 1;
+            const step = Math.min(dd, (b.beltSpeed || 140) * dt);
+            drop.x += (dx / dd) * step;
+            drop.y += (dy / dd) * step;
+            movedDrops.push({ id: drop.id, x: drop.x, y: drop.y });
+          }
+        }
       }
     }
+    if (movedDrops.length) emitToRoom(room, 'dropsMoved', movedDrops);
 
     // Broadcast bot positions
     if (Object.keys(room.bots).length > 0) {
@@ -876,15 +906,25 @@ function startRoomLoop(room) {
       .map(p=>({ username:p.username, money:Math.floor(p.money), totalEarned:Math.floor(p.totalEarned), level:p.level, kills:p.kills, prestige:p.prestige, color:p.color, isBot:p.isBot }));
     emitToRoom(room, 'leaderboard', lb);
 
-    // Money drops
+    // Money drops — coins physically pop out of one of the player's own income
+    // buildings (Roblox-tycoon "dropper" feel) and land somewhere random nearby
+    // on their pad, instead of just appearing at a fully random spot.
     for (const p of allPlayers) {
       if (p.isDead || p.mps <= 1) continue;
       if (Math.random() < 0.5) {
         const pad = PADS[p.padIdx];
+        const ownerId = p.id || p.socketId;
+        const myIncomeBuildings = Object.values(room.buildings).filter(b => b.ownerId === ownerId && b.type === 'income');
+        const src = myIncomeBuildings.length ? myIncomeBuildings[Math.floor(Math.random() * myIncomeBuildings.length)] : null;
+        const srcX = src ? src.x : pad.x + PAD_SIZE / 2;
+        const srcY = src ? src.y : pad.y + PAD_SIZE / 2;
+        const clampX = v => Math.max(pad.x + 40, Math.min(pad.x + PAD_SIZE - 40, v));
+        const clampY = v => Math.max(pad.y + 40, Math.min(pad.y + PAD_SIZE - 40, v));
         const drop = {
           id: room.nextDropId++,
-          x: pad.x + 70 + Math.random()*(PAD_SIZE-140),
-          y: pad.y + 70 + Math.random()*(PAD_SIZE-140),
+          srcX, srcY,
+          x: clampX(srcX + (Math.random() - 0.5) * 280),
+          y: clampY(srcY + (Math.random() - 0.5) * 280),
           amount: Math.floor(p.mps * 2 + Math.random()*p.mps),
           color: p.color,
         };

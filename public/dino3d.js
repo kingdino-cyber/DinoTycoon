@@ -371,6 +371,35 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       pit.position.y = 0.06; group.add(pit);
       break;
     }
+    case 'conveyorBelt': {
+      // Flat belt surface with an animated arrow-stripe texture (offset is scrolled
+      // each frame by game3d.js) plus side rails and support legs
+      const stripeCanvas = document.createElement('canvas');
+      stripeCanvas.width = 64; stripeCanvas.height = 16;
+      const sctx = stripeCanvas.getContext('2d');
+      sctx.fillStyle = '#3a3a3a'; sctx.fillRect(0, 0, 64, 16);
+      sctx.fillStyle = '#ffd700';
+      for (let i = 0; i < 4; i++) {
+        sctx.beginPath();
+        sctx.moveTo(i * 16, 16); sctx.lineTo(i * 16 + 8, 0); sctx.lineTo(i * 16 + 16, 16);
+        sctx.closePath(); sctx.fill();
+      }
+      const stripeTex = new THREE.CanvasTexture(stripeCanvas);
+      stripeTex.wrapS = THREE.RepeatWrapping; stripeTex.wrapT = THREE.RepeatWrapping;
+      stripeTex.repeat.set(1, 3);
+      const belt = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.1, 1.8), new THREE.MeshLambertMaterial({ map: stripeTex }));
+      belt.position.set(0, 0.2, 0); group.add(belt);
+      group.userData.beltTexture = stripeTex; // animated by game3d.js each frame
+
+      addBox(0.08, 0.22, 1.8, 0x6b6354, -0.49, 0.26, 0);
+      addBox(0.08, 0.22, 1.8, 0x6b6354,  0.49, 0.26, 0);
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
+      for (const lz of [-0.75, 0, 0.75]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.16, 0.14), legMat);
+        leg.position.set(0, 0.08, lz); group.add(leg);
+      }
+      break;
+    }
     default:
       addBox(1, 1, 1, hexStr2numTHREE(ownerColorHex || '#888888'), 0, 0.5, 0);
   }
