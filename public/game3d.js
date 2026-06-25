@@ -318,9 +318,8 @@ class Game3D {
       this._ghost = window.buildBuilding3DModel(THREE, upgradeId, this.myPlayer?.color || '#4caf50');
       this._ghost.traverse(o => {
         if (!o.material) return;
-        // Some buildings (Fossil Mine cave walls, Conveyor Belt) use a per-face
-        // material array instead of a single material — clone() doesn't exist
-        // on arrays, so handle both shapes.
+        // The Fossil Mine's cave walls use a per-face material array instead of
+        // a single material — clone() doesn't exist on arrays, so handle both shapes.
         if (Array.isArray(o.material)) {
           o.material = o.material.map(m => { const c = m.clone(); c.transparent = true; c.opacity = 0.5; return c; });
         } else {
@@ -516,7 +515,6 @@ class Game3D {
   spawnBuilding(b) {
     const model = window.buildBuilding3DModel(THREE, b.upgradeId, b.ownerColor);
     if (b.orientation === 'v') model.rotation.y = Math.PI / 2;
-    if (b.dir !== undefined) model.rotation.y = dirToRotY(b.dir); // conveyor belts face their pull direction
     const isIncome = b.type === 'income';
     if (isIncome) model.scale.setScalar(2); // income structures stand out twice as large
     // Wrap in an unscaled outer group so the HP bar sprite (added below) stays
@@ -531,7 +529,7 @@ class Game3D {
     group.add(hpSprite);
     redrawHPSprite(hpSprite, b.hp, b.maxHp);
 
-    this.buildingObjs[b.id] = { group, hpSprite, data: { ...b }, beltTexture: model.userData.beltTexture || null };
+    this.buildingObjs[b.id] = { group, hpSprite, data: { ...b } };
   }
 
   removeBuilding(id) {
@@ -961,11 +959,6 @@ class Game3D {
       }
     }
 
-    // Scroll conveyor belt stripe textures so they visibly look like they're moving
-    for (const obj of Object.values(this.buildingObjs)) {
-      if (obj.beltTexture) obj.beltTexture.offset.y -= dt * 1.4;
-    }
-
     // Walk animation + world arm swing for all players
     for (const [id, obj] of Object.entries(this.playerObjs)) {
       // Smooth knockback lerp for this player (ease-out cubic) takes priority
@@ -1261,17 +1254,6 @@ function setupGameSocketEvents() {
   });
 
   s.on('moneyDropSpawned', drop => { const scene = gs(); if (scene) scene.spawnDrop(drop); });
-
-  s.on('dropsMoved', moved => {
-    // Coin drops nudged along a conveyor belt this tick
-    const scene = gs(); if (!scene) return;
-    for (const { id, x, y } of moved) {
-      const obj = scene.moneyDropObjs[id]; if (!obj) continue;
-      if (obj._arcT !== undefined) continue; // still mid-toss, let that finish first
-      obj.data.x = x; obj.data.y = y;
-      obj.group.position.x = sx(x); obj.group.position.z = sz(y);
-    }
-  });
 
   s.on('dropCollected', ({ dropId, playerId, money }) => {
     const scene = gs(); if (!scene) return;

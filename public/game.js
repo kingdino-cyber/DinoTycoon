@@ -732,7 +732,7 @@ class GameScene extends Phaser.Scene {
     // Name label
     const icons = {bonePile1:'🦴',bonePile2:'⛏️',bonePile3:'🌿',bonePile4:'🏛️',bonePile5:'💎',
                    stoneWall:'🪨',spikeTrap:'🔺',thornHedge:'🌵',dinoTurret:'🗼',fossilFortress:'🏰',
-                   iceTower:'🧊',tarPit:'🕳️',lavaPit:'🌋',healingTotem:'✨',boneCannon:'💣',conveyorBelt:'➡️'};
+                   iceTower:'🧊',tarPit:'🕳️',lavaPit:'🌋',healingTotem:'✨',boneCannon:'💣'};
     const label = this.add.text(b.x, b.y-48, (icons[b.upgradeId]||'🏗️'), {
       fontSize:'18px', stroke:'#000', strokeThickness:3
     }).setOrigin(0.5).setDepth(53);
@@ -894,12 +894,6 @@ class GameScene extends Phaser.Scene {
       gfx.fillStyle(0xeeeedd,alpha); gfx.fillRect(10,-4,26,10);
       gfx.fillStyle(0xccccbb,alpha); gfx.fillCircle(36,1,7);
       gfx.fillStyle(0xfff8e0,0.6*alpha); gfx.fillCircle(-4,2,4); gfx.fillCircle(4,2,4);
-    } else if (upgradeId === 'conveyorBelt') {
-      // Top-down belt strip with arrow chevrons
-      gfx.fillStyle(0x6b6354,alpha); gfx.fillRoundedRect(-16,-34,32,68,6);
-      gfx.fillStyle(0x3a3a3a,alpha); gfx.fillRoundedRect(-12,-30,24,60,4);
-      gfx.fillStyle(0xffd700,0.9*alpha);
-      for (let i=-2;i<=1;i++){ gfx.fillTriangle(-8,i*14+2, 8,i*14+2, 0,i*14+12); }
     }
   }
 
@@ -1360,18 +1354,6 @@ function setupGameSocketEvents() {
   });
 
   s.on('moneyDropSpawned', drop=>{ const scene=gs(); if(scene) scene.spawnDrop(drop); });
-
-  s.on('dropsMoved', moved=>{
-    // Coin drops nudged along a Conveyor Belt this tick — without this the 2D view
-    // never reflects the server-side pull, leaving drops visually frozen while their
-    // real (server) position drifts away, eventually making them look uncollectible.
-    const scene=gs(); if(!scene) return;
-    for(const {id,x,y} of moved) {
-      const d=scene.moneyDropObjs[id]; if(!d) continue;
-      d.data.x=x; d.data.y=y;
-      d.gfx.setPosition(x,y); d.icon.setPosition(x,y); d.label.setPosition(x,y-18);
-    }
-  });
 
   s.on('dropCollected', ({dropId,playerId,money})=>{
     const scene=gs(); if(!scene) return;

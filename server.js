@@ -126,7 +126,6 @@ const UPGRADES = {
   boneCannon:    { name:'Bone Cannon',     cost:2000,  icon:'💣', effect:{}, req:null, desc:'Long range cannon (55 dmg, slow fire rate)', cat:'build' },
   healingTotem:  { name:'Healing Totem',   cost:800,   icon:'🪄', effect:{}, req:null, desc:'Heals YOU when you stand near it (+20 HP/s)', cat:'build' },
   tarPit:        { name:'Tar Pit',         cost:500,   icon:'🕳️', effect:{}, req:null, desc:'Severely slows enemies who walk through it', cat:'build' },
-  conveyorBelt:  { name:'Conveyor Belt',   cost:1500,  icon:'➡️', effect:{}, req:'bonePile1', desc:'Sweeps up nearby coin drops and deposits them straight into your wallet — true passive collection!', cat:'build' },
 };
 
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
@@ -170,7 +169,6 @@ const BUILDING_DATA = {
   boneCannon:    { maxHp:350,  type:'defense', defType:'turret',  damage:55, range:520, cooldown:3500 },
   healingTotem:  { maxHp:200,  type:'defense', defType:'totem',   healRate:20, range:120 },
   tarPit:        { maxHp:100,  type:'defense', defType:'trap',    damage:5,  range:90,  slow:true, slowAmt:0.25 },
-  conveyorBelt:  { maxHp:150,  type:'defense', defType:'conveyor', range:320, beltSpeed:160 },
 };
 // Slot offsets from player's base (income slots then defense slots)
 const INCOME_OFFSETS  = [{dx:-90,dy:-70},{dx:0,dy:-90},{dx:90,dy:-70},{dx:-50,dy:60},{dx:50,dy:60}];
@@ -299,14 +297,6 @@ function placeBuilding(room, player, upgradeId, targetPos) {
   }
   const bid = 'b_' + (buildingIdCounter++);
 
-  // Conveyor belts visually face the direction they actually pull coins in —
-  // toward the owner's base center — using the same angle convention as player.dir
-  let beltDir;
-  if (bd.defType === 'conveyor') {
-    const tx = player.baseX || player.x, ty = player.baseY || player.y;
-    beltDir = Math.atan2(tx - bx, ty - by);
-  }
-
   const building = {
     id: bid, upgradeId, ownerId: player.id || player.socketId,
     ownerColor: player.color, ownerName: player.username,
@@ -314,14 +304,12 @@ function placeBuilding(room, player, upgradeId, targetPos) {
     hp: bd.maxHp, maxHp: bd.maxHp,
     type: bd.type, defType: bd.defType || null,
     orientation: isWallBuilding(upgradeId) ? wallOrientation : undefined,
-    dir: beltDir,
     damage: bd.damage || 0, range: bd.range || 0,
     cooldown: bd.cooldown || 2000, lastFired: 0,
     mps: bd.mps || 0,
     slow: bd.slow || false,
     slowAmt: bd.slowAmt || 0,
     healRate: bd.healRate || 0,
-    beltSpeed: bd.beltSpeed || 0,
   };
   room.buildings[bid] = building;
   emitToRoom(room, 'buildingPlaced', building);
@@ -787,8 +775,6 @@ function startRoomLoop(room) {
     for (const bot of Object.values(room.bots)) tickBot(bot, room, dt, allEntities, buildingsArr, wallBuildingsArr);
 
     // Tick buildings (turrets fire, traps trigger)
-    const movedDrops = []; // coin drops nudged by conveyor belts this tick, broadcast once below
-    const movedDropIds = new Set(); // prevents two overlapping belts double-speeding the same drop
     for (const b of buildingsArr) {
       if (b.hp <= 0) continue;
       if (b.defType === 'turret') {
@@ -841,42 +827,8 @@ function startRoomLoop(room) {
             if (sock) sock.emit('healed', { hp: owner.hp, source: 'totem' });
           }
         }
-      } else if (b.defType === 'conveyor') {
-        // Sweep up nearby coin drops and ride them toward the owner's base — once a
-        // drop reaches the end of the belt it's auto-deposited straight into their
-        // wallet, no manual walk-over or Collector's Hole click needed. This is what
-        // actually makes the belt a standalone automation building rather than just
-        // a weaker, shorter-range version of the Hole.
-        const owner = allEntities.find(e => (e.id||e.socketId) === b.ownerId);
-        const pad = owner ? PADS[owner.padIdx] : null;
-        if (owner && pad) {
-          const tx = owner.baseX || owner.x, ty = owner.baseY || owner.y;
-          for (let i = room.moneyDrops.length - 1; i >= 0; i--) {
-            const drop = room.moneyDrops[i];
-            if (movedDropIds.has(drop.id)) continue; // already pulled by another belt this tick
-            if (dist(b, drop) >= b.range) continue;
-            // Only pull drops actually inside the owner's own pad — stops a belt
-            // placed near a pad boundary from reaching into a neighbor's base
-            if (drop.x < pad.x || drop.x > pad.x + PAD_SIZE || drop.y < pad.y || drop.y > pad.y + PAD_SIZE) continue;
-            movedDropIds.add(drop.id);
-            const dx = tx - drop.x, dy = ty - drop.y;
-            const dd = Math.hypot(dx, dy) || 1;
-            if (dd < 24) {
-              // Reached the end of the belt — deposit straight into the wallet
-              owner.money += drop.amount; owner.totalEarned += drop.amount;
-              room.moneyDrops.splice(i, 1);
-              emitToRoom(room, 'dropCollected', { dropId: drop.id, playerId: b.ownerId, money: owner.money });
-              continue;
-            }
-            const step = Math.min(dd, (b.beltSpeed || 140) * dt);
-            drop.x += (dx / dd) * step;
-            drop.y += (dy / dd) * step;
-            movedDrops.push({ id: drop.id, x: drop.x, y: drop.y });
-          }
-        }
       }
     }
-    if (movedDrops.length) emitToRoom(room, 'dropsMoved', movedDrops);
 
     // Broadcast bot positions
     if (Object.keys(room.bots).length > 0) {
