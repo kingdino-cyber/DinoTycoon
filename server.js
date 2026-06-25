@@ -1642,7 +1642,7 @@ io.on('connection', (socket) => {
     if (room.status !== 'playing') return;  // block during countdown
     const atk = room.players[socket.id]; if (!atk || atk.isDead) return;
     const now = Date.now();
-    if (now - atk.lastAttack < 800) return;  // 0.8s cooldown
+    if (now - atk.lastAttack < 200) return;  // 0.2s cooldown
     const tgt = room.players[targetId] || room.bots[targetId];
     if (!tgt || tgt.isDead) return;
     if (dist(atk, tgt) > 450) return;  // very lenient — client already validated range
@@ -1756,7 +1756,7 @@ io.on('connection', (socket) => {
     const b = room.buildings[buildingId]; if (!b || b.hp <= 0) return;
     if (b.ownerId === socket.id) return;  // can't attack own buildings
     const now = Date.now();
-    if (now - atk.lastAttack < 800) return;
+    if (now - atk.lastAttack < 200) return;  // 0.2s cooldown
     if (dist(atk, b) > 400) return;
     atk.lastAttack = now;
     const rawDmg = atk.damage + Math.floor(Math.random()*8) - 4;
