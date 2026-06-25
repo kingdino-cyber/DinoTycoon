@@ -184,7 +184,7 @@ function isWallBuilding(upgradeId) {
 }
 
 // Smart wall placement — snaps new wall adjacent to existing wall chain
-const WALL_STEP = 46;
+const WALL_STEP = 16;
 
 function getWallPlacement(room, player, upgradeId, dropX, dropY) {
   const ownerId = player.id || player.socketId;
