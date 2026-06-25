@@ -1361,6 +1361,18 @@ function setupGameSocketEvents() {
 
   s.on('moneyDropSpawned', drop=>{ const scene=gs(); if(scene) scene.spawnDrop(drop); });
 
+  s.on('dropsMoved', moved=>{
+    // Coin drops nudged along a Conveyor Belt this tick — without this the 2D view
+    // never reflects the server-side pull, leaving drops visually frozen while their
+    // real (server) position drifts away, eventually making them look uncollectible.
+    const scene=gs(); if(!scene) return;
+    for(const {id,x,y} of moved) {
+      const d=scene.moneyDropObjs[id]; if(!d) continue;
+      d.data.x=x; d.data.y=y;
+      d.gfx.setPosition(x,y); d.icon.setPosition(x,y); d.label.setPosition(x,y-18);
+    }
+  });
+
   s.on('dropCollected', ({dropId,playerId,money})=>{
     const scene=gs(); if(!scene) return;
     const drop=scene.moneyDropObjs[dropId];

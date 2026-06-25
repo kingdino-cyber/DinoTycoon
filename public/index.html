@@ -1828,7 +1828,7 @@ function loadGameScripts(mode, cb) {
   if (mode === '2d') {
     showToast('🗺️ Loading 2D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
-      appendScript('game.js?v=9', null, () => {
+      appendScript('game.js?v=10', null, () => {
         _engineLoaded['2d'] = true; _engineLoading['2d'] = false;
         _engineFuncs['2d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
         cb();
@@ -1838,7 +1838,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=14', null, () => {
-        appendScript('game3d.js?v=29', null, () => {
+        appendScript('game3d.js?v=30', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();

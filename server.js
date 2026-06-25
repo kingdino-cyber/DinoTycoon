@@ -788,6 +788,7 @@ function startRoomLoop(room) {
 
     // Tick buildings (turrets fire, traps trigger)
     const movedDrops = []; // coin drops nudged by conveyor belts this tick, broadcast once below
+    const movedDropIds = new Set(); // prevents two overlapping belts double-speeding the same drop
     for (const b of buildingsArr) {
       if (b.hp <= 0) continue;
       if (b.defType === 'turret') {
@@ -841,13 +842,23 @@ function startRoomLoop(room) {
           }
         }
       } else if (b.defType === 'conveyor') {
-        // Pull any coin drop within range toward the owner's base center, riding
-        // the belt instead of teleporting — this is what makes it feel automated
+        // Pull coin drops toward the owner's Collector's Hole if they have one
+        // (so belts feed directly into it), otherwise toward their base center.
+        // Riding the belt instead of teleporting is what makes it feel automated.
         const owner = allEntities.find(e => (e.id||e.socketId) === b.ownerId);
-        if (owner) {
-          const tx = owner.baseX || owner.x, ty = owner.baseY || owner.y;
+        const pad = owner ? PADS[owner.padIdx] : null;
+        if (owner && pad) {
+          let tx = owner.baseX || owner.x, ty = owner.baseY || owner.y;
+          if (owner.upgrades?.includes('collectorsHole')) {
+            tx = pad.x + PAD_SIZE / 2; ty = pad.y + PAD_SIZE / 2;
+          }
           for (const drop of room.moneyDrops) {
+            if (movedDropIds.has(drop.id)) continue; // already pulled by another belt this tick
             if (dist(b, drop) >= b.range) continue;
+            // Only pull drops actually inside the owner's own pad — stops a belt
+            // placed near a pad boundary from reaching into a neighbor's base
+            if (drop.x < pad.x || drop.x > pad.x + PAD_SIZE || drop.y < pad.y || drop.y > pad.y + PAD_SIZE) continue;
+            movedDropIds.add(drop.id);
             const dx = tx - drop.x, dy = ty - drop.y;
             const dd = Math.hypot(dx, dy) || 1;
             const step = Math.min(dd, (b.beltSpeed || 140) * dt);
