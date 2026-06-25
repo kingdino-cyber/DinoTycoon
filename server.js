@@ -255,7 +255,7 @@ function isInsideBase(player) {
 
 function isPositionInsideBase(player, x, y) {
   const pad = PADS[player.padIdx || 0]; if (!pad) return false;
-  const m = 80; // lenient margin so edge placements aren't unfairly rejected
+  const m = 160; // lenient margin so edge placements aren't unfairly rejected
   return x >= pad.x - m && x <= pad.x + PAD_SIZE + m && y >= pad.y - m && y <= pad.y + PAD_SIZE + m;
 }
 
@@ -327,7 +327,7 @@ function placeBuilding(room, player, upgradeId, targetPos) {
   emitToRoom(room, 'buildingPlaced', building);
 }
 
-function destroyBuilding(room, buildingId, attacker) {
+function destroyBuilding(room, buildingId, attacker, selfDemolish = false) {
   const b = room.buildings[buildingId]; if (!b) return;
   // If it was an income building, reduce owner's mps
   if (b.type === 'income' && b.mps > 0) {
@@ -339,6 +339,7 @@ function destroyBuilding(room, buildingId, attacker) {
     destroyerName: attacker ? attacker.username : 'Unknown',
     ownerName: b.ownerName,
     buildingName: UPGRADES[b.upgradeId]?.name || b.upgradeId,
+    selfDemolish,
   });
   delete room.buildings[buildingId];
 }
@@ -1763,6 +1764,17 @@ io.on('connection', (socket) => {
     b.hp -= dmg;
     emitToRoom(room, 'buildingDamaged', { id: buildingId, hp: b.hp, maxHp: b.maxHp, damage: dmg });
     if (b.hp <= 0) destroyBuilding(room, buildingId, atk);
+  });
+
+  // Tear down your own misplaced building — no cooldown, no range cap beyond what
+  // the client already enforces via raycast reach, just an ownership check
+  socket.on('demolishBuilding', (buildingId) => {
+    const room = rooms[socketRoom[socket.id]]; if (!room) return;
+    if (room.status !== 'playing') return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    const b = room.buildings[buildingId]; if (!b) return;
+    if (b.ownerId !== socket.id) return; // can only demolish your own
+    destroyBuilding(room, buildingId, p, true);
   });
 
   socket.on('prestige', () => {

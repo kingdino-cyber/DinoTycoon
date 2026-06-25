@@ -279,6 +279,10 @@ class Game3D {
         const labels = ['🎥 Third-person', '👁️ First-person', '🔄 Front-cam'];
         window.showToast?.(labels[this._camMode], 1200);
       }
+      if (e.code === 'KeyX' && this.locked) {
+        e.preventDefault();
+        this.tryDemolish();
+      }
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
   }
@@ -395,6 +399,34 @@ class Game3D {
       // Nothing in crosshair — still swing arms so the attack feels responsive
       this._armSwinging = true; this._armSwingT = 0;
     }
+  }
+
+  // Tear down one of YOUR OWN buildings — fixes misplaced walls/structures without
+  // needing to wait for someone else to destroy it. Aim at it and press X.
+  tryDemolish() {
+    if (!this.myPlayer || this.myPlayer.isDead || this._countdown > 0) return;
+    this._raycaster.setFromCamera({ x: 0, y: 0 }, this.camera);
+    const targets = [];
+    for (const [id, obj] of Object.entries(this.buildingObjs)) {
+      if (obj.data.ownerId !== this.myId) continue;
+      targets.push({ id, group: obj.group, data: obj.data, dist: Math.hypot(this.myPlayer.x - obj.data.x, this.myPlayer.y - obj.data.y) });
+    }
+    if (!targets.length) { window.showToast?.('🔨 You have no buildings to demolish', 1500); return; }
+    const meshLookup = new Map();
+    const meshes = [];
+    for (const t of targets) {
+      t.group.traverse(o => { if (o.isMesh) { meshes.push(o); meshLookup.set(o, t); } });
+    }
+    const hits = this._raycaster.intersectObjects(meshes, false);
+    if (hits.length) {
+      const t = meshLookup.get(hits[0].object);
+      if (t && t.dist <= REACH) {
+        window.gameSocket.emit('demolishBuilding', t.id);
+        window.SFX?.crunch();
+        return;
+      }
+    }
+    window.showToast?.('🔨 Aim at one of your own buildings to demolish it', 1500);
   }
 
   spawnPlayer(data) {
@@ -1189,11 +1221,16 @@ function setupGameSocketEvents() {
     scene.showDamageNum(obj.data.x, obj.data.y, damage);
   });
 
-  s.on('buildingDestroyed', ({ id, destroyerName, ownerName, buildingName }) => {
+  s.on('buildingDestroyed', ({ id, destroyerName, ownerName, buildingName, selfDemolish }) => {
     const scene = gs(); if (!scene) return;
     scene.removeBuilding(id);
-    window.addKillFeed?.(`<span style="color:#ff6b35">🏚️ ${destroyerName}</span> destroyed <span style="color:#ffd700">${ownerName}'s ${buildingName}</span>!`);
-    window.addChatMessage?.('🏚️ Destroy', `${destroyerName} destroyed ${ownerName}'s ${buildingName}!`, '#ff6b35');
+    if (selfDemolish) {
+      if (destroyerName === scene.myPlayer?.username) window.showToast?.(`🔨 Demolished your ${buildingName}`, 1500);
+      window.addChatMessage?.('🔨 Demolish', `${ownerName} demolished their own ${buildingName}.`, '#88aa88');
+    } else {
+      window.addKillFeed?.(`<span style="color:#ff6b35">🏚️ ${destroyerName}</span> destroyed <span style="color:#ffd700">${ownerName}'s ${buildingName}</span>!`);
+      window.addChatMessage?.('🏚️ Destroy', `${destroyerName} destroyed ${ownerName}'s ${buildingName}!`, '#ff6b35');
+    }
     window.SFX?.crunch();
   });
 

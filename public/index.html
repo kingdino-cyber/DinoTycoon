@@ -1612,7 +1612,8 @@ canvas{display:block;}
 <div id="controls" class="hidden">
   <span class="key">WASD</span> Move &nbsp; <span class="key">Click</span> Attack<br>
   <span class="key">B</span> Shop &nbsp; <span class="key">Enter</span> Chat<br>
-  <span class="key">Space</span> Jump &nbsp; <span class="key">Tab</span> Collect &nbsp; <span class="key">Click ON enemy</span> Bite 🦷
+  <span class="key">Space</span> Jump &nbsp; <span class="key">Tab</span> Collect &nbsp; <span class="key">Click ON enemy</span> Bite 🦷<br>
+  <span class="key">X</span> Demolish own building (aim at it first)
 </div>
 
 <!-- Kill feed -->
@@ -1837,7 +1838,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=14', null, () => {
-        appendScript('game3d.js?v=28', null, () => {
+        appendScript('game3d.js?v=29', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
