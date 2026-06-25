@@ -854,6 +854,12 @@ function startRoomLoop(room) {
         // Freeze the world immediately — stop bot AI/attacks/building and money sync so
         // nothing keeps acting (or making sound) during the post-match results screen
         stopRoomLoop(room);
+        // Persist every human player's final state right now — stopRoomLoop just killed
+        // the periodic 2s autosave, and destroyRoom below wipes the room from memory
+        // with no save of its own. Without this, anyone who doesn't click "quit" within
+        // the 10s grace period (or who just closes the tab) loses everything earned
+        // since the last periodic sync — which is exactly what was happening before.
+        for (const p of Object.values(room.players)) persistPlayer(p);
         // Clean up after 10s
         setTimeout(() => destroyRoom(room.id), 10000);
         return;
