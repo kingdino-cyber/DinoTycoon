@@ -53,7 +53,7 @@ async function getSave(id) {
     s.customSkin = undefined;
     if (s.equippedSkin === 'custom') s.equippedSkin = 'custom_imported';
   }
-  const raw = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[], achievements:[], mmr:1000, tutorialSeen:false, buildingsPlaced:0 };
+  const raw = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[], achievements:[], mmr:1000, tutorialSeen:false, buildingsPlaced:0, rankedMatchesPlayed:0 };
   const result = _stripId(raw);
   _saveCache.set(id, { data: result, ts: Date.now() });
   return JSON.parse(JSON.stringify(result));
@@ -536,6 +536,7 @@ function createPlayerData(socketId, username, save, padIdx, color) {
     achievements: [...(save.achievements||[])],
     mmr: save.mmr || 1000,
     buildingsPlaced: save.buildingsPlaced || 0,
+    rankedMatchesPlayed: save.rankedMatchesPlayed || 0,
     padIdx, color, dbUserId: null, isBot: false, ...stats,
   };
 }
@@ -551,6 +552,7 @@ async function persistPlayer(p) {
     achievements: p.achievements || existing.achievements || [],
     mmr: p.mmr || existing.mmr || 1000,
     buildingsPlaced: p.buildingsPlaced || existing.buildingsPlaced || 0,
+    rankedMatchesPlayed: p.rankedMatchesPlayed || existing.rankedMatchesPlayed || 0,
     tutorialSeen: existing.tutorialSeen || false,
     savedGames: existing.savedGames || [],
     lobbyItems: existing.lobbyItems || { skins:[], tags:[] },
@@ -867,7 +869,20 @@ function startRoomLoop(room) {
           emitToRoom(room, 'turretFired', { buildingId: b.id, targetId: nearest.id||nearest.socketId, damage: dmg, targetHp: nearest.hp, x: b.x, y: b.y });
           if (nearest.hp <= 0) {
             nearest.isDead = true; nearest.deaths++;
-            emitToRoom(room, 'playerDied', { victimId: nearest.id||nearest.socketId, killerId: b.ownerId, loot: 0, killerMoney: 0 });
+            // Credit the turret's OWNER like a real kill — was previously hardcoded to
+            // loot:0/killerMoney:0, which also meant the owner's own HUD money briefly
+            // flashed to $0 client-side whenever their own turret got a kill.
+            const owner = room.players[b.ownerId] || room.bots[b.ownerId];
+            let loot = 0;
+            if (owner) {
+              loot = Math.floor(nearest.money * 0.25);
+              nearest.money = Math.max(0, nearest.money - loot);
+              owner.money += loot; owner.totalEarned += loot; owner.kills++;
+              addXP(owner, 60 + nearest.level*8, room);
+              checkAchievements(room, owner);
+              if (!owner.isBot) persistPlayer(owner);
+            }
+            emitToRoom(room, 'playerDied', { victimId: nearest.id||nearest.socketId, killerId: b.ownerId, loot, killerMoney: owner ? owner.money : 0 });
             if (!nearest.isBot) persistPlayer(nearest);
             scheduleRespawn(nearest, room);
           }
@@ -884,7 +899,19 @@ function startRoomLoop(room) {
             emitToRoom(room, 'trapTriggered', { buildingId: b.id, targetId: e.id||e.socketId, damage: dmg, targetHp: e.hp, slow: b.slow || false, slowAmt });
             if (e.hp <= 0) {
               e.isDead = true; e.deaths++;
-              emitToRoom(room, 'playerDied', { victimId: e.id||e.socketId, killerId: b.ownerId, loot: 0, killerMoney: 0 });
+              // Same fix as turrets — credit the trap's owner instead of hardcoding 0,
+              // which was also resetting the owner's own HUD money to $0 client-side.
+              const owner = room.players[b.ownerId] || room.bots[b.ownerId];
+              let loot = 0;
+              if (owner) {
+                loot = Math.floor(e.money * 0.25);
+                e.money = Math.max(0, e.money - loot);
+                owner.money += loot; owner.totalEarned += loot; owner.kills++;
+                addXP(owner, 60 + e.level*8, room);
+                checkAchievements(room, owner);
+                if (!owner.isBot) persistPlayer(owner);
+              }
+              emitToRoom(room, 'playerDied', { victimId: e.id||e.socketId, killerId: b.ownerId, loot, killerMoney: owner ? owner.money : 0 });
               if (!e.isBot) persistPlayer(e);
               scheduleRespawn(e, room);
             }
@@ -1278,6 +1305,13 @@ const rankedQueue = []; // { socketId, username, mmr }
 const RANKED_K = 32; // standard Elo K-factor
 
 function tryMatchRanked() {
+  // Drop any stale (disconnected) entries before pairing — previously a stale
+  // socket would get re-pushed back into the queue and, since it kept being
+  // picked as the "best" pair, could permanently block ALL matchmaking behind
+  // it (the function bailed out entirely instead of trying other pairs).
+  for (let i = rankedQueue.length - 1; i >= 0; i--) {
+    if (!io.sockets.sockets.get(rankedQueue[i].socketId)) rankedQueue.splice(i, 1);
+  }
   if (rankedQueue.length < 2) return;
   // Sort by mmr and pair the two closest-skill players waiting
   const sorted = [...rankedQueue].sort((a, b) => a.mmr - b.mmr);
@@ -1294,7 +1328,7 @@ function tryMatchRanked() {
   const [p1, p2] = bestPair;
   const sock1 = io.sockets.sockets.get(p1.socketId);
   const sock2 = io.sockets.sockets.get(p2.socketId);
-  if (!sock1 || !sock2) { if (sock1) rankedQueue.push(p1); if (sock2) rankedQueue.push(p2); return; }
+  if (!sock1 || !sock2) { tryMatchRanked(); return; } // shouldn't happen post-filter, but never re-add — just retry
 
   const room = createRoom(p1.socketId, p1.username, {
     name: '🏆 Ranked Match', isPublic: false, maxPlayers: 2,
@@ -1314,6 +1348,9 @@ function tryMatchRanked() {
 
   // Auto-start — ranked has no host-click step, queueing both players is the commitment
   startMatch(room);
+
+  // In case 4+ players were waiting, keep matching pairs in this same pass
+  tryMatchRanked();
 }
 
 // Standard Elo update for a 2-player ranked match, called once at match end.
@@ -1325,6 +1362,8 @@ function applyRankedResult(room, winnerSocketId, loserSocketId) {
   const delta = Math.round(RANKED_K * (1 - expectedWin));
   winner.mmr = (winner.mmr || 1000) + delta;
   loser.mmr = Math.max(0, (loser.mmr || 1000) - delta);
+  winner.rankedMatchesPlayed = (winner.rankedMatchesPlayed || 0) + 1;
+  loser.rankedMatchesPlayed = (loser.rankedMatchesPlayed || 0) + 1;
   io.to(winnerSocketId).emit('rankedResult', { won: true, mmr: winner.mmr, delta });
   io.to(loserSocketId).emit('rankedResult', { won: false, mmr: loser.mmr, delta: -delta });
 }
@@ -1522,8 +1561,12 @@ io.on('connection', (socket) => {
     if (!authedUser) return;
     const FIELD_BY_CATEGORY = { earnings: 'total_earned', kills: 'kills', prestige: 'prestige', mmr: 'mmr' };
     const field = FIELD_BY_CATEGORY[category] || 'total_earned';
+    // mmr defaults to 1000 for every account that's ever played a single match
+    // (ranked or not), so filtering on "mmr > 0" would list everyone, not just
+    // people who've actually queued for ranked. Gate on rankedMatchesPlayed instead.
+    const filter = field === 'mmr' ? { rankedMatchesPlayed: { $gt: 0 } } : { [field]: { $gt: 0 } };
     try {
-      const top = await savesCol.find({ [field]: { $gt: 0 } })
+      const top = await savesCol.find(filter)
         .sort({ [field]: -1 }).limit(20).toArray();
       const userIds = top.map(s => s.userId);
       const users = await usersCol.find({ id: { $in: userIds } }).toArray();
@@ -1726,11 +1769,30 @@ io.on('connection', (socket) => {
     delete room.lobbyPlayers[socket.id];
     delete socketRoom[socket.id];
 
+    const leavingPlayer = room.players[socket.id];
+
+    // Ranked forfeit — leaving mid-match now counts as a loss instead of letting
+    // you dodge an MMR loss for free by just quitting. Remaining player wins.
+    if (room.isRanked && room.status === 'playing' && !room._matchEnded && leavingPlayer) {
+      const opponentId = Object.keys(room.players).find(id => id !== socket.id);
+      if (opponentId) {
+        room._matchEnded = true;
+        applyRankedResult(room, opponentId, socket.id);
+        const opponent = room.players[opponentId];
+        emitToRoom(room, 'matchOver', { leaderboard: [
+          { username: opponent.username, color: opponent.color, money: Math.floor(opponent.money), kills: opponent.kills, isBot: false },
+          { username: leavingPlayer.username, color: leavingPlayer.color, money: Math.floor(leavingPlayer.money), kills: leavingPlayer.kills, isBot: false },
+        ] });
+        stopRoomLoop(room);
+        persistPlayer(opponent);
+        setTimeout(() => destroyRoom(room.id), 10000);
+      }
+    }
+
     // Persist if was playing — must happen BEFORE deleting from room.players below,
     // otherwise this check always sees it already gone and never actually persists
     // (money/points/kills earned in the final seconds before quitting were lost
     // until the next periodic sync tick happened to fire first).
-    const leavingPlayer = room.players[socket.id];
     if (leavingPlayer) persistPlayer(leavingPlayer);
     delete room.players[socket.id];
 
