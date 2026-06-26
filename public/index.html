@@ -274,6 +274,8 @@ canvas{display:block;}
 .lby-btn-stats  {background:linear-gradient(135deg,#003d7a,#1565c0);}
 .lby-btn-saves  {background:linear-gradient(135deg,#004d5a,#00838f);}
 .lby-btn-settings{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#ccc;}
+.lby-btn-achievements{background:linear-gradient(135deg,#7a5a00,#d4af37);}
+.lby-btn-tutorial{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#ccc;}
 .lby-left-divider{height:1px;background:rgba(255,255,255,.07);margin:2px 0;}
 .lby-invites-label{font-size:.7rem;color:#557755;text-transform:uppercase;letter-spacing:1px;padding:2px 0;}
 .invite-list{flex:1;}
@@ -530,6 +532,7 @@ canvas{display:block;}
 .bar-bg{background:rgba(255,255,255,.08);border-radius:99px;height:7px;margin-top:3px;overflow:hidden;width:160px;}
 .bar-fill{height:100%;border-radius:99px;transition:width .3s;}
 #hpFill{background:linear-gradient(90deg,#2d7a1e,#66bb6a);}
+body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 #xpFill{background:linear-gradient(90deg,#7b1fa2,#e040fb);}
 .hud-spacer{flex:1;}
 
@@ -1107,7 +1110,9 @@ canvas{display:block;}
       <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">🔑 Join by Code</button>
       <button class="lby-left-btn lby-btn-rewards" onclick="openSavedGamesModal()">💾 Saved Games</button>
       <button class="lby-left-btn lby-btn-stats"   onclick="openStatsModal()">📊 My Stats</button>
+      <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()">🏆 Achievements</button>
       <button class="lby-left-btn lby-btn-settings" onclick="openSettingsModal()">⚙️ Settings</button>
+      <button class="lby-left-btn lby-btn-tutorial" onclick="openTutorialModal()">❓ How to Play</button>
 
       <div class="lby-left-divider"></div>
       <div class="lby-invites-label">📨 Invites</div>
@@ -1140,6 +1145,9 @@ canvas{display:block;}
           <div class="lby-hero-pedestal"></div>
           <button class="lby-play-btn" onclick="openPlayNowModal()" style="margin-top:10px;width:100%;justify-content:center;">
             ▶ PLAY NOW!
+          </button>
+          <button class="lby-play-btn" id="rankedQueueBtn" onclick="toggleRankedQueue()" style="margin-top:8px;width:100%;justify-content:center;background:linear-gradient(135deg,#7a5a00,#d4af37);">
+            🏆 Ranked Match
           </button>
         </div><!-- /flex column -->
 
@@ -1470,6 +1478,32 @@ canvas{display:block;}
   </div>
 </div>
 
+<!-- ══ ACHIEVEMENTS MODAL ═══════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="achievementsModal">
+  <div class="modal" style="width:480px;">
+    <h2>🏆 Achievements</h2>
+    <div id="achievementsContent" style="max-height:420px;overflow-y:auto;">
+      <div style="text-align:center;color:#557755;padding:20px;">Loading...</div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="modal-confirm" onclick="closeModal('achievementsModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TUTORIAL MODAL ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="tutorialModal">
+  <div class="modal" style="width:480px;">
+    <h2 id="tutorialTitle">🦕 Welcome to Dino Tycoon!</h2>
+    <div id="tutorialContent" style="min-height:180px;color:#cde;font-size:.92rem;line-height:1.6;"></div>
+    <div style="display:flex;justify-content:center;gap:6px;margin:14px 0;" id="tutorialDots"></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="skipTutorial()">Skip</button>
+      <button class="modal-confirm" id="tutorialNextBtn" onclick="tutorialNext()">Next ▶</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ JOIN CODE MODAL ══════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="joinCodeModal">
   <div class="modal" style="width:320px;">
@@ -1748,8 +1782,49 @@ window.SFX = (() => {
     src.start(); src.stop(c.currentTime+dur+0.01);
   };
   const play = fn => { if (!(window.GAME_SETTINGS?.soundEnabled === false)) fn(); };
+
+  // ── Ambient background music — a slow looping chord pad, fully procedural ──
+  const MUSIC_CHORDS = [
+    [196.00, 246.94, 293.66], // G major
+    [220.00, 261.63, 329.63], // A minor
+    [174.61, 220.00, 261.63], // F major
+    [196.00, 246.94, 392.00], // G major (octave voicing for variety)
+  ];
+  let musicGain = null, musicInterval = null, chordIdx = 0;
+  const startMusic = () => {
+    if (musicInterval || window.GAME_SETTINGS?.musicEnabled === false) return;
+    const c = getCtx();
+    musicGain = c.createGain();
+    musicGain.gain.setValueAtTime(0, c.currentTime);
+    musicGain.gain.linearRampToValueAtTime(0.05, c.currentTime + 2);
+    musicGain.connect(c.destination);
+    const playChord = () => {
+      const chord = MUSIC_CHORDS[chordIdx % MUSIC_CHORDS.length]; chordIdx++;
+      for (const freq of chord) {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, c.currentTime);
+        g.gain.linearRampToValueAtTime(1, c.currentTime + 1.5);
+        g.gain.linearRampToValueAtTime(0, c.currentTime + 7.5);
+        o.connect(g); g.connect(musicGain);
+        o.start(c.currentTime); o.stop(c.currentTime + 8);
+      }
+    };
+    playChord();
+    musicInterval = setInterval(playChord, 8000);
+  };
+  const stopMusic = () => {
+    if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+    if (musicGain) {
+      const c = getCtx(); const g = musicGain; musicGain = null;
+      g.gain.linearRampToValueAtTime(0, c.currentTime + 1);
+      setTimeout(() => g.disconnect(), 1100);
+    }
+  };
+
   return {
     _muted: false,
+    startMusic, stopMusic,
     pop:       () => play(()=>{ osc(900,'sine',0.07,0.5); osc(600,'sine',0.05,0.2); }),
     click:     () => play(()=>{ osc(700,'sine',0.06,0.4); }),
     crunch:    () => play(()=>{ noise(0.15,0.5,800); osc(90,'sawtooth',0.12,0.35); }),
@@ -1828,7 +1903,7 @@ function loadGameScripts(mode, cb) {
   if (mode === '2d') {
     showToast('🗺️ Loading 2D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
-      appendScript('game.js?v=11', null, () => {
+      appendScript('game.js?v=12', null, () => {
         _engineLoaded['2d'] = true; _engineLoading['2d'] = false;
         _engineFuncs['2d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
         cb();
@@ -1838,7 +1913,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=15', null, () => {
-        appendScript('game3d.js?v=31', null, () => {
+        appendScript('game3d.js?v=32', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -2094,6 +2169,8 @@ const SETTINGS_DEFS = [
   { key:'knockbackEffect', label:'💥 Knockback Animation',  desc:'Smooth slide when you or enemies get knocked back', default:true },
   { key:'arenaFlash',      label:'⚡ Hit Screen Flash',     desc:'Brief red flash on screen when you take damage',   default:true },
   { key:'viewBobbing',     label:'👀 View Bobbing (3D)',    desc:'Arms and camera bob as you walk in first-person mode', default:true },
+  { key:'musicEnabled',    label:'🎵 Background Music',     desc:'Soft ambient music loop while playing',             default:true },
+  { key:'colorblindHpBar', label:'🎨 Colorblind-Friendly HP Bars', desc:'Switch HP bar colors from green/red to blue/orange', default:false },
 ];
 let GAME_SETTINGS = {};
 
@@ -2115,6 +2192,10 @@ function applySettings() {
     cam.fov = GAME_SETTINGS.fov;
     cam.updateProjectionMatrix();
   }
+  // Background music toggle — only matters while actually in a match
+  if (GAME_SETTINGS.musicEnabled && window._gameScene) window.SFX?.startMusic?.();
+  else window.SFX?.stopMusic?.();
+  document.body.classList.toggle('colorblind-hp', !!GAME_SETTINGS.colorblindHpBar);
 }
 
 function openSettingsModal() {
@@ -2346,6 +2427,7 @@ function renderStats(s) {
       <div class="stat-card"><div class="stat-card-val" style="color:#ff4757;">${s.deaths||0}</div><div class="stat-card-lbl">💀 Total Deaths</div></div>
       <div class="stat-card"><div class="stat-card-val" style="color:#74b9ff;">${kd}</div><div class="stat-card-lbl">📈 K/D Ratio</div></div>
       <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">${s.prestige||0}</div><div class="stat-card-lbl">⭐ Prestige</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#d4af37;">${s.mmr||1000}</div><div class="stat-card-lbl">🏆 Ranked MMR</div></div>
     </div>
     <div style="color:#88aa88;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
       🧬 Upgrades Owned (${(s.upgrades||[]).length})
@@ -2355,6 +2437,105 @@ function renderStats(s) {
     </div>
   `;
 }
+
+// ── Achievements ──────────────────────────────────────────────────────────────
+function openAchievementsModal() {
+  window.SFX?.pop();
+  document.getElementById('achievementsModal').classList.remove('hidden');
+  const list = window._achievementsList || [];
+  const mine = new Set(window._myAchievements || []);
+  const el = document.getElementById('achievementsContent');
+  if (!list.length) { el.innerHTML = '<div style="text-align:center;color:#557755;padding:20px;">Loading...</div>'; return; }
+  el.innerHTML = list.map(a => {
+    const unlocked = mine.has(a.id);
+    return `<div style="display:flex;align-items:center;gap:14px;padding:12px;margin-bottom:8px;border-radius:12px;
+      background:${unlocked?'rgba(212,175,55,.12)':'rgba(255,255,255,.03)'};
+      border:1px solid ${unlocked?'rgba(212,175,55,.4)':'rgba(255,255,255,.08)'};">
+      <div style="font-size:1.8rem;opacity:${unlocked?'1':'.3'};filter:${unlocked?'none':'grayscale(1)'};">${a.icon}</div>
+      <div style="flex:1;">
+        <div style="font-weight:bold;color:${unlocked?'#ffd700':'#888'};">${esc(a.name)}</div>
+        <div style="font-size:.78rem;color:#88aa88;">${esc(a.desc)}</div>
+      </div>
+      <div style="font-size:.8rem;font-weight:bold;color:${unlocked?'#7fff6a':'#557755'};">
+        ${unlocked ? '✅ +'+a.reward : '🔒 +'+a.reward+' pts'}
+      </div>
+    </div>`;
+  }).join('');
+}
+window.openAchievementsModal = openAchievementsModal;
+
+// ── Onboarding Tutorial ───────────────────────────────────────────────────────
+const TUTORIAL_SLIDES = [
+  { title:'🦕 Welcome to Dino Tycoon!', body:'Build a prehistoric money empire, defend it from other dinos, and fight your way up the leaderboard. Here\'s the loop in a nutshell.' },
+  { title:'⛏️ Step 1 — Build Income', body:'Buy income buildings from the shop (Bone Pile, Fossil Mine, and beyond). They earn you money automatically every second, even while you\'re off fighting.' },
+  { title:'🪨 Step 2 — Defend Your Base', body:'Walls, turrets, and traps protect your buildings from rivals. Place them around your pad — losing a building costs you real income.' },
+  { title:'⚔️ Step 3 — Fight for Loot', body:'Attack other players and bots to steal a cut of their money and earn XP. Watch your own HP — defeated dinos respawn at their base after a few seconds.' },
+  { title:'⭐ Step 4 — Prestige', body:'Once you hit $100k, you can Prestige: your shop resets, but you keep permanent bonuses to income, damage, defense and HP — forever stronger on your next run.' },
+  { title:'🏆 You\'re Ready!', body:'Check My Stats and Achievements anytime from the lobby, or queue up for a Ranked Match once you\'re feeling confident. Good luck out there!' },
+];
+let _tutorialIdx = 0;
+function openTutorialModal(isAuto) {
+  if (!isAuto) window.SFX?.pop();
+  _tutorialIdx = 0;
+  renderTutorialSlide();
+  document.getElementById('tutorialModal').classList.remove('hidden');
+}
+window.openTutorialModal = openTutorialModal;
+function renderTutorialSlide() {
+  const s = TUTORIAL_SLIDES[_tutorialIdx];
+  document.getElementById('tutorialTitle').textContent = s.title;
+  document.getElementById('tutorialContent').textContent = s.body;
+  document.getElementById('tutorialDots').innerHTML = TUTORIAL_SLIDES.map((_,i) =>
+    `<span style="width:8px;height:8px;border-radius:50%;background:${i===_tutorialIdx?'#7fff6a':'rgba(255,255,255,.2)'};"></span>`
+  ).join('');
+  document.getElementById('tutorialNextBtn').textContent = _tutorialIdx === TUTORIAL_SLIDES.length-1 ? "Let's Go! 🦖" : 'Next ▶';
+}
+function tutorialNext() {
+  window.SFX?.click();
+  if (_tutorialIdx >= TUTORIAL_SLIDES.length - 1) { skipTutorial(); return; }
+  _tutorialIdx++;
+  renderTutorialSlide();
+}
+function skipTutorial() {
+  closeModal('tutorialModal');
+  if (window.gameSocket) window.gameSocket.emit('dismissTutorial');
+}
+window.tutorialNext = tutorialNext;
+window.skipTutorial = skipTutorial;
+
+// ── Ranked Matchmaking ────────────────────────────────────────────────────────
+let _inRankedQueue = false;
+function toggleRankedQueue() {
+  if (!window.gameSocket) return;
+  window.SFX?.pop();
+  if (_inRankedQueue) { window.gameSocket.emit('leaveRankedQueue'); return; }
+  window.gameSocket.emit('joinRankedQueue');
+}
+window.toggleRankedQueue = toggleRankedQueue;
+function setRankedQueueUI(active) {
+  _inRankedQueue = active;
+  const btn = document.getElementById('rankedQueueBtn');
+  if (!btn) return;
+  btn.innerHTML = active ? '🔎 Searching... (click to cancel)' : '🏆 Ranked Match';
+  btn.style.opacity = active ? '0.75' : '1';
+}
+
+// ── Seasonal Event Banner ─────────────────────────────────────────────────────
+function showEventBanner(ev) {
+  if (!ev) return;
+  let el = document.getElementById('eventBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'eventBanner';
+    el.style = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:2500;'+
+      'background:rgba(20,10,0,.85);border:1px solid rgba(255,215,0,.4);border-radius:12px;'+
+      'padding:8px 18px;color:#ffd700;font-weight:bold;font-size:.9rem;letter-spacing:.5px;'+
+      'box-shadow:0 0 20px rgba(255,215,0,.25);pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent = `${ev.icon || '🎉'} ${ev.name} is live!`;
+}
+
 function openJoinCodeModal() {
   document.getElementById('joinCodeInput').value = '';
   document.getElementById('joinCodeModal').classList.remove('hidden');
@@ -2707,6 +2888,8 @@ function matchOverQuit() {
   _leaveGame();
 }
 function _leaveGame() {
+  window.SFX?.stopMusic?.();
+  const evBanner = document.getElementById('eventBanner'); if (evBanner) evBanner.remove();
   ['hud','shopToggle','lbPanel','chatPanel','controls'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
@@ -3288,6 +3471,14 @@ function initSocket(token){
       document.getElementById('shopPointsVal').textContent = pts;
     }
     initFossilDropCard(data.lastDailyReward || 0);
+
+    // Achievements / Ranked / Tutorial / Seasonal event
+    window._achievementsList = data.achievementsList || [];
+    window._myAchievements = data.myAchievements || [];
+    window._myMmr = data.mmr || 1000;
+    window._activeEvent = data.activeEvent || null;
+    if (window._activeEvent) showEventBanner(window._activeEvent);
+    if (!data.tutorialSeen) setTimeout(() => openTutorialModal(true), 600);
   });
 
   s.on('dailyRewardResult', data => {
@@ -3308,6 +3499,21 @@ function initSocket(token){
       if (_shopData) _shopData.points = data.totalPoints;
       showToast(`🥚 Fossil Drop! +${data.pts} points!`, 3500);
     }
+  });
+
+  s.on('achievementUnlocked', data => {
+    if (window._myAchievements) window._myAchievements.push(data.id);
+    window.SFX?.levelUp();
+    showToast(`${data.icon} Achievement unlocked: ${data.name} (+${data.reward} pts)`, 4500);
+    window.addKillFeed?.(`<span style="color:#ffd700">🏆 ${data.name} unlocked!</span>`);
+  });
+
+  s.on('rankedQueueJoined', () => { setRankedQueueUI(true); showToast('🔎 Searching for a ranked opponent...', 2500); });
+  s.on('rankedQueueLeft',   () => { setRankedQueueUI(false); showToast('Left ranked queue.', 1500); });
+  s.on('rankedMatchFound',  data => { setRankedQueueUI(false); showToast(`🏆 Ranked match found vs ${data.opponent}!`, 3000); window.SFX?.roar(); });
+  s.on('rankedResult', data => {
+    window._myMmr = data.mmr;
+    showToast(data.won ? `🏆 Ranked Win! MMR +${data.delta} (now ${data.mmr})` : `Ranked Loss. MMR ${data.delta} (now ${data.mmr})`, 4500);
   });
 
   s.on('statsData', data => {
@@ -3542,6 +3748,8 @@ function initSocket(token){
   s.on('gameStarted', data => {
     if (window._currentSaveId) s.emit('markSavePlayed', window._currentSaveId);
     showScreen('game');
+    if (GAME_SETTINGS.musicEnabled !== false) window.SFX?.startMusic?.();
+    if (data.activeEvent) showEventBanner(data.activeEvent);
     const mode = data.renderMode || '3d';
     // Reset init flag when engine changes so startPhaserGame runs for the new engine
     if (_loadedRenderMode && _loadedRenderMode !== mode) {

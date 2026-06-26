@@ -53,7 +53,7 @@ async function getSave(id) {
     s.customSkin = undefined;
     if (s.equippedSkin === 'custom') s.equippedSkin = 'custom_imported';
   }
-  const raw = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[] };
+  const raw = s || { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, savedGames:[], points:0, lobbyItems:{skins:[],tags:[]}, equippedSkin:'default', equippedTag:'none', customSkins:[], achievements:[], mmr:1000, tutorialSeen:false, buildingsPlaced:0 };
   const result = _stripId(raw);
   _saveCache.set(id, { data: result, ts: Date.now() });
   return JSON.parse(JSON.stringify(result));
@@ -81,6 +81,17 @@ const PLAYER_COLORS = PADS.map(p => p.color);
 
 const BOT_NAMES = ['RaptorBot','T-RexBot','TriceBot','BrachBot','AnkyBot','SpinoBot','CarnoBot','ParaBot','DilophBot','AlloBot'];
 const HARDCORE_NAMES = ['TERROR','ALPHA','APEX','TYRANT','GOLIATH','LEVIATHAN','DOMINUS','WARLORD'];
+const BOT_TAUNTS = {
+  kill:  ['Got em! 🦖', 'Too easy.', 'Next!', 'Stay down.', 'Extinction event incoming.', 'GG.'],
+  death: ['Lucky shot.', 'I\'ll be back.', 'Rebuilding stronger!', 'Not over yet!', 'Respawning...'],
+  spawn: ['Ready to roar!', 'Let\'s build an empire.', 'Time to dig in.'],
+};
+function botTaunt(room, bot, category) {
+  if (Math.random() > 0.35) return; // don't spam — taunt about a third of the time
+  const lines = BOT_TAUNTS[category]; if (!lines) return;
+  const text = lines[Math.floor(Math.random() * lines.length)];
+  emitToRoom(room, 'chatMessage', { username: bot.username, message: text, color: bot.color });
+}
 const BOT_COLORS = ['#ff6348','#74b9ff','#55efc4','#fdcb6e','#a29bfe','#fd79a8','#00b894','#e17055'];
 
 const UPGRADES = {
@@ -127,6 +138,52 @@ const UPGRADES = {
   healingTotem:  { name:'Healing Totem',   cost:800,   icon:'🪄', effect:{}, req:null, desc:'Heals YOU when you stand near it (+20 HP/s)', cat:'build' },
   tarPit:        { name:'Tar Pit',         cost:500,   icon:'🕳️', effect:{}, req:null, desc:'Severely slows enemies who walk through it', cat:'build' },
 };
+
+// ── Achievements ────────────────────────────────────────────────────────────────
+// check(p) runs against the live in-room player object (kills/totalEarned/prestige/
+// level/upgrades/buildingsPlaced are all already tracked there).
+const ACHIEVEMENTS = [
+  { id:'first_blood',  name:'First Blood',      icon:'🩸', reward:20,  desc:'Get your first kill',                check:p => p.kills >= 1 },
+  { id:'fossil_fortune',name:'Fossil Fortune',  icon:'💰', reward:25,  desc:'Earn $10,000 in total',              check:p => p.totalEarned >= 10000 },
+  { id:'dino_slayer',  name:'Dino Slayer',      icon:'🦖', reward:50,  desc:'Get 50 kills',                       check:p => p.kills >= 50 },
+  { id:'millionaire',  name:'Fossil Millionaire',icon:'💎', reward:100, desc:'Earn $1,000,000 in total',          check:p => p.totalEarned >= 1000000 },
+  { id:'ascended',     name:'Ascended',         icon:'⭐', reward:50,  desc:'Prestige for the first time',        check:p => p.prestige >= 1 },
+  { id:'legend',       name:'Living Legend',    icon:'👑', reward:200, desc:'Reach Prestige 5',                   check:p => p.prestige >= 5 },
+  { id:'survivor',     name:'Survivor',         icon:'🛡️', reward:30,  desc:'Reach Level 10',                     check:p => p.level >= 10 },
+  { id:'architect',    name:'Architect',        icon:'🏛️', reward:40,  desc:'Own every income building at once', check:p => ['bonePile1','bonePile2','bonePile3','bonePile4','bonePile5'].every(id => p.upgrades.includes(id)) },
+  { id:'tycoon',       name:'Master Builder',   icon:'🏗️', reward:30,  desc:'Place 10 buildings',                 check:p => p.buildingsPlaced >= 10 },
+];
+
+// Checks all achievements for a player, unlocking + awarding points for any newly met,
+// and notifying their client. Safe to call often — already-unlocked ids are skipped.
+function checkAchievements(room, p) {
+  if (!p || p.isBot) return;
+  if (!Array.isArray(p.achievements)) p.achievements = [];
+  for (const ach of ACHIEVEMENTS) {
+    if (p.achievements.includes(ach.id)) continue;
+    if (!ach.check(p)) continue;
+    p.achievements.push(ach.id);
+    p.points = (p.points || 0) + ach.reward;
+    const sock = io.sockets.sockets.get(p.socketId || p.id);
+    if (sock) sock.emit('achievementUnlocked', { id: ach.id, name: ach.name, icon: ach.icon, reward: ach.reward, desc: ach.desc });
+  }
+}
+
+// ── Seasonal Events ──────────────────────────────────────────────────────────────
+// Date-windowed so events can be scheduled ahead of time — add more entries and
+// adjust the dates to run a rotation. Only one is considered "active" at a time
+// (the first match found). mpsMultiplier applies to passive income; meteor:true
+// enables periodic area-damage meteor strikes in the room tick loop.
+const SEASONAL_EVENTS = [
+  { id:'double_income', name:'💰 Double Income Weekend', icon:'💰',
+    start:'2026-01-01T00:00:00Z', end:'2027-01-01T00:00:00Z', mpsMultiplier:2 },
+  // { id:'meteor_chaos', name:'☄️ Meteor Shower', icon:'☄️',
+  //   start:'2026-07-01T00:00:00Z', end:'2026-07-08T00:00:00Z', meteor:true },
+];
+function getActiveEvent() {
+  const now = Date.now();
+  return SEASONAL_EVENTS.find(e => now >= new Date(e.start).getTime() && now <= new Date(e.end).getTime()) || null;
+}
 
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
 const LOBBY_SHOP = {
@@ -313,6 +370,8 @@ function placeBuilding(room, player, upgradeId, targetPos) {
   };
   room.buildings[bid] = building;
   emitToRoom(room, 'buildingPlaced', building);
+  player.buildingsPlaced = (player.buildingsPlaced || 0) + 1;
+  checkAchievements(room, player);
 }
 
 function destroyBuilding(room, buildingId, attacker, selfDemolish = false) {
@@ -474,6 +533,9 @@ function createPlayerData(socketId, username, save, padIdx, color) {
     level: save.level||1, xp: save.xp||0, prestige: save.prestige||0,
     upgrades: [...(save.upgrades||[])],
     points: save.points||0,
+    achievements: [...(save.achievements||[])],
+    mmr: save.mmr || 1000,
+    buildingsPlaced: save.buildingsPlaced || 0,
     padIdx, color, dbUserId: null, isBot: false, ...stats,
   };
 }
@@ -486,6 +548,10 @@ async function persistPlayer(p) {
     level: p.level, xp: p.xp, upgrades: p.upgrades,
     kills: p.kills, deaths: p.deaths, prestige: p.prestige,
     points: Math.floor(p.points || 0),
+    achievements: p.achievements || existing.achievements || [],
+    mmr: p.mmr || existing.mmr || 1000,
+    buildingsPlaced: p.buildingsPlaced || existing.buildingsPlaced || 0,
+    tutorialSeen: existing.tutorialSeen || false,
     savedGames: existing.savedGames || [],
     lobbyItems: existing.lobbyItems || { skins:[], tags:[] },
     equippedSkin: existing.equippedSkin || 'default',
@@ -747,6 +813,9 @@ function handleAttack(attacker, target, room) {
     addXP(attacker, 80 + target.level*10, room);
     emitToRoom(room, 'playerDied', { victimId: target.id, killerId: attacker.id, loot, killerMoney: attacker.money });
 
+    if (attacker.isBot) botTaunt(room, attacker, 'kill');
+    if (target.isBot) botTaunt(room, target, 'death');
+    checkAchievements(room, attacker);
     if (!target.isBot) persistPlayer(target);
     scheduleRespawn(target, room);
   }
@@ -764,9 +833,12 @@ function startRoomLoop(room) {
     const dt = (now - lastTick) / 1000;
     lastTick = now;
     const allEntities = [...Object.values(room.players), ...Object.values(room.bots)];
+    const activeEvent = getActiveEvent();
+    const incomeMult = activeEvent?.mpsMultiplier || 1;
     for (const p of allEntities) {
       if (p.isDead) continue;
-      p.money += p.mps * dt; p.totalEarned += p.mps * dt;
+      const earned = p.mps * incomeMult * dt;
+      p.money += earned; p.totalEarned += earned;
       if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
     }
     // Tick bots — precompute shared arrays once per tick instead of per-bot to avoid O(bots*buildings) reallocation
@@ -851,6 +923,17 @@ function startRoomLoop(room) {
           kills: p.kills, isBot: p.isBot
         }));
         emitToRoom(room, 'matchOver', { leaderboard: lb });
+        // Ranked: settle the Elo update before persisting so the new mmr is saved
+        if (room.isRanked) {
+          const humanIds = Object.keys(room.players);
+          if (humanIds.length === 2) {
+            const [aId, bId] = humanIds;
+            const a = room.players[aId], b = room.players[bId];
+            const winnerId = a.totalEarned >= b.totalEarned ? aId : bId;
+            const loserId = winnerId === aId ? bId : aId;
+            applyRankedResult(room, winnerId, loserId);
+          }
+        }
         // Freeze the world immediately — stop bot AI/attacks/building and money sync so
         // nothing keeps acting (or making sound) during the post-match results screen
         stopRoomLoop(room);
@@ -877,6 +960,10 @@ function startRoomLoop(room) {
       sync[p.id] = { hp: Math.round(p.hp), money: Math.floor(p.money), mps: p.mps, isDead: p.isDead };
     }
     emitToRoom(room, 'statSync', sync);
+
+    // Income/level achievements accrue passively, so check them on this slower tick
+    // instead of only at kill/prestige/build-time trigger points
+    for (const p of Object.values(room.players)) checkAchievements(room, p);
 
     // Leaderboard
     const lb = allPlayers.sort((a,b)=>b.totalEarned-a.totalEarned).slice(0,10)
@@ -1019,6 +1106,186 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// ── Match start (shared by manual "Start Game" and ranked auto-match) ───────────
+async function startMatch(room) {
+  room.status = 'starting';
+
+  // Initialize all players from lobby — fetch all saves in parallel
+  const playerEntries = Object.entries(room.lobbyPlayers);
+  const playerSaveData = await Promise.all(playerEntries.map(async ([sid, lp]) => {
+    const userDoc = await usersCol.findOne({ username: lp.username });
+    const dbId = userDoc ? userDoc.id : null;
+    const rawSave = dbId ? await getSave(dbId) : {};
+    return { sid, lp, dbId, rawSave };
+  }));
+  for (const { sid, lp, dbId, rawSave } of playerSaveData) {
+    let save2 = room.freshStart
+      ? { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0 }
+      : { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, ...rawSave };
+    // Load a saved game slot if requested
+    const sg = room.loadSavedGame && Array.isArray(rawSave.savedGames)
+      ? rawSave.savedGames.find(g => g.id === room.loadSavedGame) || null
+      : null;
+    // Check if this player is the host or a returning guest
+    const isHost = sid === room.hostId;
+    const guestSnap = (!isHost && sg?.guestStates)
+      ? sg.guestStates[lp.username.toLowerCase()] || null
+      : null;
+    if (sg && !room.freshStart) {
+      if (isHost) {
+        save2.money = sg.money || 0;
+        save2.upgrades = sg.upgrades || [];
+      } else if (guestSnap) {
+        // Returning guest — restore their exact state from last save
+        save2.money = guestSnap.money || 0;
+        save2.upgrades = guestSnap.upgrades || [];
+      }
+      // If guest has no prior state in this save, they keep their own account stats (default)
+    }
+    const player = createPlayerData(sid, lp.username, save2, lp.padIdx, lp.color);
+    player.dbUserId = dbId;
+    // Equipped skin — override color if a non-default skin is equipped
+    const equippedSkinId = rawSave.equippedSkin || 'default';
+    if (equippedSkinId.startsWith('custom_')) {
+      const csId = equippedSkinId.slice(7);
+      const csSlot = (rawSave.customSkins || []).find(s => s.id === csId);
+      player.customSkin = csSlot ? csSlot.base64 : null;
+      player.skinColor = null;
+    } else {
+      const skinDef = LOBBY_SHOP.skins.find(s => s.id === equippedSkinId);
+      player.skinColor = skinDef ? skinDef.color : null;
+      player.customSkin = null;
+    }
+    // Equipped nametag prefix — sent to all clients so it shows above the dino
+    const equippedTagId = rawSave.equippedTag || 'none';
+    const tagDef = LOBBY_SHOP.tags.find(t => t.id === equippedTagId);
+    player.tagPrefix = (tagDef && tagDef.prefix) || '';
+    // Base regen from difficulty — easy=6, medium=3, hard=2 HP/s
+    const baseRegen = room.difficulty==='easy' ? 6 : room.difficulty==='hard' ? 2 : 3;
+    player.regen = (player.regen || 0) + baseRegen;
+    // Spawn at assigned pad center (their home base)
+    const base = padCenter(player.padIdx);
+    player.x = base.x + (Math.random()-0.5)*80;
+    player.y = base.y + (Math.random()-0.5)*80;
+    player.baseX = base.x;
+    player.baseY = base.y;
+    player.incomeSlot = 0; player.defenseSlot = 0;
+    room.players[sid] = player;
+
+    // Restore buildings — host from sg.buildings, returning guest from guestSnap.buildings
+    const buildingsToRestore = isHost ? sg?.buildings : guestSnap?.buildings;
+    if (buildingsToRestore?.length) {
+      for (const sb of buildingsToRestore) {
+        const bd = BUILDING_DATA[sb.upgradeId]; if (!bd) continue;
+        const bid = 'b_' + (buildingIdCounter++);
+        room.buildings[bid] = {
+          id: bid, upgradeId: sb.upgradeId, ownerId: sid,
+          ownerColor: player.color, ownerName: player.username,
+          x: player.baseX + sb.dx, y: player.baseY + sb.dy,
+          hp: sb.hp, maxHp: sb.maxHp,
+          type: bd.type, defType: bd.defType||null,
+          orientation: sb.orientation || 'h',
+          damage: bd.damage||0, range: bd.range||0,
+          cooldown: bd.cooldown||2000, lastFired: 0,
+          mps: bd.mps||0, slow: bd.slow||false, slowAmt: bd.slowAmt||0, healRate: bd.healRate||0,
+        };
+      }
+    }
+  }
+
+  // Send gameStarted immediately so Phaser loads, but with countdown flag
+  for (const [sid, lp] of Object.entries(room.lobbyPlayers)) {
+    const myPlayer = room.players[sid];
+    io.to(sid).emit('gameStarted', {
+      myPlayer,
+      allPlayers: Object.values(room.players),
+      allBots: Object.values(room.bots).map(b=>({
+        ...b, isHardcore: b.isHardcore||false, scale: b.scale||1
+      })),
+      upgrades: applyDifficultyCosts(UPGRADES, room.difficulty),
+      difficulty: room.difficulty,
+      pads: PADS, worldSize: WORLD_SIZE, padSize: PAD_SIZE,
+      gameMode: room.gameMode,
+      renderMode: room.renderMode || '3d',
+      buildings: Object.values(room.buildings),
+      savedGame: null,
+      isRanked: room.isRanked || false,
+      activeEvent: getActiveEvent(),
+    });
+  }
+  broadcastLobbyUpdate();
+
+  // 5-second countdown then start the loop
+  let count = 5;
+  emitToRoom(room, 'countdown', { count });
+  const cdInterval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      emitToRoom(room, 'countdown', { count });
+    } else {
+      clearInterval(cdInterval);
+      emitToRoom(room, 'countdown', { count: 0, go: true });
+      startRoomLoop(room);
+    }
+  }, 1000);
+}
+
+// ── Ranked Matchmaking ───────────────────────────────────────────────────────────
+const rankedQueue = []; // { socketId, username, mmr }
+const RANKED_K = 32; // standard Elo K-factor
+
+function tryMatchRanked() {
+  if (rankedQueue.length < 2) return;
+  // Sort by mmr and pair the two closest-skill players waiting
+  const sorted = [...rankedQueue].sort((a, b) => a.mmr - b.mmr);
+  let bestPair = null, bestDiff = Infinity;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const diff = Math.abs(sorted[i].mmr - sorted[i + 1].mmr);
+    if (diff < bestDiff) { bestDiff = diff; bestPair = [sorted[i], sorted[i + 1]]; }
+  }
+  if (!bestPair) return;
+  for (const q of bestPair) {
+    const idx = rankedQueue.findIndex(r => r.socketId === q.socketId);
+    if (idx > -1) rankedQueue.splice(idx, 1);
+  }
+  const [p1, p2] = bestPair;
+  const sock1 = io.sockets.sockets.get(p1.socketId);
+  const sock2 = io.sockets.sockets.get(p2.socketId);
+  if (!sock1 || !sock2) { if (sock1) rankedQueue.push(p1); if (sock2) rankedQueue.push(p2); return; }
+
+  const room = createRoom(p1.socketId, p1.username, {
+    name: '🏆 Ranked Match', isPublic: false, maxPlayers: 2,
+    gameMode: 'classic', renderMode: '3d', difficulty: 'medium', matchDuration: 300,
+  });
+  room.isRanked = true;
+  room.lobbyPlayers[p1.socketId] = { username: p1.username, ready: true, padIdx: 0, color: PLAYER_COLORS[0] };
+  room.lobbyPlayers[p2.socketId] = { username: p2.username, ready: true, padIdx: 1, color: PLAYER_COLORS[1] };
+  socketRoom[p1.socketId] = room.id;
+  socketRoom[p2.socketId] = room.id;
+
+  sock1.emit('roomJoined', { room: { ...getRoomPublicInfo(room), inviteCode: room.inviteCode }, lobbyPlayers: room.lobbyPlayers, isHost: true });
+  sock2.emit('roomJoined', { room: { ...getRoomPublicInfo(room), inviteCode: room.inviteCode }, lobbyPlayers: room.lobbyPlayers, isHost: false });
+  io.to(p1.socketId).emit('rankedMatchFound', { opponent: p2.username });
+  io.to(p2.socketId).emit('rankedMatchFound', { opponent: p1.username });
+  broadcastLobbyUpdate();
+
+  // Auto-start — ranked has no host-click step, queueing both players is the commitment
+  startMatch(room);
+}
+
+// Standard Elo update for a 2-player ranked match, called once at match end.
+// winnerIsP1 selects which lobbyPlayers slot (padIdx 0 or 1) won.
+function applyRankedResult(room, winnerSocketId, loserSocketId) {
+  const winner = room.players[winnerSocketId], loser = room.players[loserSocketId];
+  if (!winner || !loser) return;
+  const expectedWin = 1 / (1 + Math.pow(10, (loser.mmr - winner.mmr) / 400));
+  const delta = Math.round(RANKED_K * (1 - expectedWin));
+  winner.mmr = (winner.mmr || 1000) + delta;
+  loser.mmr = Math.max(0, (loser.mmr || 1000) - delta);
+  io.to(winnerSocketId).emit('rankedResult', { won: true, mmr: winner.mmr, delta });
+  io.to(loserSocketId).emit('rankedResult', { won: false, mmr: loser.mmr, delta: -delta });
+}
+
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   let authedUser = null; // { id, username }
@@ -1069,9 +1336,21 @@ io.on('connection', (socket) => {
       lobbyShop: LOBBY_SHOP,
       customSkins: save.customSkins || [],
       lastDailyReward: save.lastDailyReward || 0,
+      achievementsList: ACHIEVEMENTS,
+      myAchievements: save.achievements || [],
+      mmr: save.mmr || 1000,
+      tutorialSeen: save.tutorialSeen || false,
+      activeEvent: getActiveEvent(),
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
+  });
+
+  socket.on('dismissTutorial', async () => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    save.tutorialSeen = true;
+    await putSave(authedUser.id, save);
   });
 
   // ── Save / Load game ──
@@ -1483,125 +1762,25 @@ io.on('connection', (socket) => {
     const room = rooms[socketRoom[socket.id]]; if (!room) return;
     if (room.hostId !== socket.id) return;
     if (room.status === 'playing') return;
-    room.status = 'starting';
-
-    // Initialize all players from lobby — fetch all saves in parallel
-    const playerEntries = Object.entries(room.lobbyPlayers);
-    const playerSaveData = await Promise.all(playerEntries.map(async ([sid, lp]) => {
-      const userDoc = await usersCol.findOne({ username: lp.username });
-      const dbId = userDoc ? userDoc.id : null;
-      const rawSave = dbId ? await getSave(dbId) : {};
-      return { sid, lp, dbId, rawSave };
-    }));
-    for (const { sid, lp, dbId, rawSave } of playerSaveData) {
-      let save2 = room.freshStart
-        ? { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0 }
-        : { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, ...rawSave };
-      // Load a saved game slot if requested
-      const sg = room.loadSavedGame && Array.isArray(rawSave.savedGames)
-        ? rawSave.savedGames.find(g => g.id === room.loadSavedGame) || null
-        : null;
-      // Check if this player is the host or a returning guest
-      const isHost = sid === room.hostId;
-      const guestSnap = (!isHost && sg?.guestStates)
-        ? sg.guestStates[lp.username.toLowerCase()] || null
-        : null;
-      if (sg && !room.freshStart) {
-        if (isHost) {
-          save2.money = sg.money || 0;
-          save2.upgrades = sg.upgrades || [];
-        } else if (guestSnap) {
-          // Returning guest — restore their exact state from last save
-          save2.money = guestSnap.money || 0;
-          save2.upgrades = guestSnap.upgrades || [];
-        }
-        // If guest has no prior state in this save, they keep their own account stats (default)
-      }
-      const player = createPlayerData(sid, lp.username, save2, lp.padIdx, lp.color);
-      player.dbUserId = dbId;
-      // Equipped skin — override color if a non-default skin is equipped
-      const equippedSkinId = rawSave.equippedSkin || 'default';
-      if (equippedSkinId.startsWith('custom_')) {
-        const csId = equippedSkinId.slice(7);
-        const csSlot = (rawSave.customSkins || []).find(s => s.id === csId);
-        player.customSkin = csSlot ? csSlot.base64 : null;
-        player.skinColor = null;
-      } else {
-        const skinDef = LOBBY_SHOP.skins.find(s => s.id === equippedSkinId);
-        player.skinColor = skinDef ? skinDef.color : null;
-        player.customSkin = null;
-      }
-      // Equipped nametag prefix — sent to all clients so it shows above the dino
-      const equippedTagId = rawSave.equippedTag || 'none';
-      const tagDef = LOBBY_SHOP.tags.find(t => t.id === equippedTagId);
-      player.tagPrefix = (tagDef && tagDef.prefix) || '';
-      // Base regen from difficulty — easy=6, medium=3, hard=2 HP/s
-      const baseRegen = room.difficulty==='easy' ? 6 : room.difficulty==='hard' ? 2 : 3;
-      player.regen = (player.regen || 0) + baseRegen;
-      // Spawn at assigned pad center (their home base)
-      const base = padCenter(player.padIdx);
-      player.x = base.x + (Math.random()-0.5)*80;
-      player.y = base.y + (Math.random()-0.5)*80;
-      player.baseX = base.x;
-      player.baseY = base.y;
-      player.incomeSlot = 0; player.defenseSlot = 0;
-      room.players[sid] = player;
-
-      // Restore buildings — host from sg.buildings, returning guest from guestSnap.buildings
-      const buildingsToRestore = isHost ? sg?.buildings : guestSnap?.buildings;
-      if (buildingsToRestore?.length) {
-        for (const sb of buildingsToRestore) {
-          const bd = BUILDING_DATA[sb.upgradeId]; if (!bd) continue;
-          const bid = 'b_' + (buildingIdCounter++);
-          room.buildings[bid] = {
-            id: bid, upgradeId: sb.upgradeId, ownerId: sid,
-            ownerColor: player.color, ownerName: player.username,
-            x: player.baseX + sb.dx, y: player.baseY + sb.dy,
-            hp: sb.hp, maxHp: sb.maxHp,
-            type: bd.type, defType: bd.defType||null,
-            orientation: sb.orientation || 'h',
-            damage: bd.damage||0, range: bd.range||0,
-            cooldown: bd.cooldown||2000, lastFired: 0,
-            mps: bd.mps||0, slow: bd.slow||false, slowAmt: bd.slowAmt||0, healRate: bd.healRate||0,
-          };
-        }
-      }
-    }
-
-    // Send gameStarted immediately so Phaser loads, but with countdown flag
-    for (const [sid, lp] of Object.entries(room.lobbyPlayers)) {
-      const myPlayer = room.players[sid];
-      io.to(sid).emit('gameStarted', {
-        myPlayer,
-        allPlayers: Object.values(room.players),
-        allBots: Object.values(room.bots).map(b=>({
-          ...b, isHardcore: b.isHardcore||false, scale: b.scale||1
-        })),
-        upgrades: applyDifficultyCosts(UPGRADES, room.difficulty),
-        difficulty: room.difficulty,
-        pads: PADS, worldSize: WORLD_SIZE, padSize: PAD_SIZE,
-        gameMode: room.gameMode,
-        renderMode: room.renderMode || '3d',
-        buildings: Object.values(room.buildings),
-        savedGame: null,
-      });
-    }
-    broadcastLobbyUpdate();
-
-    // 5-second countdown then start the loop
-    let count = 5;
-    emitToRoom(room, 'countdown', { count });
-    const cdInterval = setInterval(() => {
-      count--;
-      if (count > 0) {
-        emitToRoom(room, 'countdown', { count });
-      } else {
-        clearInterval(cdInterval);
-        emitToRoom(room, 'countdown', { count: 0, go: true });
-        startRoomLoop(room);
-      }
-    }, 1000);
+    await startMatch(room);
   });
+
+  socket.on('joinRankedQueue', async () => {
+    if (!authedUser) return;
+    if (socketRoom[socket.id]) { socket.emit('roomError', 'Already in a room'); return; }
+    if (rankedQueue.some(q => q.socketId === socket.id)) return;
+    const save = await getSave(authedUser.id);
+    rankedQueue.push({ socketId: socket.id, username: authedUser.username, mmr: save.mmr || 1000 });
+    socket.emit('rankedQueueJoined', { position: rankedQueue.length });
+    tryMatchRanked();
+  });
+
+  socket.on('leaveRankedQueue', () => {
+    const idx = rankedQueue.findIndex(q => q.socketId === socket.id);
+    if (idx > -1) rankedQueue.splice(idx, 1);
+    socket.emit('rankedQueueLeft');
+  });
+
 
   // ── In-Game Events ──
   socket.on('move', (data) => {
@@ -1769,6 +1948,7 @@ io.on('connection', (socket) => {
       maxHp: p.maxHp, hp: p.hp, mps: p.mps, regen: p.regen,
     });
     emitToRoom(room, 'playerPrestiged', { id: socket.id, prestige: p.prestige });
+    checkAchievements(room, p);
     persistPlayer(p);
   });
 
@@ -1780,6 +1960,8 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     if (authedUser) delete onlineByName[authedUser.username.toLowerCase()];
+    const qIdx = rankedQueue.findIndex(q => q.socketId === socket.id);
+    if (qIdx > -1) rankedQueue.splice(qIdx, 1);
     leaveRoom(socket);
     broadcastLobbyUpdate();
     console.log(`Disconnected: ${authedUser?.username||socket.id}`);

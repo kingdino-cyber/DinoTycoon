@@ -74,7 +74,11 @@ function redrawHPSprite(spr, hp, maxHp) {
   const pct = Math.max(0, Math.min(1, hp / maxHp));
   ctx.clearRect(0, 0, 128, 18);
   ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, 128, 18);
-  ctx.fillStyle = pct > 0.6 ? '#44dd44' : pct > 0.3 ? '#ffaa00' : '#ff3333';
+  // Colorblind-friendly palette swaps green/red (hard to tell apart) for blue/orange
+  const cb = window.GAME_SETTINGS?.colorblindHpBar;
+  ctx.fillStyle = cb
+    ? (pct > 0.6 ? '#2196f3' : pct > 0.3 ? '#ffb300' : '#e65100')
+    : (pct > 0.6 ? '#44dd44' : pct > 0.3 ? '#ffaa00' : '#ff3333');
   ctx.fillRect(2, 2, (128 - 4) * pct, 14);
   spr.userData.tex.needsUpdate = true;
 }

@@ -622,7 +622,8 @@ class GameScene extends Phaser.Scene {
   redrawHP(hpBar, hp, maxHp) {
     hpBar.clear();
     const pct=Math.max(0,Math.min(1,hp/maxHp));
-    const c=pct>0.6?0x44dd44:pct>0.3?0xffaa00:0xff3333;
+    const cb = window.GAME_SETTINGS?.colorblindHpBar;
+    const c = cb ? (pct>0.6?0x2196f3:pct>0.3?0xffb300:0xe65100) : (pct>0.6?0x44dd44:pct>0.3?0xffaa00:0xff3333);
     hpBar.fillStyle(c,1);
     hpBar.fillRoundedRect(-25,-41,50*pct,6,3);
   }
