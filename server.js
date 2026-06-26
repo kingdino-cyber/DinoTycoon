@@ -825,6 +825,9 @@ function handleAttack(attacker, target, room) {
 function startRoomLoop(room) {
   room.status = 'playing';
   room.matchStartTime = Date.now();
+  // Hard mode gets periodic meteor strikes — first one a bit into the match so
+  // players have time to get settled before chaos starts
+  if (room.difficulty === 'hard') room._nextMeteorAt = room.matchStartTime + 8000 + Math.random() * 5000;
   let lastTick = Date.now();
 
   // Main tick
@@ -906,6 +909,46 @@ function startRoomLoop(room) {
     if (Object.keys(room.bots).length > 0) {
       const botPositions = Object.values(room.bots).map(b => ({ id:b.id, x:b.x, y:b.y }));
       emitToRoom(room, 'botPositions', botPositions);
+    }
+
+    // Hard mode: periodic meteor strikes for chaos
+    if (room.difficulty === 'hard' && room._nextMeteorAt && now >= room._nextMeteorAt) {
+      room._nextMeteorAt = now + 8000 + Math.random() * 7000; // next one in 8-15s
+      // Strike near a random living entity so it actually threatens someone, with
+      // enough scatter that it's a real risk rather than a guaranteed direct hit
+      const aliveTargets = allEntities.filter(e => !e.isDead);
+      let mx, my;
+      if (aliveTargets.length) {
+        const t = aliveTargets[Math.floor(Math.random() * aliveTargets.length)];
+        mx = Math.max(20, Math.min(WORLD_SIZE - 20, t.x + (Math.random() - 0.5) * 500));
+        my = Math.max(20, Math.min(WORLD_SIZE - 20, t.y + (Math.random() - 0.5) * 500));
+      } else {
+        mx = Math.random() * WORLD_SIZE; my = Math.random() * WORLD_SIZE;
+      }
+      const METEOR_RADIUS = 180, METEOR_DMG = 45;
+      emitToRoom(room, 'meteorStrike', { x: mx, y: my, radius: METEOR_RADIUS });
+      for (const e of allEntities) {
+        if (e.isDead) continue;
+        if (dist(e, { x: mx, y: my }) >= METEOR_RADIUS) continue;
+        e.hp -= METEOR_DMG;
+        if (e.hp <= 0) {
+          e.isDead = true; e.deaths++;
+          emitToRoom(room, 'playerDied', { victimId: e.id, killerId: null, loot: 0, killerMoney: 0 });
+          if (!e.isBot) persistPlayer(e);
+          scheduleRespawn(e, room);
+        } else {
+          // Survived — push an immediate HP update instead of waiting up to 2s for
+          // the next periodic statSync, so the hit feels instant like combat damage
+          emitToRoom(room, 'meteorDamage', { id: e.id, hp: e.hp, maxHp: e.maxHp, damage: METEOR_DMG });
+        }
+      }
+      for (const b of Object.values(room.buildings)) {
+        if (b.hp <= 0) continue;
+        if (dist(b, { x: mx, y: my }) >= METEOR_RADIUS) continue;
+        b.hp -= METEOR_DMG;
+        emitToRoom(room, 'buildingDamaged', { id: b.id, hp: b.hp, maxHp: b.maxHp, damage: METEOR_DMG });
+        if (b.hp <= 0) destroyBuilding(room, b.id, { username: 'A meteor' });
+      }
     }
 
     // Match timer

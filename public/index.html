@@ -1903,7 +1903,7 @@ function loadGameScripts(mode, cb) {
   if (mode === '2d') {
     showToast('🗺️ Loading 2D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
-      appendScript('game.js?v=12', null, () => {
+      appendScript('game.js?v=13', null, () => {
         _engineLoaded['2d'] = true; _engineLoading['2d'] = false;
         _engineFuncs['2d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
         cb();
@@ -1913,7 +1913,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=15', null, () => {
-        appendScript('game3d.js?v=32', null, () => {
+        appendScript('game3d.js?v=33', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -3749,7 +3749,8 @@ function initSocket(token){
     if (window._currentSaveId) s.emit('markSavePlayed', window._currentSaveId);
     showScreen('game');
     if (GAME_SETTINGS.musicEnabled !== false) window.SFX?.startMusic?.();
-    if (data.activeEvent) showEventBanner(data.activeEvent);
+    if (data.difficulty === 'hard') showEventBanner({ icon: '☄️', name: 'Meteor Shower — Hard Mode' });
+    else if (data.activeEvent) showEventBanner(data.activeEvent);
     const mode = data.renderMode || '3d';
     // Reset init flag when engine changes so startPhaserGame runs for the new engine
     if (_loadedRenderMode && _loadedRenderMode !== mode) {

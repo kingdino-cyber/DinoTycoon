@@ -960,6 +960,25 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.flash(300,255,215,0);
   }
 
+  // Hard-mode meteor strike — a ☄️ falls in from offscreen, lands with an
+  // explosion + fading scorch ring sized to the real damage radius.
+  showMeteorStrike(x, y, radius) {
+    const meteor = this.add.text(x - 300, y - 300, '☄️', { fontSize: '40px' }).setOrigin(0.5).setDepth(900);
+    this.tweens.add({
+      targets: meteor, x, y, duration: 550, ease: 'Cubic.In',
+      onComplete: () => {
+        meteor.destroy();
+        this.showHitEffect(x, y, 0xff6600);
+        this.cameras.main.flash(250, 255, 100, 0);
+        if ((window.GAME_SETTINGS||{}).cameraShake !== false) this.cameras.main.shake(200, 0.015);
+        window.SFX?.crunch();
+        const ring = this.add.graphics().setDepth(60);
+        ring.lineStyle(4, 0xff4400, 0.7); ring.strokeCircle(x, y, radius);
+        this.tweens.add({ targets: ring, alpha: 0, duration: 700, onComplete: () => ring.destroy() });
+      }
+    });
+  }
+
   update(time, delta) {
     if(!this.myPlayer||!this.myId) return;
     // No movement/actions while dead or during countdown
@@ -1262,13 +1281,19 @@ function setupGameSocketEvents() {
     const vc=victim?.data?.color||'#ccc', kc=killer?.data?.color||'#fff';
     const vIsBot=victim?.data?.isBot, kIsBot=killer?.data?.isBot;
 
-    // Kill feed (top-right visual)
-    window.addKillFeed(`<span style="color:${kc}">${kn}</span> ☄️ <span style="color:${vc}">${vn}</span> <span style="color:#ffd700">(+$${loot})</span>`);
+    if (killerId === null) {
+      // Meteor strike — no killer to credit, just announce it
+      window.addKillFeed(`☄️ <span style="color:${vc}">${vn}</span> was struck by a meteor!`);
+      window.addChatMessage('☄️ Meteor', `${vn} was struck by a meteor!`, '#ff6600');
+    } else {
+      // Kill feed (top-right visual)
+      window.addKillFeed(`<span style="color:${kc}">${kn}</span> ☄️ <span style="color:${vc}">${vn}</span> <span style="color:#ffd700">(+$${loot})</span>`);
 
-    // Activity chat message
-    const msg = KILL_MSGS[Math.floor(Math.random()*KILL_MSGS.length)](kn, vn);
-    const chatColor = kIsBot&&vIsBot ? '#a29bfe' : kIsBot ? '#ff7675' : '#ffd700';
-    window.addChatMessage('⚔️ Arena', msg, chatColor);
+      // Activity chat message
+      const msg = KILL_MSGS[Math.floor(Math.random()*KILL_MSGS.length)](kn, vn);
+      const chatColor = kIsBot&&vIsBot ? '#a29bfe' : kIsBot ? '#ff7675' : '#ffd700';
+      window.addChatMessage('⚔️ Arena', msg, chatColor);
+    }
 
     if(victimId===scene.myId){
       scene.myPlayer.isDead=true;
@@ -1322,6 +1347,20 @@ function setupGameSocketEvents() {
     // Screen shake if it's your building being hit
     if(obj.data.ownerId === scene.myId) scene.cameras.main.shake(80, 0.005);
     window.SFX?.hit();
+  });
+
+  s.on('meteorStrike', ({x, y, radius}) => {
+    const scene = gs(); if (!scene) return;
+    scene.showMeteorStrike(x, y, radius);
+  });
+
+  s.on('meteorDamage', ({id, hp, maxHp, damage}) => {
+    const scene = gs(); if (!scene) return;
+    const tgt = scene.playerObjs[id]; if (!tgt) return;
+    tgt.data.hp = hp; tgt.data.maxHp = maxHp;
+    scene.redrawHP(tgt.hpBar, hp, maxHp);
+    scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
+    if (id === scene.myId) window.SFX?.hit();
   });
 
   s.on('buildingDestroyed', ({id, destroyerName, ownerName, buildingName})=>{

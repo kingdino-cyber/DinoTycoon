@@ -654,6 +654,52 @@ class Game3D {
     requestAnimationFrame(tick);
   }
 
+  // Hard-mode meteor strike — a falling glowing sphere lands at (x,y), leaves a
+  // fading scorch ring sized to the actual damage radius, and shakes the camera
+  // if the local player was standing inside the blast.
+  showMeteorStrike(x, y, radius) {
+    const startY = 30;
+    const meteor = new THREE.Mesh(
+      new THREE.SphereGeometry(0.6, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff4400 })
+    );
+    meteor.position.set(sx(x), startY, sz(y));
+    const light = new THREE.PointLight(0xff6600, 3, 15);
+    meteor.add(light);
+    this.scene.add(meteor);
+
+    const fallDuration = 700;
+    const startTime = performance.now();
+    const fall = () => {
+      const t = Math.min((performance.now() - startTime) / fallDuration, 1);
+      meteor.position.y = startY * (1 - t);
+      meteor.rotation.x += 0.3; meteor.rotation.y += 0.2;
+      if (t < 1) { requestAnimationFrame(fall); return; }
+      this.scene.remove(meteor);
+      this.showHitEffect(x, y, 0xff6600);
+      window.SFX?.crunch();
+
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.1, Math.max(0.2, radius * WU), 24),
+        new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(sx(x), 0.05, sz(y));
+      this.scene.add(ring);
+      let rt = 0;
+      const fade = () => {
+        rt += 1; ring.material.opacity *= 0.88; ring.scale.multiplyScalar(1.03);
+        if (rt < 25) requestAnimationFrame(fade); else this.scene.remove(ring);
+      };
+      requestAnimationFrame(fade);
+
+      if (this.myPlayer && Math.hypot(this.myPlayer.x - x, this.myPlayer.y - y) < radius) {
+        this._shakeUntil = performance.now() + 400;
+      }
+    };
+    requestAnimationFrame(fall);
+  }
+
   showLaser(fromX, fromY, toX, toY) {
     const start = new THREE.Vector3(sx(fromX), 1.05, sz(fromY));
     const end   = new THREE.Vector3(sx(toX),   1.05, sz(toY));
@@ -1177,7 +1223,10 @@ function setupGameSocketEvents() {
     const vc = victim?.data?.color || '#ccc';
     const kc = killer?.data?.color || '#fff';
     const kIsBot = killer?.data?.isBot, vIsBot = victim?.data?.isBot;
-    if (victimId === killerId) {
+    if (killerId === null) {
+      window.addKillFeed?.(`☄️ <span style="color:${vc}">${vName}</span> was struck by a meteor!`);
+      window.addChatMessage?.('☄️ Meteor', `${vName} was struck by a meteor!`, '#ff6600');
+    } else if (victimId === killerId) {
       window.addKillFeed?.(`☠️ <span style="color:${vc}">${vName}</span> perished`);
       window.addChatMessage?.('⚔️ Arena', `☠️ ${vName} perished`, '#a29bfe');
     } else {
@@ -1219,6 +1268,21 @@ function setupGameSocketEvents() {
     obj.data.hp = hp;
     redrawHPSprite(obj.hpSprite, hp, maxHp);
     scene.showDamageNum(obj.data.x, obj.data.y, damage);
+  });
+
+  s.on('meteorStrike', ({ x, y, radius }) => {
+    const scene = gs(); if (!scene) return;
+    scene.showMeteorStrike(x, y, radius);
+  });
+
+  s.on('meteorDamage', ({ id, hp, maxHp, damage }) => {
+    const scene = gs(); if (!scene) return;
+    const tgt = scene.playerObjs[id]; if (!tgt) return;
+    tgt.data.hp = hp; tgt.data.maxHp = maxHp;
+    redrawHPSprite(tgt.hpSprite, hp, maxHp);
+    scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
+    scene.showHitAnim(id);
+    if (id === scene.myId) { scene.myPlayer.hp = hp; window.updateHUD(scene.myPlayer); }
   });
 
   s.on('buildingDestroyed', ({ id, destroyerName, ownerName, buildingName, selfDemolish }) => {
