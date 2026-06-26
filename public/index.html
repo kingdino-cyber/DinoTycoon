@@ -275,6 +275,7 @@ canvas{display:block;}
 .lby-btn-saves  {background:linear-gradient(135deg,#004d5a,#00838f);}
 .lby-btn-settings{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#ccc;}
 .lby-btn-achievements{background:linear-gradient(135deg,#7a5a00,#d4af37);}
+.lby-btn-leaderboard{background:linear-gradient(135deg,#003d7a,#1565c0);}
 .lby-btn-tutorial{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#ccc;}
 .lby-left-divider{height:1px;background:rgba(255,255,255,.07);margin:2px 0;}
 .lby-invites-label{font-size:.7rem;color:#557755;text-transform:uppercase;letter-spacing:1px;padding:2px 0;}
@@ -1111,6 +1112,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <button class="lby-left-btn lby-btn-rewards" onclick="openSavedGamesModal()">💾 Saved Games</button>
       <button class="lby-left-btn lby-btn-stats"   onclick="openStatsModal()">📊 My Stats</button>
       <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()">🏆 Achievements</button>
+      <button class="lby-left-btn lby-btn-leaderboard" onclick="openLeaderboardModal()">🌍 Leaderboard</button>
       <button class="lby-left-btn lby-btn-settings" onclick="openSettingsModal()">⚙️ Settings</button>
       <button class="lby-left-btn lby-btn-tutorial" onclick="openTutorialModal()">❓ How to Play</button>
 
@@ -1487,6 +1489,25 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     </div>
     <div class="modal-footer" style="margin-top:16px;">
       <button class="modal-confirm" onclick="closeModal('achievementsModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GLOBAL LEADERBOARD MODAL ═════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="leaderboardModal">
+  <div class="modal" style="width:480px;">
+    <h2>🌍 Global Leaderboard</h2>
+    <div class="shop-tabs" id="lbCatTabs" style="margin-bottom:12px;">
+      <button class="shop-tab active" data-cat="earnings" onclick="switchLbCategory('earnings')">💰 Earnings</button>
+      <button class="shop-tab" data-cat="kills" onclick="switchLbCategory('kills')">⚔️ Kills</button>
+      <button class="shop-tab" data-cat="prestige" onclick="switchLbCategory('prestige')">⭐ Prestige</button>
+      <button class="shop-tab" data-cat="mmr" onclick="switchLbCategory('mmr')">🏆 Ranked MMR</button>
+    </div>
+    <div id="leaderboardContent" style="max-height:380px;overflow-y:auto;">
+      <div style="text-align:center;color:#557755;padding:20px;">Loading...</div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="modal-confirm" onclick="closeModal('leaderboardModal')">Close</button>
     </div>
   </div>
 </div>
@@ -2463,6 +2484,44 @@ function openAchievementsModal() {
   }).join('');
 }
 window.openAchievementsModal = openAchievementsModal;
+
+// ── Global Leaderboard ────────────────────────────────────────────────────────
+let _lbCategory = 'earnings';
+const LB_CAT_META = {
+  earnings: { label: '💰 Earnings', fmt: v => '$' + fmt(v), color: '#ffd700' },
+  kills:    { label: '⚔️ Kills',    fmt: v => v, color: '#ff4757' },
+  prestige: { label: '⭐ Prestige', fmt: v => '★' + v, color: '#a29bfe' },
+  mmr:      { label: '🏆 Ranked MMR', fmt: v => v, color: '#d4af37' },
+};
+function openLeaderboardModal() {
+  window.SFX?.pop();
+  document.getElementById('leaderboardModal').classList.remove('hidden');
+  switchLbCategory(_lbCategory);
+}
+window.openLeaderboardModal = openLeaderboardModal;
+function switchLbCategory(cat) {
+  _lbCategory = cat;
+  document.querySelectorAll('#lbCatTabs .shop-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+  document.getElementById('leaderboardContent').innerHTML = '<div style="text-align:center;color:#557755;padding:20px;">Loading...</div>';
+  if (window.gameSocket) window.gameSocket.emit('getGlobalLeaderboard', cat);
+}
+window.switchLbCategory = switchLbCategory;
+function renderGlobalLeaderboard(data) {
+  if (data.category !== _lbCategory) return; // a stale response from a tab switched away from
+  const el = document.getElementById('leaderboardContent');
+  const meta = LB_CAT_META[data.category] || LB_CAT_META.earnings;
+  if (!data.entries.length) {
+    el.innerHTML = '<div style="text-align:center;color:#557755;padding:30px;">No players on the board yet — be the first!</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = data.entries.map((e, i) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px solid rgba(255,255,255,.05);">
+      <span style="width:28px;text-align:center;font-weight:bold;color:#88aa88;">${medals[i] || (i+1)}</span>
+      <span style="flex:1;color:#e8f5e9;font-weight:${i<3?'bold':'normal'};">${esc(e.username)}</span>
+      <span style="font-weight:bold;color:${meta.color};">${meta.fmt(e.value)}</span>
+    </div>`).join('');
+}
 
 // ── Onboarding Tutorial ───────────────────────────────────────────────────────
 const TUTORIAL_SLIDES = [
@@ -3515,6 +3574,8 @@ function initSocket(token){
     window._myMmr = data.mmr;
     showToast(data.won ? `🏆 Ranked Win! MMR +${data.delta} (now ${data.mmr})` : `Ranked Loss. MMR ${data.delta} (now ${data.mmr})`, 4500);
   });
+
+  s.on('globalLeaderboard', data => renderGlobalLeaderboard(data));
 
   s.on('statsData', data => {
     window._myStats = data;

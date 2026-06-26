@@ -1514,6 +1514,31 @@ io.on('connection', (socket) => {
     socket.emit('statsData', { ...save, username: authedUser.username });
   });
 
+  // ── Global Leaderboard — top players across all accounts, not just the
+  // current match. Queries savesCol directly (bypasses the per-user save
+  // cache, which only ever holds individually-fetched saves) then joins
+  // usernames in from usersCol by userId.
+  socket.on('getGlobalLeaderboard', async (category) => {
+    if (!authedUser) return;
+    const FIELD_BY_CATEGORY = { earnings: 'total_earned', kills: 'kills', prestige: 'prestige', mmr: 'mmr' };
+    const field = FIELD_BY_CATEGORY[category] || 'total_earned';
+    try {
+      const top = await savesCol.find({ [field]: { $gt: 0 } })
+        .sort({ [field]: -1 }).limit(20).toArray();
+      const userIds = top.map(s => s.userId);
+      const users = await usersCol.find({ id: { $in: userIds } }).toArray();
+      const nameById = {};
+      for (const u of users) nameById[u.id] = u.username;
+      const entries = top
+        .filter(s => nameById[s.userId])
+        .map(s => ({ username: nameById[s.userId], value: Math.floor(s[field] || 0) }));
+      socket.emit('globalLeaderboard', { category: FIELD_BY_CATEGORY[category] ? category : 'earnings', entries });
+    } catch (e) {
+      console.error('getGlobalLeaderboard error:', e);
+      socket.emit('globalLeaderboard', { category, entries: [] });
+    }
+  });
+
   // ── Lobby ──
   socket.on('getLobby', () => {
     const publicRooms = Object.values(rooms).filter(r=>r.isPublic).map(getRoomPublicInfo);
