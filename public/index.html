@@ -1145,11 +1145,8 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
           <canvas id="heroDinoCanvas" width="170" height="155" style="display:block;width:100%;height:100%;"></canvas>
           </div><!-- /heroDinoContainer -->
           <div class="lby-hero-pedestal"></div>
-          <button class="lby-play-btn" onclick="openPlayNowModal()" style="margin-top:10px;width:100%;justify-content:center;">
+          <button class="lby-play-btn" onclick="openPlayModeModal()" style="margin-top:10px;width:100%;justify-content:center;">
             ▶ PLAY NOW!
-          </button>
-          <button class="lby-play-btn" id="rankedQueueBtn" onclick="toggleRankedQueue()" style="margin-top:8px;width:100%;justify-content:center;background:linear-gradient(135deg,#7a5a00,#d4af37);">
-            🏆 Ranked Match
           </button>
         </div><!-- /flex column -->
 
@@ -1267,6 +1264,43 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     </div>
     <div class="modal-footer" style="margin-top:20px;">
       <button class="modal-cancel" onclick="closeModal('renderModeModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLAY MODE CHOICE MODAL ═══════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="playModeModal">
+  <div class="modal" style="width:440px;text-align:center;">
+    <h2 style="font-size:1.4rem;letter-spacing:1px;">🦖 Choose Your Match</h2>
+    <div style="display:flex;gap:14px;margin:22px 0 8px;">
+      <button onclick="chooseCasual()" style="flex:1;padding:20px 12px;border:none;border-radius:14px;cursor:pointer;
+        background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;">
+        <div style="font-size:2rem;margin-bottom:6px;">🎮</div>
+        <div style="font-weight:900;font-size:1.05rem;">Casual</div>
+        <div style="font-size:.72rem;opacity:.85;margin-top:4px;">Bots, friends, custom settings — no MMR tracked</div>
+      </button>
+      <button onclick="chooseRanked()" style="flex:1;padding:20px 12px;border:none;border-radius:14px;cursor:pointer;
+        background:linear-gradient(135deg,#7a5a00,#d4af37);color:#fff;">
+        <div style="font-size:2rem;margin-bottom:6px;">🏆</div>
+        <div style="font-weight:900;font-size:1.05rem;">Ranked</div>
+        <div style="font-size:.72rem;opacity:.85;margin-top:4px;">1v1 matchmaking — affects your Ranked MMR</div>
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal('playModeModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RANKED WAITING SCREEN ════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="rankedWaitingScreen" style="z-index:3000;">
+  <div class="modal" style="width:380px;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:10px;animation:pulse 1.6s ease-in-out infinite;">🔎</div>
+    <h2 style="font-size:1.2rem;">Searching for a Ranked Opponent...</h2>
+    <div style="color:#88aa88;font-size:1.4rem;font-weight:bold;margin:16px 0;" id="rankedWaitingTime">0:00</div>
+    <div style="color:#557755;font-size:.78rem;margin-bottom:18px;">Closest-skill match — hang tight!</div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="cancelRankedQueue()">Cancel</button>
     </div>
   </div>
 </div>
@@ -2563,25 +2597,68 @@ window.tutorialNext = tutorialNext;
 window.skipTutorial = skipTutorial;
 
 // ── Ranked Matchmaking ────────────────────────────────────────────────────────
-let _inRankedQueue = false;
-function toggleRankedQueue() {
-  if (!window.gameSocket) return;
+// ── Play Now: Casual vs Ranked choice ──────────────────────────────────────────
+function openPlayModeModal() {
   window.SFX?.pop();
-  if (_inRankedQueue) { window.gameSocket.emit('leaveRankedQueue'); return; }
+  document.getElementById('playModeModal').classList.remove('hidden');
+}
+window.openPlayModeModal = openPlayModeModal;
+
+function chooseCasual() {
+  window.SFX?.click();
+  closeModal('playModeModal');
+  openPlayNowModal();
+}
+window.chooseCasual = chooseCasual;
+
+function chooseRanked() {
+  window.SFX?.roar();
+  closeModal('playModeModal');
+  if (!window.gameSocket) return;
   window.gameSocket.emit('joinRankedQueue');
+  showRankedWaitingScreen();
 }
-window.toggleRankedQueue = toggleRankedQueue;
-function setRankedQueueUI(active) {
-  _inRankedQueue = active;
-  const btn = document.getElementById('rankedQueueBtn');
-  if (!btn) return;
-  btn.innerHTML = active ? '🔎 Searching... (click to cancel)' : '🏆 Ranked Match';
-  btn.style.opacity = active ? '0.75' : '1';
+window.chooseRanked = chooseRanked;
+
+let _rankedWaitStart = 0, _rankedWaitTimer = null;
+function showRankedWaitingScreen() {
+  document.getElementById('rankedWaitingScreen').classList.remove('hidden');
+  _rankedWaitStart = Date.now();
+  updateRankedWaitTime();
+  clearInterval(_rankedWaitTimer);
+  _rankedWaitTimer = setInterval(updateRankedWaitTime, 1000);
 }
+function updateRankedWaitTime() {
+  const sec = Math.floor((Date.now() - _rankedWaitStart) / 1000);
+  const el = document.getElementById('rankedWaitingTime');
+  if (el) el.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+function hideRankedWaitingScreen() {
+  document.getElementById('rankedWaitingScreen').classList.add('hidden');
+  clearInterval(_rankedWaitTimer); _rankedWaitTimer = null;
+}
+function cancelRankedQueue() {
+  window.SFX?.click();
+  if (window.gameSocket) window.gameSocket.emit('leaveRankedQueue');
+  hideRankedWaitingScreen();
+}
+window.cancelRankedQueue = cancelRankedQueue;
 
 // ── Seasonal Event Banner ─────────────────────────────────────────────────────
+function formatCountdown(ms) {
+  if (ms <= 0) return '0s';
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60), sec = s % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+let _eventBannerInterval = null, _eventBannerData = null;
 function showEventBanner(ev) {
   if (!ev) return;
+  if (_eventBannerInterval) { clearInterval(_eventBannerInterval); _eventBannerInterval = null; }
   let el = document.getElementById('eventBanner');
   if (!el) {
     el = document.createElement('div');
@@ -2592,7 +2669,29 @@ function showEventBanner(ev) {
       'box-shadow:0 0 20px rgba(255,215,0,.25);pointer-events:none;';
     document.body.appendChild(el);
   }
-  el.textContent = `${ev.icon || '🎉'} ${ev.name} is live!`;
+  // Plain one-off banner (e.g. the hard-mode meteor shower notice) has no
+  // start/end timestamps — just show the static text, no countdown needed.
+  if (!ev.endsAt && !ev.startsAt) { el.textContent = `${ev.icon || '🎉'} ${ev.name}`; return; }
+  _eventBannerData = ev;
+  _updateEventBannerText();
+  _eventBannerInterval = setInterval(_updateEventBannerText, 1000);
+}
+function _updateEventBannerText() {
+  const el = document.getElementById('eventBanner');
+  const d = _eventBannerData;
+  if (!el || !d) return;
+  const now = Date.now();
+  if (d.endsAt && (!d.startsAt || now >= d.startsAt) && now < d.endsAt) {
+    el.textContent = `${d.icon || '💰'} ${d.name} is live! Ends in ${formatCountdown(d.endsAt - now)}`;
+  } else if (d.startsAt && now < d.startsAt) {
+    el.textContent = `${d.icon || '💰'} ${d.name} starts in ${formatCountdown(d.startsAt - now)}`;
+  } else {
+    hideEventBanner();
+  }
+}
+function hideEventBanner() {
+  if (_eventBannerInterval) { clearInterval(_eventBannerInterval); _eventBannerInterval = null; }
+  document.getElementById('eventBanner')?.remove();
 }
 
 function openJoinCodeModal() {
@@ -2948,7 +3047,11 @@ function matchOverQuit() {
 }
 function _leaveGame() {
   window.SFX?.stopMusic?.();
-  const evBanner = document.getElementById('eventBanner'); if (evBanner) evBanner.remove();
+  // Clear whatever was showing (e.g. an in-match-only "Hard Mode" banner) and
+  // restore the lobby-appropriate seasonal event banner from the last lobbyReady.
+  hideEventBanner();
+  if (window._activeEvent) showEventBanner(window._activeEvent);
+  else if (window._upcomingEvent) showEventBanner(window._upcomingEvent);
   ['hud','shopToggle','lbPanel','chatPanel','controls'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
@@ -3536,7 +3639,9 @@ function initSocket(token){
     window._myAchievements = data.myAchievements || [];
     window._myMmr = data.mmr || 1000;
     window._activeEvent = data.activeEvent || null;
+    window._upcomingEvent = data.upcomingEvent || null;
     if (window._activeEvent) showEventBanner(window._activeEvent);
+    else if (window._upcomingEvent) showEventBanner(window._upcomingEvent);
     if (!data.tutorialSeen) setTimeout(() => openTutorialModal(true), 600);
   });
 
@@ -3567,9 +3672,9 @@ function initSocket(token){
     window.addKillFeed?.(`<span style="color:#ffd700">🏆 ${data.name} unlocked!</span>`);
   });
 
-  s.on('rankedQueueJoined', () => { setRankedQueueUI(true); showToast('🔎 Searching for a ranked opponent...', 2500); });
-  s.on('rankedQueueLeft',   () => { setRankedQueueUI(false); showToast('Left ranked queue.', 1500); });
-  s.on('rankedMatchFound',  data => { setRankedQueueUI(false); showToast(`🏆 Ranked match found vs ${data.opponent}!`, 3000); window.SFX?.roar(); });
+  s.on('rankedQueueJoined', () => {}); // waiting screen already shown by chooseRanked()
+  s.on('rankedQueueLeft',   () => { hideRankedWaitingScreen(); showToast('Left ranked queue.', 1500); });
+  s.on('rankedMatchFound',  data => { hideRankedWaitingScreen(); showToast(`🏆 Ranked match found vs ${data.opponent}!`, 3000); window.SFX?.roar(); });
   s.on('rankedResult', data => {
     window._myMmr = data.mmr;
     showToast(data.won ? `🏆 Ranked Win! MMR +${data.delta} (now ${data.mmr})` : `Ranked Loss. MMR ${data.delta} (now ${data.mmr})`, 4500);
@@ -3808,10 +3913,12 @@ function initSocket(token){
   // ── Game start → load appropriate engine, then start ──
   s.on('gameStarted', data => {
     if (window._currentSaveId) s.emit('markSavePlayed', window._currentSaveId);
+    hideRankedWaitingScreen(); // safety net in case rankedMatchFound didn't fire first
     showScreen('game');
     if (GAME_SETTINGS.musicEnabled !== false) window.SFX?.startMusic?.();
     if (data.difficulty === 'hard') showEventBanner({ icon: '☄️', name: 'Meteor Shower — Hard Mode' });
     else if (data.activeEvent) showEventBanner(data.activeEvent);
+    else if (data.upcomingEvent) showEventBanner(data.upcomingEvent);
     const mode = data.renderMode || '3d';
     // Reset init flag when engine changes so startPhaserGame runs for the new engine
     if (_loadedRenderMode && _loadedRenderMode !== mode) {

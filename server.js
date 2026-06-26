@@ -170,19 +170,34 @@ function checkAchievements(room, p) {
 }
 
 // ── Seasonal Events ──────────────────────────────────────────────────────────────
-// Date-windowed so events can be scheduled ahead of time — add more entries and
-// adjust the dates to run a rotation. Only one is considered "active" at a time
-// (the first match found). mpsMultiplier applies to passive income; meteor:true
-// enables periodic area-damage meteor strikes in the room tick loop.
-const SEASONAL_EVENTS = [
-  { id:'double_income', name:'💰 Double Income Weekend', icon:'💰',
-    start:'2026-01-01T00:00:00Z', end:'2027-01-01T00:00:00Z', mpsMultiplier:2 },
-  // { id:'meteor_chaos', name:'☄️ Meteor Shower', icon:'☄️',
-  //   start:'2026-07-01T00:00:00Z', end:'2026-07-08T00:00:00Z', meteor:true },
-];
+// Double Income Weekend genuinely recurs every Saturday 00:00 UTC -> Monday 00:00
+// UTC, computed from the real clock (not a static date range), so it actually
+// toggles on/off and has a real countdown in both directions — "starts in" when
+// inactive, "ends in" while live.
+const MS_DAY = 86400000;
+function getWeekendWindow(refDate = new Date()) {
+  const day = refDate.getUTCDay(); // 0=Sun..6=Sat
+  const daysSinceSat = (day + 1) % 7; // Sat->0, Sun->1, Mon->2, ... Fri->6
+  const recentSatStart = new Date(refDate);
+  recentSatStart.setUTCHours(0, 0, 0, 0);
+  recentSatStart.setUTCDate(recentSatStart.getUTCDate() - daysSinceSat);
+  const windowEnd = new Date(recentSatStart.getTime() + 2 * MS_DAY); // Monday 00:00 UTC
+  if (refDate >= recentSatStart && refDate < windowEnd) {
+    return { active: true, start: recentSatStart.getTime(), end: windowEnd.getTime() };
+  }
+  const nextStart = new Date(recentSatStart.getTime() + 7 * MS_DAY);
+  const nextEnd = new Date(nextStart.getTime() + 2 * MS_DAY);
+  return { active: false, start: nextStart.getTime(), end: nextEnd.getTime() };
+}
 function getActiveEvent() {
-  const now = Date.now();
-  return SEASONAL_EVENTS.find(e => now >= new Date(e.start).getTime() && now <= new Date(e.end).getTime()) || null;
+  const w = getWeekendWindow();
+  if (!w.active) return null;
+  return { id: 'double_income', name: '💰 Double Income Weekend', icon: '💰', mpsMultiplier: 2, endsAt: w.end };
+}
+function getUpcomingEvent() {
+  const w = getWeekendWindow();
+  if (w.active) return null;
+  return { id: 'double_income', name: 'Double Income Weekend', icon: '💰', startsAt: w.start, endsAt: w.end };
 }
 
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
@@ -1281,6 +1296,7 @@ async function startMatch(room) {
       savedGame: null,
       isRanked: room.isRanked || false,
       activeEvent: getActiveEvent(),
+      upcomingEvent: getUpcomingEvent(),
     });
   }
   broadcastLobbyUpdate();
@@ -1423,6 +1439,7 @@ io.on('connection', (socket) => {
       mmr: save.mmr || 1000,
       tutorialSeen: save.tutorialSeen || false,
       activeEvent: getActiveEvent(),
+      upcomingEvent: getUpcomingEvent(),
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
