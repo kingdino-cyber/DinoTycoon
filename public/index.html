@@ -1816,9 +1816,14 @@ window.SFX = (() => {
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   };
-  const osc = (freq, type, dur, vol=0.35, freqEnd=null) => {
+  const osc = (freq, type, dur, vol=0.35, freqEnd=null, pan=0) => {
     const c=getCtx(); const o=c.createOscillator(), g=c.createGain();
-    o.connect(g); g.connect(c.destination);
+    if (pan) {
+      const p = c.createStereoPanner(); p.pan.value = pan;
+      o.connect(g); g.connect(p); p.connect(c.destination);
+    } else {
+      o.connect(g); g.connect(c.destination);
+    }
     o.type=type; o.frequency.setValueAtTime(freq, c.currentTime);
     if(freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, c.currentTime+dur);
     g.gain.setValueAtTime(vol, c.currentTime);
@@ -1894,6 +1899,16 @@ window.SFX = (() => {
     chatMsg:   () => play(()=>{ osc(1200,'sine',0.05,0.15); }),
     countdown: () => play(()=>{ osc(600,'sine',0.12,0.1,600); }),
     start:     () => play(()=>{ noise(0.2,0.3,500); osc(130,'sawtooth',0.4,0.6); setTimeout(()=>osc(200,'sawtooth',0.3,0.3),180); }),
+    // Big celebratory "ta-da!" — rising sparkle arpeggio panned across the stereo
+    // field, then a warm major chord landing. Used for fossil drops / achievements.
+    fanfare:   () => play(()=>{
+      const sparkle = [659,784,988,1175,1318];
+      sparkle.forEach((f,i)=>setTimeout(()=>osc(f,'triangle',0.25,0.28,null,(i/(sparkle.length-1))*1.6-0.8),i*65));
+      setTimeout(()=>{
+        osc(523,'sine',0.6,0.32,null,-0.3); osc(659,'sine',0.6,0.28,null,0); osc(784,'sine',0.6,0.24,null,0.3);
+        noise(0.3,0.12,6000);
+      }, sparkle.length*65 + 60);
+    }),
   };
 })();
 
@@ -3598,6 +3613,42 @@ function showToast(msg,dur=2500){
 }
 window.showToast=showToast;
 
+// ── Confetti burst — used for fossil drop claims, achievement unlocks, etc. ──
+function spawnConfetti(originEl, count = 70) {
+  const colors = ['#ffd700','#ff6b6b','#4cd137','#54a0ff','#ff9ff3','#feca57','#7fff6a'];
+  const rect = originEl?.getBoundingClientRect?.();
+  const originX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+  const originY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    const isCircle = Math.random() < 0.4;
+    const size = 6 + Math.random() * 7;
+    piece.style.position = 'fixed';
+    piece.style.left = originX + 'px';
+    piece.style.top = originY + 'px';
+    piece.style.width = size + 'px';
+    piece.style.height = (isCircle ? size : size * 1.6) + 'px';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.borderRadius = isCircle ? '50%' : '2px';
+    piece.style.zIndex = 9999;
+    piece.style.pointerEvents = 'none';
+    document.body.appendChild(piece);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 100 + Math.random() * 260;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 120 - Math.random() * 160; // initial upward/outward burst
+    const rot = (Math.random() - 0.5) * 720;
+    const dur = 1300 + Math.random() * 900;
+    piece.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${dx * 0.45}px, ${dy * 0.5}px) rotate(${rot * 0.4}deg)`, opacity: 1, offset: 0.35 },
+      { transform: `translate(${dx}px, ${dy + 520}px) rotate(${rot}deg)`, opacity: 0 },
+    ], { duration: dur, easing: 'cubic-bezier(.2,.6,.35,1)' });
+    setTimeout(() => piece.remove(), dur + 50);
+  }
+}
+window.spawnConfetti = spawnConfetti;
+
 // ── Shop toggle ───────────────────────────────────────────────────────────────
 let shopOpen=false;
 function toggleShop(){
@@ -3672,14 +3723,17 @@ function initSocket(token){
       document.getElementById('shopPointsVal').textContent = data.totalPoints;
       if (_shopData) _shopData.points = data.totalPoints;
       showToast(`🥚 Fossil Drop! +${data.pts} points!`, 3500);
+      spawnConfetti(card);
+      window.SFX?.fanfare?.();
     }
   });
 
   s.on('achievementUnlocked', data => {
     if (window._myAchievements) window._myAchievements.push(data.id);
-    window.SFX?.levelUp();
+    window.SFX?.fanfare?.();
     showToast(`${data.icon} Achievement unlocked: ${data.name} (+${data.reward} pts)`, 4500);
     window.addKillFeed?.(`<span style="color:#ffd700">🏆 ${data.name} unlocked!</span>`);
+    spawnConfetti(null, 50);
   });
 
   s.on('rankedQueueJoined', () => {}); // waiting screen already shown by chooseRanked()
@@ -3688,6 +3742,7 @@ function initSocket(token){
   s.on('rankedResult', data => {
     window._myMmr = data.mmr;
     showToast(data.won ? `🏆 Ranked Win! MMR +${data.delta} (now ${data.mmr})` : `Ranked Loss. MMR ${data.delta} (now ${data.mmr})`, 4500);
+    if (data.won) { window.SFX?.fanfare?.(); spawnConfetti(null, 90); }
   });
 
   s.on('globalLeaderboard', data => renderGlobalLeaderboard(data));
