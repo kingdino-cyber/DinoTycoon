@@ -170,34 +170,56 @@ function checkAchievements(room, p) {
 }
 
 // ── Seasonal Events ──────────────────────────────────────────────────────────────
-// Double Income Weekend genuinely recurs every Saturday 00:00 UTC -> Monday 00:00
-// UTC, computed from the real clock (not a static date range), so it actually
-// toggles on/off and has a real countdown in both directions — "starts in" when
-// inactive, "ends in" while live.
+// A full weekly rotation — every day of the week has its own event, computed live
+// from the real clock (no static dates to maintain, no manual toggling). The
+// windows tile the week with zero gaps and zero overlap, so there's always
+// exactly one event active. Effects only apply to casual matches — ranked stays
+// purely skill-based and predictable (see isRanked checks at each effect site).
 const MS_DAY = 86400000;
-function getWeekendWindow(refDate = new Date()) {
+const WEEKLY_EVENTS = [
+  { id:'speedy_monday', name:'Speedy Monday',         icon:'⚡', startDay:1, durationDays:1, speedMult:1.4 },
+  { id:'double_xp',     name:'Double XP Tuesday',     icon:'🎯', startDay:2, durationDays:1, xpMult:2 },
+  { id:'half_price',    name:'Half-Price Wednesday',  icon:'💎', startDay:3, durationDays:1, shopDiscount:0.25 },
+  { id:'bounty',        name:'Bounty Thursday',       icon:'⚔️', startDay:4, durationDays:1, pointsMult:2 },
+  { id:'lucky_drop',    name:'Lucky Drop Friday',     icon:'🍀', startDay:5, durationDays:1, dropMult:1.5 },
+  { id:'double_income', name:'Double Income Weekend', icon:'💰', startDay:6, durationDays:2, mpsMultiplier:2 },
+];
+function getWeeklyWindow(startDay, durationDays, refDate = new Date()) {
   const day = refDate.getUTCDay(); // 0=Sun..6=Sat
-  const daysSinceSat = (day + 1) % 7; // Sat->0, Sun->1, Mon->2, ... Fri->6
-  const recentSatStart = new Date(refDate);
-  recentSatStart.setUTCHours(0, 0, 0, 0);
-  recentSatStart.setUTCDate(recentSatStart.getUTCDate() - daysSinceSat);
-  const windowEnd = new Date(recentSatStart.getTime() + 2 * MS_DAY); // Monday 00:00 UTC
-  if (refDate >= recentSatStart && refDate < windowEnd) {
-    return { active: true, start: recentSatStart.getTime(), end: windowEnd.getTime() };
+  const daysSinceStart = (day - startDay + 7) % 7;
+  const recentStart = new Date(refDate);
+  recentStart.setUTCHours(0, 0, 0, 0);
+  recentStart.setUTCDate(recentStart.getUTCDate() - daysSinceStart);
+  const windowEnd = new Date(recentStart.getTime() + durationDays * MS_DAY);
+  if (refDate >= recentStart && refDate < windowEnd) {
+    return { active: true, start: recentStart.getTime(), end: windowEnd.getTime() };
   }
-  const nextStart = new Date(recentSatStart.getTime() + 7 * MS_DAY);
-  const nextEnd = new Date(nextStart.getTime() + 2 * MS_DAY);
+  const nextStart = new Date(recentStart.getTime() + 7 * MS_DAY);
+  const nextEnd = new Date(nextStart.getTime() + durationDays * MS_DAY);
   return { active: false, start: nextStart.getTime(), end: nextEnd.getTime() };
 }
 function getActiveEvent() {
-  const w = getWeekendWindow();
-  if (!w.active) return null;
-  return { id: 'double_income', name: '💰 Double Income Weekend', icon: '💰', mpsMultiplier: 2, endsAt: w.end };
+  const now = new Date();
+  for (const ev of WEEKLY_EVENTS) {
+    const w = getWeeklyWindow(ev.startDay, ev.durationDays, now);
+    if (w.active) return { ...ev, endsAt: w.end };
+  }
+  return null; // shouldn't happen given full week coverage, but guard anyway
 }
-function getUpcomingEvent() {
-  const w = getWeekendWindow();
-  if (w.active) return null;
-  return { id: 'double_income', name: 'Double Income Weekend', icon: '💰', startsAt: w.start, endsAt: w.end };
+function getNextEvent() {
+  // The event immediately following whichever is currently active — since the
+  // rotation tiles with no gaps, its startsAt always equals the active one's endsAt.
+  const now = new Date();
+  let best = null, bestStart = Infinity;
+  for (const ev of WEEKLY_EVENTS) {
+    const w = getWeeklyWindow(ev.startDay, ev.durationDays, now);
+    if (!w.active && w.start < bestStart) { bestStart = w.start; best = { ...ev, startsAt: w.start, endsAt: w.end }; }
+  }
+  return best;
+}
+function getShopDiscountMult() {
+  const ev = getActiveEvent();
+  return ev?.shopDiscount ? (1 - ev.shopDiscount) : 1;
 }
 
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
@@ -415,8 +437,9 @@ let botIdCounter = 1;
 
 function makeId(len=6) { return crypto.randomBytes(len).toString('base64url').slice(0,len).toUpperCase(); }
 
-function applyDifficultyCosts(upgrades, difficulty) {
-  const mult = difficulty === 'easy' ? 0.3 : difficulty === 'hard' ? 1.5 : 1.0;
+function applyDifficultyCosts(upgrades, difficulty, isRanked = false) {
+  const diffMult = difficulty === 'easy' ? 0.3 : difficulty === 'hard' ? 1.5 : 1.0;
+  const mult = diffMult * (isRanked ? 1 : getShopDiscountMult());
   if (mult === 1.0) return upgrades;
   const result = {};
   for (const [id, u] of Object.entries(upgrades)) {
@@ -512,6 +535,10 @@ function calcStats(upgrades) {
 function xpForLevel(l) { return Math.floor(100 * Math.pow(1.4, l-1)); }
 
 function addXP(player, amount, room) {
+  if (!room?.isRanked) {
+    const ev = getActiveEvent();
+    if (ev?.xpMult) amount = Math.round(amount * ev.xpMult);
+  }
   player.xp += amount;
   while (player.xp >= xpForLevel(player.level)) {
     player.xp -= xpForLevel(player.level);
@@ -647,7 +674,8 @@ function tickBot(bot, room, dt, allEntitiesArr, buildingsArr, wallBuildingsArr) 
   }
 
   // ── Smart purchasing — income first, then defenses, then combat ──
-  const diffMult = room.difficulty==='easy' ? 0.3 : room.difficulty==='hard' ? 1.5 : 1.0;
+  // Bots never play ranked, so the weekly shop-discount event always applies to them
+  const diffMult = (room.difficulty==='easy' ? 0.3 : room.difficulty==='hard' ? 1.5 : 1.0) * getShopDiscountMult();
   if (now - (bot._lastBuyCheck||0) > 5000) {   // check every 5 seconds (not too fast)
     bot._lastBuyCheck = now;
     const atHome = Math.hypot(bot.x - bot.baseX, bot.y - bot.baseY) < PAD_SIZE/2;
@@ -823,7 +851,10 @@ function handleAttack(attacker, target, room) {
   if (target.hp <= 0) {
     target.isDead = true; target.deaths++;
     attacker.kills++;
-    attacker.points = (attacker.points || 0) + 10;  // +10 Dino Points per kill
+    // +10 Dino Points per kill, doubled during Bounty Thursday (casual matches only)
+    const bountyEvent = !room.isRanked ? getActiveEvent() : null;
+    const pointsGain = Math.round(10 * (bountyEvent?.pointsMult || 1));
+    attacker.points = (attacker.points || 0) + pointsGain;
     const loot = Math.floor(target.money * 0.25);
     target.money = Math.max(0, target.money - loot);
     attacker.money += loot; attacker.totalEarned += loot;
@@ -853,7 +884,7 @@ function startRoomLoop(room) {
     const dt = (now - lastTick) / 1000;
     lastTick = now;
     const allEntities = [...Object.values(room.players), ...Object.values(room.bots)];
-    const activeEvent = getActiveEvent();
+    const activeEvent = room.isRanked ? null : getActiveEvent();
     const incomeMult = activeEvent?.mpsMultiplier || 1;
     for (const p of allEntities) {
       if (p.isDead) continue;
@@ -893,6 +924,8 @@ function startRoomLoop(room) {
               loot = Math.floor(nearest.money * 0.25);
               nearest.money = Math.max(0, nearest.money - loot);
               owner.money += loot; owner.totalEarned += loot; owner.kills++;
+              const bountyEv = !room.isRanked ? getActiveEvent() : null;
+              owner.points = (owner.points || 0) + Math.round(10 * (bountyEv?.pointsMult || 1));
               addXP(owner, 60 + nearest.level*8, room);
               checkAchievements(room, owner);
               if (!owner.isBot) persistPlayer(owner);
@@ -922,6 +955,8 @@ function startRoomLoop(room) {
                 loot = Math.floor(e.money * 0.25);
                 e.money = Math.max(0, e.money - loot);
                 owner.money += loot; owner.totalEarned += loot; owner.kills++;
+                const bountyEv = !room.isRanked ? getActiveEvent() : null;
+                owner.points = (owner.points || 0) + Math.round(10 * (bountyEv?.pointsMult || 1));
                 addXP(owner, 60 + e.level*8, room);
                 checkAchievements(room, owner);
                 if (!owner.isBot) persistPlayer(owner);
@@ -1069,12 +1104,14 @@ function startRoomLoop(room) {
         const srcY = src ? src.y : pad.y + PAD_SIZE / 2;
         const clampX = v => Math.max(pad.x + 40, Math.min(pad.x + PAD_SIZE - 40, v));
         const clampY = v => Math.max(pad.y + 40, Math.min(pad.y + PAD_SIZE - 40, v));
+        const dropEvent = !room.isRanked ? getActiveEvent() : null;
+        const dropMult = dropEvent?.dropMult || 1;
         const drop = {
           id: room.nextDropId++,
           srcX, srcY,
           x: clampX(srcX + (Math.random() - 0.5) * 280),
           y: clampY(srcY + (Math.random() - 0.5) * 280),
-          amount: Math.floor(p.mps * 2 + Math.random()*p.mps),
+          amount: Math.floor((p.mps * 2 + Math.random()*p.mps) * dropMult),
           color: p.color,
         };
         if (room.moneyDrops.length < 250) {
@@ -1194,6 +1231,9 @@ app.post('/api/login', async (req, res) => {
 // ── Match start (shared by manual "Start Game" and ranked auto-match) ───────────
 async function startMatch(room) {
   room.status = 'starting';
+  // Computed once up front so every player in the match gets the same value,
+  // and ranked matches never get the weekly fun-modifier (speed, etc.) applied.
+  const matchEvent = room.isRanked ? null : getActiveEvent();
 
   // Initialize all players from lobby — fetch all saves in parallel
   const playerEntries = Object.entries(room.lobbyPlayers);
@@ -1229,6 +1269,7 @@ async function startMatch(room) {
     }
     const player = createPlayerData(sid, lp.username, save2, lp.padIdx, lp.color);
     player.dbUserId = dbId;
+    if (matchEvent?.speedMult) player.speed = Math.round(player.speed * matchEvent.speedMult);
     // Equipped skin — override color if a non-default skin is equipped
     const equippedSkinId = rawSave.equippedSkin || 'default';
     if (equippedSkinId.startsWith('custom_')) {
@@ -1287,7 +1328,7 @@ async function startMatch(room) {
       allBots: Object.values(room.bots).map(b=>({
         ...b, isHardcore: b.isHardcore||false, scale: b.scale||1
       })),
-      upgrades: applyDifficultyCosts(UPGRADES, room.difficulty),
+      upgrades: applyDifficultyCosts(UPGRADES, room.difficulty, room.isRanked),
       difficulty: room.difficulty,
       pads: PADS, worldSize: WORLD_SIZE, padSize: PAD_SIZE,
       gameMode: room.gameMode,
@@ -1295,8 +1336,8 @@ async function startMatch(room) {
       buildings: Object.values(room.buildings),
       savedGame: null,
       isRanked: room.isRanked || false,
-      activeEvent: getActiveEvent(),
-      upcomingEvent: getUpcomingEvent(),
+      activeEvent: room.isRanked ? null : getActiveEvent(),
+      nextEvent: room.isRanked ? null : getNextEvent(),
     });
   }
   broadcastLobbyUpdate();
@@ -1439,7 +1480,7 @@ io.on('connection', (socket) => {
       mmr: save.mmr || 1000,
       tutorialSeen: save.tutorialSeen || false,
       activeEvent: getActiveEvent(),
-      upcomingEvent: getUpcomingEvent(),
+      nextEvent: getNextEvent(),
     });
     broadcastLobbyUpdate();
     io.emit('lobbyChatMsg', { username: 'System', text: `${decoded.username} joined the lobby! 🦕`, system: true });
@@ -2009,7 +2050,7 @@ io.on('connection', (socket) => {
     // Build items can be bought unlimited times; stat upgrades only once
     if (!isBuild && p.upgrades.includes(upgradeId)) return;
     if (upg.req && !p.upgrades.includes(upg.req)) { socket.emit('upgradeError',`Requires ${UPGRADES[upg.req].name}!`); return; }
-    const diffMult = room.difficulty==='easy' ? 0.3 : room.difficulty==='hard' ? 1.5 : 1.0;
+    const diffMult = (room.difficulty==='easy' ? 0.3 : room.difficulty==='hard' ? 1.5 : 1.0) * (room.isRanked ? 1 : getShopDiscountMult());
     const actualCost = Math.max(1, Math.round(upg.cost * diffMult));
     if (p.money < actualCost) { socket.emit('upgradeError','Not enough fossils!'); return; }
 

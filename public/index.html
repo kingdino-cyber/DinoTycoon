@@ -2656,7 +2656,8 @@ function formatCountdown(ms) {
   return `${sec}s`;
 }
 let _eventBannerInterval = null, _eventBannerData = null;
-function showEventBanner(ev) {
+let _eventBannerNext = null;
+function showEventBanner(ev, next) {
   if (!ev) return;
   if (_eventBannerInterval) { clearInterval(_eventBannerInterval); _eventBannerInterval = null; }
   let el = document.getElementById('eventBanner');
@@ -2673,14 +2674,22 @@ function showEventBanner(ev) {
   // start/end timestamps — just show the static text, no countdown needed.
   if (!ev.endsAt && !ev.startsAt) { el.textContent = `${ev.icon || '🎉'} ${ev.name}`; return; }
   _eventBannerData = ev;
+  _eventBannerNext = next || null;
   _updateEventBannerText();
   _eventBannerInterval = setInterval(_updateEventBannerText, 1000);
 }
 function _updateEventBannerText() {
   const el = document.getElementById('eventBanner');
-  const d = _eventBannerData;
+  let d = _eventBannerData;
   if (!el || !d) return;
   const now = Date.now();
+  // The weekly rotation tiles with no gaps, so once the active event's window
+  // ends, the "next" one (already holding its own startsAt/endsAt) just becomes
+  // the new active event — no server round-trip needed to keep the banner live.
+  if (d.endsAt && now >= d.endsAt && _eventBannerNext) {
+    d = _eventBannerData = _eventBannerNext;
+    _eventBannerNext = null;
+  }
   if (d.endsAt && (!d.startsAt || now >= d.startsAt) && now < d.endsAt) {
     el.textContent = `${d.icon || '💰'} ${d.name} is live! Ends in ${formatCountdown(d.endsAt - now)}`;
   } else if (d.startsAt && now < d.startsAt) {
@@ -2691,6 +2700,7 @@ function _updateEventBannerText() {
 }
 function hideEventBanner() {
   if (_eventBannerInterval) { clearInterval(_eventBannerInterval); _eventBannerInterval = null; }
+  _eventBannerNext = null;
   document.getElementById('eventBanner')?.remove();
 }
 
@@ -3050,8 +3060,8 @@ function _leaveGame() {
   // Clear whatever was showing (e.g. an in-match-only "Hard Mode" banner) and
   // restore the lobby-appropriate seasonal event banner from the last lobbyReady.
   hideEventBanner();
-  if (window._activeEvent) showEventBanner(window._activeEvent);
-  else if (window._upcomingEvent) showEventBanner(window._upcomingEvent);
+  if (window._activeEvent) showEventBanner(window._activeEvent, window._nextEvent);
+  else if (window._nextEvent) showEventBanner(window._nextEvent);
   ['hud','shopToggle','lbPanel','chatPanel','controls'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
@@ -3639,9 +3649,9 @@ function initSocket(token){
     window._myAchievements = data.myAchievements || [];
     window._myMmr = data.mmr || 1000;
     window._activeEvent = data.activeEvent || null;
-    window._upcomingEvent = data.upcomingEvent || null;
-    if (window._activeEvent) showEventBanner(window._activeEvent);
-    else if (window._upcomingEvent) showEventBanner(window._upcomingEvent);
+    window._nextEvent = data.nextEvent || null;
+    if (window._activeEvent) showEventBanner(window._activeEvent, window._nextEvent);
+    else if (window._nextEvent) showEventBanner(window._nextEvent);
     if (!data.tutorialSeen) setTimeout(() => openTutorialModal(true), 600);
   });
 
@@ -3917,8 +3927,9 @@ function initSocket(token){
     showScreen('game');
     if (GAME_SETTINGS.musicEnabled !== false) window.SFX?.startMusic?.();
     if (data.difficulty === 'hard') showEventBanner({ icon: '☄️', name: 'Meteor Shower — Hard Mode' });
-    else if (data.activeEvent) showEventBanner(data.activeEvent);
-    else if (data.upcomingEvent) showEventBanner(data.upcomingEvent);
+    else if (data.activeEvent) showEventBanner(data.activeEvent, data.nextEvent);
+    else if (data.nextEvent) showEventBanner(data.nextEvent);
+    else hideEventBanner(); // ranked matches get no weekly-event banner — see server's isRanked gating
     const mode = data.renderMode || '3d';
     // Reset init flag when engine changes so startPhaserGame runs for the new engine
     if (_loadedRenderMode && _loadedRenderMode !== mode) {
