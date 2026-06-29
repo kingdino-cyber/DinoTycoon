@@ -170,20 +170,21 @@ function checkAchievements(room, p) {
 }
 
 // ── Seasonal Events ──────────────────────────────────────────────────────────────
-// A full weekly rotation — every day of the week has its own event, computed live
-// from the real clock (no static dates to maintain, no manual toggling). The
-// windows tile the week with zero gaps and zero overlap, so there's always
-// exactly one event active. Effects only apply to casual matches — ranked stays
-// purely skill-based and predictable (see isRanked checks at each effect site).
+// A weekly rotation of events, computed live from the real clock (no static
+// dates to maintain, no manual toggling). Not every day has an event — Monday
+// and Wednesday are deliberately quiet. Effects only apply to casual matches —
+// ranked stays purely skill-based and predictable (see isRanked checks at each
+// effect site).
 const MS_DAY = 86400000;
 const WEEKLY_EVENTS = [
-  { id:'speedy_monday', name:'Speedy Monday',         icon:'⚡', startDay:1, durationDays:1, speedMult:1.4 },
   { id:'double_xp',     name:'Double XP Tuesday',     icon:'🎯', startDay:2, durationDays:1, xpMult:2 },
-  { id:'half_price',    name:'Half-Price Wednesday',  icon:'💎', startDay:3, durationDays:1, shopDiscount:0.25 },
   { id:'bounty',        name:'Bounty Thursday',       icon:'⚔️', startDay:4, durationDays:1, pointsMult:2 },
   { id:'lucky_drop',    name:'Lucky Drop Friday',     icon:'🍀', startDay:5, durationDays:1, dropMult:1.5 },
   { id:'double_income', name:'Double Income Weekend', icon:'💰', startDay:6, durationDays:2, mpsMultiplier:2 },
 ];
+// Monday and Wednesday are intentionally left as quiet "gap" days with no
+// event — getActiveEvent() returns null and the banner falls back to
+// getNextEvent()'s "starts in X" countdown on those days.
 function getWeeklyWindow(startDay, durationDays, refDate = new Date()) {
   const day = refDate.getUTCDay(); // 0=Sun..6=Sat
   const daysSinceStart = (day - startDay + 7) % 7;
@@ -204,7 +205,7 @@ function getActiveEvent() {
     const w = getWeeklyWindow(ev.startDay, ev.durationDays, now);
     if (w.active) return { ...ev, endsAt: w.end };
   }
-  return null; // shouldn't happen given full week coverage, but guard anyway
+  return null; // a quiet day (e.g. Monday/Wednesday) with no event scheduled
 }
 function getNextEvent() {
   // The event immediately following whichever is currently active — since the
