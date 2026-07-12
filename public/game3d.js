@@ -671,17 +671,30 @@ class Game3D {
     const col = new THREE.Color(colorHex || '#ffffff');
     const dx = (toX - fromX) * WU, dz = (toY - fromY) * WU;
     const len = Math.hypot(dx, dz); if (len < 0.01) return;
-    const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.75 });
-    const geo = new THREE.BoxGeometry(len, 0.25 * WU, 0.25 * WU);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(sx((fromX + toX) / 2), 0.4 * WU, sz((fromY + toY) / 2));
-    mesh.rotation.y = -Math.atan2(dz, dx);
-    this.scene.add(mesh);
+    const angle = -Math.atan2(dz, dx);
+    const midX = sx((fromX + toX) / 2), midZ = sz((fromY + toY) / 2);
+    // Main wide trail
+    const mats = [], meshes = [];
+    const widths = [0.7, 0.35, 0.18];
+    const opacities = [0.9, 0.65, 0.4];
+    for (let i = 0; i < 3; i++) {
+      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: opacities[i] });
+      const geo = new THREE.BoxGeometry(len, widths[i] * WU, widths[i] * WU);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(midX, (0.3 + i * 0.15) * WU, midZ);
+      mesh.rotation.y = angle;
+      this.scene.add(mesh);
+      mats.push(mat); meshes.push({ mesh, geo });
+    }
     const t0 = Date.now();
     const fade = () => {
-      const t = (Date.now() - t0) / 450;
-      if (t >= 1) { this.scene.remove(mesh); geo.dispose(); mat.dispose(); return; }
-      mat.opacity = 0.75 * (1 - t);
+      const t = (Date.now() - t0) / 380;
+      if (t >= 1) {
+        meshes.forEach(({ mesh, geo }) => { this.scene.remove(mesh); geo.dispose(); });
+        mats.forEach(m => m.dispose());
+        return;
+      }
+      mats.forEach((m, i) => { m.opacity = opacities[i] * (1 - t); });
       requestAnimationFrame(fade);
     };
     requestAnimationFrame(fade);
@@ -689,22 +702,48 @@ class Game3D {
 
   showRoarRing(x, y, range, colorHex) {
     const col = new THREE.Color(colorHex || '#ff6b6b');
-    const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
-    const geo = new THREE.RingGeometry(0.01, 1, 48);
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(sx(x), 0.15 * WU, sz(y));
-    mesh.rotation.x = -Math.PI / 2;
     const maxR = range * WU;
-    this.scene.add(mesh);
-    const t0 = Date.now();
-    const expand = () => {
-      const t = (Date.now() - t0) / 650;
-      if (t >= 1) { this.scene.remove(mesh); geo.dispose(); mat.dispose(); return; }
-      const s = maxR * t; mesh.scale.set(s, s, 1);
-      mat.opacity = 0.55 * (1 - t);
+    // Three concentric rings staggered in time for a shockwave feel
+    const rings = [
+      { delay: 0,   duration: 600, maxScale: maxR,       opacity: 0.8  },
+      { delay: 80,  duration: 700, maxScale: maxR * 1.3,  opacity: 0.55 },
+      { delay: 160, duration: 800, maxScale: maxR * 1.7,  opacity: 0.35 },
+    ];
+    for (const cfg of rings) {
+      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, side: THREE.DoubleSide });
+      const geo = new THREE.RingGeometry(0.01, 1, 64);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(sx(x), 0.12 * WU, sz(y));
+      mesh.rotation.x = -Math.PI / 2;
+      this.scene.add(mesh);
+      const t0 = Date.now() + cfg.delay;
+      const expand = () => {
+        const elapsed = Date.now() - t0;
+        if (elapsed < 0) { requestAnimationFrame(expand); return; }
+        const t = Math.min(1, elapsed / cfg.duration);
+        const ease = 1 - Math.pow(1 - t, 2); // ease-out quad
+        mesh.scale.set(cfg.maxScale * ease, cfg.maxScale * ease, 1);
+        mat.opacity = cfg.opacity * (1 - t);
+        if (t >= 1) { this.scene.remove(mesh); geo.dispose(); mat.dispose(); return; }
+        requestAnimationFrame(expand);
+      };
       requestAnimationFrame(expand);
+    }
+    // Ground flash — brief bright disc at centre
+    const flashMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const flashGeo = new THREE.CircleGeometry(maxR * 0.5, 48);
+    const flashMesh = new THREE.Mesh(flashGeo, flashMat);
+    flashMesh.position.set(sx(x), 0.08 * WU, sz(y));
+    flashMesh.rotation.x = -Math.PI / 2;
+    this.scene.add(flashMesh);
+    const ft0 = Date.now();
+    const flashFade = () => {
+      const t = Math.min(1, (Date.now() - ft0) / 250);
+      flashMat.opacity = 0.7 * (1 - t);
+      if (t >= 1) { this.scene.remove(flashMesh); flashGeo.dispose(); flashMat.dispose(); return; }
+      requestAnimationFrame(flashFade);
     };
-    requestAnimationFrame(expand);
+    requestAnimationFrame(flashFade);
   }
 
   // Hard-mode meteor strike — a falling glowing sphere lands at (x,y), leaves a
@@ -841,6 +880,16 @@ class Game3D {
       this.myPlayer.x = this._kbFromX + (this._kbToX - this._kbFromX) * ease;
       this.myPlayer.y = this._kbFromY + (this._kbToY - this._kbFromY) * ease;
       if (t >= 1) this._kbDur = 0;
+    }
+
+    // Smooth charge glide — ease-out quint for a fast-then-decelerate feel
+    if (this._chargeAnim && this.myPlayer) {
+      const { fromX, fromY, toX, toY, startTime, duration } = this._chargeAnim;
+      const t = Math.min(1, (Date.now() - startTime) / duration);
+      const ease = 1 - Math.pow(1 - t, 5); // ease-out quint — very fast start, smooth stop
+      this.myPlayer.x = fromX + (toX - fromX) * ease;
+      this.myPlayer.y = fromY + (toY - fromY) * ease;
+      if (t >= 1) { this._chargeAnim = null; this.myPlayer.x = toX; this.myPlayer.y = toY; }
     }
 
     if (this.myPlayer && this.myId && !this.myPlayer.isDead && this._countdown <= 0) {
@@ -1073,6 +1122,13 @@ class Game3D {
         const ny = obj._kbFromY + (obj._kbToY - obj._kbFromY) * ease;
         this.setPos(id, nx, ny);
         if (t >= 1) obj._kbDur = 0;
+      } else if (id !== this.myId && obj._chargeAnim) {
+        // Dedicated charge glide for other players — same ease-out quint
+        const { fromX, fromY, toX, toY, startTime, duration } = obj._chargeAnim;
+        const t = Math.min(1, (Date.now() - startTime) / duration);
+        const ease = 1 - Math.pow(1 - t, 5);
+        obj.group.position.set(sx(fromX + (toX - fromX) * ease), 0, sz(fromY + (toY - fromY) * ease));
+        if (t >= 1) obj._chargeAnim = null;
       } else if (id !== this.myId && obj._netTargetX !== undefined) {
         // Smoothly ease the visual model toward the latest network position/rotation
         // instead of snapping every ~50ms server tick — removes the "glitchy" teleport look
@@ -1303,10 +1359,15 @@ function setupGameSocketEvents() {
     const obj = scene.playerObjs[playerId];
     const color = obj?.data?.color || '#ffffff';
     if (playerId === scene.myId && scene.myPlayer) {
-      scene.myPlayer.x = toX; scene.myPlayer.y = toY;
-      scene._camShake = 0.25;
+      // Smooth glide — animation runs in update() each frame
+      scene._chargeAnim = { fromX, fromY, toX, toY, startTime: Date.now(), duration: 220 };
+      scene._camShake = 0.2;
+    } else if (obj) {
+      // Other players: dedicated per-obj charge anim for their group
+      obj._chargeAnim = { fromX, fromY, toX, toY, startTime: Date.now(), duration: 220 };
+      obj.data.x = toX; obj.data.y = toY;
+      obj._netTargetX = toX; obj._netTargetY = toY;
     }
-    scene.setNetPos(playerId, toX, toY, obj?.data?.dir ?? 0);
     scene.showChargeTrail(fromX, fromY, toX, toY, color);
   });
 
@@ -1314,7 +1375,24 @@ function setupGameSocketEvents() {
     const scene = gs(); if (!scene) return;
     const obj = scene.playerObjs[playerId];
     scene.showRoarRing(x, y, range, obj?.data?.color || '#ff6b6b');
-    if (playerId === scene.myId) scene._camShake = 0.4;
+    // Strong camera shake for anyone nearby
+    if (scene.myPlayer) {
+      const distToRoar = Math.hypot(scene.myPlayer.x - x, scene.myPlayer.y - y);
+      const shakeMag = Math.max(0, 1 - distToRoar / (range * 2));
+      if (shakeMag > 0) {
+        scene._camShake = 0.8 * shakeMag;
+        // Screen flash overlay
+        const flash = document.createElement('div');
+        Object.assign(flash.style, {
+          position:'fixed', inset:'0', zIndex:'99998', pointerEvents:'none',
+          background: obj?.data?.color || '#ff4444',
+          opacity: String(0.25 * shakeMag), transition:'opacity 0.4s ease',
+        });
+        document.body.appendChild(flash);
+        requestAnimationFrame(() => { flash.style.opacity = '0'; });
+        setTimeout(() => flash.remove(), 500);
+      }
+    }
   });
 
   s.on('prestigeSuccess', ({ prestige, speed, damage, defense, maxHp, hp, mps, regen, incomeBonus, milestone }) => {

@@ -1484,21 +1484,42 @@ function setupGameSocketEvents() {
   s.on('chargeResult', ({playerId, fromX, fromY, toX, toY})=>{
     const scene=gs(); if(!scene) return;
     const obj=scene.playerObjs[playerId];
-    if(playerId===scene.myId && scene.myPlayer){ scene.myPlayer.x=toX; scene.myPlayer.y=toY; }
-    if(obj){ obj.data.x=toX; obj.data.y=toY; obj.sprite.setPosition(toX,toY); obj.nameText.setPosition(toX,toY-40); }
-    // Trail effect
-    const g=scene.add.graphics(); g.lineStyle(6,0xffffff,0.7);
-    g.lineBetween(fromX,fromY,toX,toY); g.setDepth(600);
-    scene.tweens.add({targets:g,alpha:0,duration:400,onComplete:()=>g.destroy()});
+    const col = obj?.data?.color ? Phaser.Display.Color.HexStringToColor(obj.data.color).color : 0xffffff;
+    if(playerId===scene.myId && scene.myPlayer){
+      // Smooth tween for local player
+      scene.tweens.add({ targets: scene.myPlayer, x: toX, y: toY, duration: 200, ease: 'Quint.Out',
+        onUpdate: () => { if(obj){ obj.sprite.setPosition(scene.myPlayer.x,scene.myPlayer.y); obj.nameText.setPosition(scene.myPlayer.x,scene.myPlayer.y-40); } }
+      });
+    }
+    if(obj){ obj.data.x=toX; obj.data.y=toY; }
+    // Wide multi-layer trail
+    for(let i=0;i<3;i++){
+      const g=scene.add.graphics();
+      g.lineStyle(10-i*3, col, 0.8-i*0.2);
+      g.lineBetween(fromX,fromY,toX,toY); g.setDepth(598+i);
+      scene.tweens.add({targets:g,alpha:0,duration:300+i*80,onComplete:()=>g.destroy()});
+    }
+    scene.cameras.main.shake(150, 0.006);
   });
 
   s.on('roarResult', ({playerId, x, y, range})=>{
     const scene=gs(); if(!scene) return;
     const obj=scene.playerObjs[playerId];
-    const col=obj?.data?.color||'#ff6b6b';
-    const g=scene.add.graphics(); g.lineStyle(4, Phaser.Display.Color.HexStringToColor(col).color, 0.8);
-    g.strokeCircle(x,y,1); g.setDepth(600);
-    scene.tweens.add({targets:g,scaleX:range,scaleY:range,alpha:0,duration:600,ease:'Quad.Out',onComplete:()=>g.destroy()});
+    const col = obj?.data?.color ? Phaser.Display.Color.HexStringToColor(obj.data.color).color : 0xff4444;
+    // Three expanding rings staggered
+    [0, 100, 200].forEach((delay, i) => {
+      const maxR = range * (1 + i * 0.35);
+      setTimeout(() => {
+        const g=scene.add.graphics();
+        g.lineStyle(5-i, col, 0.85-i*0.2);
+        g.strokeCircle(x, y, 1); g.setDepth(600);
+        scene.tweens.add({targets:g, scaleX:maxR, scaleY:maxR, alpha:0, duration:700, ease:'Quad.Out', onComplete:()=>g.destroy()});
+      }, delay);
+    });
+    // Flash fill circle
+    const flash=scene.add.graphics(); flash.fillStyle(col,0.4); flash.fillCircle(x,y,range*0.6); flash.setDepth(597);
+    scene.tweens.add({targets:flash,alpha:0,duration:300,onComplete:()=>flash.destroy()});
+    scene.cameras.main.shake(300, 0.012);
   });
 
   s.on('playerPrestiged', ({id,prestige})=>{

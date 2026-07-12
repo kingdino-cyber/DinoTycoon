@@ -885,10 +885,11 @@ function scheduleRespawn(target, room) {
   }, 5000);
 }
 
-function handleAttack(attacker, target, room) {
+function handleAttack(attacker, target, room, opts = {}) {
   if (attacker.isDead || target.isDead) return;
   const now = Date.now();
-  const rawDmg = attacker.damage + Math.floor(Math.random()*10) - 5;
+  const mult = opts.damageMult || 1;
+  const rawDmg = (attacker.damage + Math.floor(Math.random()*10) - 5) * mult;
   const dmg = Math.max(1, rawDmg - target.defense);
   target.hp -= dmg;
   attacker.damageDealt = (attacker.damageDealt || 0) + dmg;
@@ -2246,18 +2247,18 @@ io.on('connection', (socket) => {
     p._lastCharge = now;
     const angle = (data && data.dir !== undefined) ? data.dir : (p.dir || 0);
     const dx = Math.cos(angle), dy = Math.sin(angle);
-    const DIST = 300;
+    const DIST = 600; // doubled from 300
     const fromX = p.x, fromY = p.y;
     p.x = Math.max(20, Math.min(WORLD_SIZE-20, p.x + dx * DIST));
     p.y = Math.max(20, Math.min(WORLD_SIZE-20, p.y + dy * DIST));
-    // Damage anything whose closest point on the charge segment is within 110 units
+    // Damage anything whose closest point on the charge segment is within 130 units (1.5x damage)
     const all = [...Object.values(room.players), ...Object.values(room.bots)];
     for (const e of all) {
       if (e.id === p.id || e.isDead) continue;
       const ex = e.x - fromX, ey = e.y - fromY;
       const proj = Math.min(Math.max(ex * dx + ey * dy, 0), DIST);
-      if (Math.hypot(e.x - (fromX + dx*proj), e.y - (fromY + dy*proj)) < 110) {
-        handleAttack(p, e, room);
+      if (Math.hypot(e.x - (fromX + dx*proj), e.y - (fromY + dy*proj)) < 130) {
+        handleAttack(p, e, room, { damageMult: 1.5 });
       }
     }
     emitToRoom(room, 'chargeResult', { playerId: socket.id, fromX, fromY, toX: p.x, toY: p.y });
@@ -2274,13 +2275,13 @@ io.on('connection', (socket) => {
     const cdMs = Math.round(9000 * (1 - cdReduction));
     if (now - (p._lastRoar || 0) < cdMs) return;
     p._lastRoar = now;
-    const RANGE = 230;
+    const RANGE = 320; // bigger range
     const all = [...Object.values(room.players), ...Object.values(room.bots)];
     const hitIds = [];
     for (const e of all) {
       if (e.id === p.id || e.isDead) continue;
       if (Math.hypot(e.x - p.x, e.y - p.y) < RANGE) {
-        handleAttack(p, e, room);
+        handleAttack(p, e, room, { damageMult: 3 }); // 3x damage — devastating roar
         hitIds.push(e.id || e.socketId);
       }
     }
