@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: dino-tycoon
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        value: dino_tycoon_secret_2024
