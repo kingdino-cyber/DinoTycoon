@@ -223,6 +223,63 @@ function getShopDiscountMult() {
   return ev?.shopDiscount ? (1 - ev.shopDiscount) : 1;
 }
 
+// ── Daily Quests ─────────────────────────────────────────────────────────────
+const DAILY_QUEST_POOL = [
+  { id:'q_kill3',    desc:'Get 3 kills in matches',          icon:'⚔️',  key:'kills',     target:3,      reward:50  },
+  { id:'q_kill10',   desc:'Get 10 kills in matches',         icon:'💀',  key:'kills',     target:10,     reward:150 },
+  { id:'q_earn50k',  desc:'Earn $50,000 in matches',         icon:'💰',  key:'earned',    target:50000,  reward:75  },
+  { id:'q_earn200k', desc:'Earn $200,000 in matches',        icon:'💎',  key:'earned',    target:200000, reward:130 },
+  { id:'q_build5',   desc:'Place 5 buildings',               icon:'🏗️',  key:'buildings', target:5,      reward:60  },
+  { id:'q_build15',  desc:'Place 15 buildings',              icon:'🏛️',  key:'buildings', target:15,     reward:100 },
+  { id:'q_ranked1',  desc:'Play a ranked match',             icon:'🏆',  key:'ranked',    target:1,      reward:80  },
+  { id:'q_win1',     desc:'Finish #1 in wealth in a match',  icon:'👑',  key:'wins',      target:1,      reward:100 },
+  { id:'q_prestige', desc:'Prestige your dino',              icon:'⭐',  key:'prestiges', target:1,      reward:200 },
+  { id:'q_damage2k', desc:'Deal 2,000 total damage',         icon:'🦖',  key:'damage',    target:2000,   reward:70  },
+];
+
+function generateDailyQuests(date = new Date()) {
+  const seed = date.getUTCFullYear() * 10000 + (date.getUTCMonth()+1) * 100 + date.getUTCDate();
+  const pool = [...DAILY_QUEST_POOL];
+  const picked = [];
+  let s = seed;
+  for (let i = 0; i < 3; i++) {
+    s = (Math.imul(s, 1664525) + 1013904223) | 0;
+    const idx = Math.abs(s) % pool.length;
+    picked.push(pool.splice(idx, 1)[0]);
+  }
+  return picked;
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+
+async function updateQuestProgress(p, deltas) {
+  if (!p.dbUserId) return null;
+  const save = await getSave(p.dbUserId);
+  const today = todayKey();
+  const dq = (save.dailyQuests && save.dailyQuests.date === today)
+    ? JSON.parse(JSON.stringify(save.dailyQuests))
+    : { date: today, progress: {}, completed: [] };
+  const quests = generateDailyQuests();
+  const newlyCompleted = [];
+  for (const q of quests) {
+    const delta = deltas[q.key] || 0;
+    if (!delta || dq.completed.includes(q.id)) continue;
+    dq.progress[q.key] = (dq.progress[q.key] || 0) + delta;
+    if (dq.progress[q.key] >= q.target) {
+      dq.completed.push(q.id);
+      p.points = (p.points || 0) + q.reward;
+      newlyCompleted.push({ ...q });
+    }
+  }
+  save.dailyQuests = dq;
+  save.points = Math.floor(p.points || 0);
+  await putSave(p.dbUserId, save);
+  return { progress: dq.progress, completed: dq.completed, newlyCompleted, quests };
+}
+
 // ── Lobby Shop ────────────────────────────────────────────────────────────────
 const LOBBY_SHOP = {
   skins: [
@@ -834,6 +891,8 @@ function handleAttack(attacker, target, room) {
   const rawDmg = attacker.damage + Math.floor(Math.random()*10) - 5;
   const dmg = Math.max(1, rawDmg - target.defense);
   target.hp -= dmg;
+  attacker.damageDealt = (attacker.damageDealt || 0) + dmg;
+  target.damageTaken   = (target.damageTaken   || 0) + dmg;
 
   // Knockback direction: attacker → target
   const kbLen = Math.hypot(target.x - attacker.x, target.y - attacker.y) || 1;
@@ -889,7 +948,9 @@ function startRoomLoop(room) {
     const incomeMult = activeEvent?.mpsMultiplier || 1;
     for (const p of allEntities) {
       if (p.isDead) continue;
-      const earned = p.mps * incomeMult * dt;
+      // Each prestige level passively boosts income by 10%
+      const prestigeBonus = 1 + (p.prestige || 0) * 0.1;
+      const earned = p.mps * incomeMult * prestigeBonus * dt;
       p.money += earned; p.totalEarned += earned;
       if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
     }
@@ -1037,13 +1098,33 @@ function startRoomLoop(room) {
       emitToRoom(room, 'matchTimer', { remaining: Math.ceil(remaining) });
       if (remaining <= 0 && !room._matchEnded) {
         room._matchEnded = true;
-        // Build final leaderboard
+        // Build final leaderboard (includes damage stats for post-match screen)
         const all = [...Object.values(room.players), ...Object.values(room.bots)];
         const lb = all.sort((a,b) => b.totalEarned - a.totalEarned).map(p => ({
           username: p.username, color: p.color, money: Math.floor(p.money),
-          kills: p.kills, isBot: p.isBot
+          kills: p.kills, isBot: p.isBot,
+          damageDealt: p.damageDealt || 0, damageTaken: p.damageTaken || 0,
+          totalEarned: Math.floor(p.totalEarned),
         }));
         emitToRoom(room, 'matchOver', { leaderboard: lb });
+        // Update daily quest progress for human players
+        const humanPlayers = Object.values(room.players).filter(p => !p.isBot && p.dbUserId);
+        const wealthWinnerId = humanPlayers.sort((a,b) => b.totalEarned - a.totalEarned)[0]?.socketId;
+        for (const p of humanPlayers) {
+          updateQuestProgress(p, {
+            kills:     (p.kills)           - (p._questStartKills     || 0),
+            earned:    (p.totalEarned)      - (p._questStartEarned    || 0),
+            buildings: (p.buildingsPlaced)  - (p._questStartBuildings || 0),
+            ranked:    room.isRanked ? 1 : 0,
+            wins:      p.socketId === wealthWinnerId ? 1 : 0,
+            damage:    p.damageDealt || 0,
+            prestiges: 0,
+          }).then(result => {
+            if (!result) return;
+            const sock = io.sockets.sockets.get(p.socketId);
+            if (sock) sock.emit('questProgress', result);
+          });
+        }
         // Ranked: settle the Elo update before persisting so the new mmr is saved
         if (room.isRanked) {
           const humanIds = Object.keys(room.players);
@@ -1271,6 +1352,10 @@ async function startMatch(room) {
     const player = createPlayerData(sid, lp.username, save2, lp.padIdx, lp.color);
     player.dbUserId = dbId;
     if (matchEvent?.speedMult) player.speed = Math.round(player.speed * matchEvent.speedMult);
+    // Seed quest start snapshots so end-of-match deltas are accurate
+    player._questStartKills     = player.kills;
+    player._questStartEarned    = player.totalEarned;
+    player._questStartBuildings = player.buildingsPlaced;
     // Equipped skin — override color if a non-default skin is equipped
     const equippedSkinId = rawSave.equippedSkin || 'default';
     if (equippedSkinId.startsWith('custom_')) {
@@ -2131,14 +2216,88 @@ io.on('connection', (socket) => {
     p.damage = stats.damage + p.prestige*6; p.defense = stats.defense + p.prestige*3;
     p.maxHp = stats.maxHp + p.prestige*60; p.hp = p.maxHp;
     p.regen = stats.regen || 0;
+    // Milestone rewards communicated to client for display
+    const milestones = { 1:'🔥 Abilities unlock (Q & E)!', 3:'⚡ 25% ability cooldown reduction!', 5:'💎 +10% income bonus stacks doubled!' };
     socket.emit('prestigeSuccess', {
       prestige: p.prestige,
       speed: p.speed, damage: p.damage, defense: p.defense,
       maxHp: p.maxHp, hp: p.hp, mps: p.mps, regen: p.regen,
+      incomeBonus: Math.round(p.prestige * 10),
+      milestone: milestones[p.prestige] || null,
     });
     emitToRoom(room, 'playerPrestiged', { id: socket.id, prestige: p.prestige });
     checkAchievements(room, p);
     persistPlayer(p);
+    updateQuestProgress(p, { prestiges: 1 }).then(result => {
+      if (!result) return;
+      socket.emit('questProgress', result);
+    });
+  });
+
+  // ── Charge Attack (Q) — dash forward, damage enemies in path ─────────────────
+  socket.on('chargeAttack', (data) => {
+    const room = rooms[socketRoom[socket.id]]; if (!room) return;
+    if (room.status !== 'playing') return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    const now = Date.now();
+    const cdReduction = Math.min(0.5, (p.prestige || 0) * 0.08); // prestige reduces CD, max -50%
+    const cdMs = Math.round(6000 * (1 - cdReduction));
+    if (now - (p._lastCharge || 0) < cdMs) return;
+    p._lastCharge = now;
+    const angle = (data && data.dir !== undefined) ? data.dir : (p.dir || 0);
+    const dx = Math.cos(angle), dy = Math.sin(angle);
+    const DIST = 300;
+    const fromX = p.x, fromY = p.y;
+    p.x = Math.max(20, Math.min(WORLD_SIZE-20, p.x + dx * DIST));
+    p.y = Math.max(20, Math.min(WORLD_SIZE-20, p.y + dy * DIST));
+    // Damage anything whose closest point on the charge segment is within 110 units
+    const all = [...Object.values(room.players), ...Object.values(room.bots)];
+    for (const e of all) {
+      if (e.id === p.id || e.isDead) continue;
+      const ex = e.x - fromX, ey = e.y - fromY;
+      const proj = Math.min(Math.max(ex * dx + ey * dy, 0), DIST);
+      if (Math.hypot(e.x - (fromX + dx*proj), e.y - (fromY + dy*proj)) < 110) {
+        handleAttack(p, e, room);
+      }
+    }
+    emitToRoom(room, 'chargeResult', { playerId: socket.id, fromX, fromY, toX: p.x, toY: p.y });
+    socket.emit('abilityCooldown', { ability: 'charge', cooldown: cdMs });
+  });
+
+  // ── Roar Attack (E) — AOE blast around player ────────────────────────────────
+  socket.on('roarAttack', () => {
+    const room = rooms[socketRoom[socket.id]]; if (!room) return;
+    if (room.status !== 'playing') return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    const now = Date.now();
+    const cdReduction = Math.min(0.5, (p.prestige || 0) * 0.08);
+    const cdMs = Math.round(9000 * (1 - cdReduction));
+    if (now - (p._lastRoar || 0) < cdMs) return;
+    p._lastRoar = now;
+    const RANGE = 230;
+    const all = [...Object.values(room.players), ...Object.values(room.bots)];
+    const hitIds = [];
+    for (const e of all) {
+      if (e.id === p.id || e.isDead) continue;
+      if (Math.hypot(e.x - p.x, e.y - p.y) < RANGE) {
+        handleAttack(p, e, room);
+        hitIds.push(e.id || e.socketId);
+      }
+    }
+    emitToRoom(room, 'roarResult', { playerId: socket.id, x: p.x, y: p.y, range: RANGE, hitIds });
+    socket.emit('abilityCooldown', { ability: 'roar', cooldown: cdMs });
+  });
+
+  // ── Daily Quests ──────────────────────────────────────────────────────────────
+  socket.on('getDailyQuests', async () => {
+    if (!authedUser) return;
+    const save = await getSave(authedUser.id);
+    const today = todayKey();
+    const quests = generateDailyQuests();
+    const dq = (save.dailyQuests && save.dailyQuests.date === today)
+      ? save.dailyQuests
+      : { date: today, progress: {}, completed: [] };
+    socket.emit('dailyQuests', { quests, progress: dq.progress, completed: dq.completed });
   });
 
   socket.on('chat', (msg) => {

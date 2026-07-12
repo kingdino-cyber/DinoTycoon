@@ -543,6 +543,22 @@ class GameScene extends Phaser.Scene {
       if(!this.myPlayer||this.myPlayer.isDead||!window.gameSocket) return;
       window.gameSocket.emit('collectPadDrops');
     });
+    // Q = Charge attack, E = Roar attack
+    this.input.keyboard.on('keydown-Q', () => {
+      if (!this.myPlayer || this.myPlayer.isDead || !window.gameSocket) return;
+      // Direction from player toward mouse cursor
+      const ptr = this.input.activePointer;
+      const wx = this.cameras.main.scrollX + ptr.x / this.cameras.main.zoom;
+      const wy = this.cameras.main.scrollY + ptr.y / this.cameras.main.zoom;
+      const dir = Math.atan2(wy - this.myPlayer.y, wx - this.myPlayer.x);
+      window.gameSocket.emit('chargeAttack', { dir });
+      window.SFX?.crunch?.();
+    });
+    this.input.keyboard.on('keydown-E', () => {
+      if (!this.myPlayer || this.myPlayer.isDead || !window.gameSocket) return;
+      window.gameSocket.emit('roarAttack');
+      window.SFX?.roar?.();
+    });
   }
 
   spawnPlayer(data) {
@@ -1454,14 +1470,35 @@ function setupGameSocketEvents() {
   s.on('leaderboard', lb=>{ window.updateLeaderboard(lb); window.updateXPBar(window._gameScene?.myPlayer?.xp||0,window._gameScene?.myPlayer?.level||1); });
   s.on('chatMessage', ({username,message,color})=>window.addChatMessage(username,message,color));
 
-  s.on('prestigeSuccess', ({prestige, speed, damage, defense, maxHp, hp, mps, regen})=>{
+  s.on('prestigeSuccess', ({prestige, speed, damage, defense, maxHp, hp, mps, regen, incomeBonus, milestone})=>{
     const scene=gs(); if(!scene||!scene.myPlayer) return;
     Object.assign(scene.myPlayer, { prestige, money:0, upgrades:[], speed, damage, defense, maxHp, hp, mps, regen });
     window.updateHUD(scene.myPlayer);
     window.buildShop(window._allUpgrades,[]);
     const obj=scene.playerObjs[scene.myId];
     if(obj){ drawDino3D(obj.sprite,scene.myPlayer.color,[]); if(!obj.presText){obj.presText=scene.add.text(0,-66,`★${prestige}`,{fontSize:'11px',color:'#ffd700',stroke:'#000',strokeThickness:3}).setOrigin(0.5);}else obj.presText.setText(`★${prestige}`); }
-    window.showToast(`⭐ PRESTIGE ${prestige}! You are a Dino Legend!`,4000);
+    window.showToast(`⭐ PRESTIGE ${prestige}! +${incomeBonus||0}% income bonus!`,4000);
+    if(milestone) setTimeout(()=>window.showToast(`🎁 Milestone: ${milestone}`,4000),1500);
+  });
+
+  s.on('chargeResult', ({playerId, fromX, fromY, toX, toY})=>{
+    const scene=gs(); if(!scene) return;
+    const obj=scene.playerObjs[playerId];
+    if(playerId===scene.myId && scene.myPlayer){ scene.myPlayer.x=toX; scene.myPlayer.y=toY; }
+    if(obj){ obj.data.x=toX; obj.data.y=toY; obj.sprite.setPosition(toX,toY); obj.nameText.setPosition(toX,toY-40); }
+    // Trail effect
+    const g=scene.add.graphics(); g.lineStyle(6,0xffffff,0.7);
+    g.lineBetween(fromX,fromY,toX,toY); g.setDepth(600);
+    scene.tweens.add({targets:g,alpha:0,duration:400,onComplete:()=>g.destroy()});
+  });
+
+  s.on('roarResult', ({playerId, x, y, range})=>{
+    const scene=gs(); if(!scene) return;
+    const obj=scene.playerObjs[playerId];
+    const col=obj?.data?.color||'#ff6b6b';
+    const g=scene.add.graphics(); g.lineStyle(4, Phaser.Display.Color.HexStringToColor(col).color, 0.8);
+    g.strokeCircle(x,y,1); g.setDepth(600);
+    scene.tweens.add({targets:g,scaleX:range,scaleY:range,alpha:0,duration:600,ease:'Quad.Out',onComplete:()=>g.destroy()});
   });
 
   s.on('playerPrestiged', ({id,prestige})=>{

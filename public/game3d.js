@@ -290,6 +290,19 @@ class Game3D {
         e.preventDefault();
         this.tryDemolish();
       }
+      if (e.code === 'KeyQ' && this.locked && window.gameSocket && !this.myPlayer?.isDead) {
+        e.preventDefault();
+        // Send facing yaw as charge direction (convert from Three.js yaw to server angle)
+        const yaw = this.yawObject?.rotation.y ?? 0;
+        const dir = Math.PI / 2 - yaw; // Three.js yaw → server-space angle
+        window.gameSocket.emit('chargeAttack', { dir });
+        window.SFX?.crunch?.();
+      }
+      if (e.code === 'KeyE' && this.locked && window.gameSocket && !this.myPlayer?.isDead) {
+        e.preventDefault();
+        window.gameSocket.emit('roarAttack');
+        window.SFX?.roar?.();
+      }
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
   }
@@ -652,6 +665,46 @@ class Game3D {
       if (t < 10) requestAnimationFrame(tick); else this.scene.remove(flash);
     };
     requestAnimationFrame(tick);
+  }
+
+  showChargeTrail(fromX, fromY, toX, toY, colorHex) {
+    const col = new THREE.Color(colorHex || '#ffffff');
+    const dx = (toX - fromX) * WU, dz = (toY - fromY) * WU;
+    const len = Math.hypot(dx, dz); if (len < 0.01) return;
+    const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.75 });
+    const geo = new THREE.BoxGeometry(len, 0.25 * WU, 0.25 * WU);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(sx((fromX + toX) / 2), 0.4 * WU, sz((fromY + toY) / 2));
+    mesh.rotation.y = -Math.atan2(dz, dx);
+    this.scene.add(mesh);
+    const t0 = Date.now();
+    const fade = () => {
+      const t = (Date.now() - t0) / 450;
+      if (t >= 1) { this.scene.remove(mesh); geo.dispose(); mat.dispose(); return; }
+      mat.opacity = 0.75 * (1 - t);
+      requestAnimationFrame(fade);
+    };
+    requestAnimationFrame(fade);
+  }
+
+  showRoarRing(x, y, range, colorHex) {
+    const col = new THREE.Color(colorHex || '#ff6b6b');
+    const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+    const geo = new THREE.RingGeometry(0.01, 1, 48);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(sx(x), 0.15 * WU, sz(y));
+    mesh.rotation.x = -Math.PI / 2;
+    const maxR = range * WU;
+    this.scene.add(mesh);
+    const t0 = Date.now();
+    const expand = () => {
+      const t = (Date.now() - t0) / 650;
+      if (t >= 1) { this.scene.remove(mesh); geo.dispose(); mat.dispose(); return; }
+      const s = maxR * t; mesh.scale.set(s, s, 1);
+      mat.opacity = 0.55 * (1 - t);
+      requestAnimationFrame(expand);
+    };
+    requestAnimationFrame(expand);
   }
 
   // Hard-mode meteor strike — a falling glowing sphere lands at (x,y), leaves a
@@ -1243,6 +1296,47 @@ function setupGameSocketEvents() {
       const chatColor = kIsBot && vIsBot ? '#a29bfe' : kIsBot ? '#ff7675' : '#ffd700';
       window.addChatMessage?.('⚔️ Arena', msg, chatColor);
     }
+  });
+
+  s.on('chargeResult', ({ playerId, fromX, fromY, toX, toY }) => {
+    const scene = gs(); if (!scene) return;
+    const obj = scene.playerObjs[playerId];
+    const color = obj?.data?.color || '#ffffff';
+    if (playerId === scene.myId && scene.myPlayer) {
+      scene.myPlayer.x = toX; scene.myPlayer.y = toY;
+      scene._camShake = 0.25;
+    }
+    scene.setNetPos(playerId, toX, toY, obj?.data?.dir ?? 0);
+    scene.showChargeTrail(fromX, fromY, toX, toY, color);
+  });
+
+  s.on('roarResult', ({ playerId, x, y, range }) => {
+    const scene = gs(); if (!scene) return;
+    const obj = scene.playerObjs[playerId];
+    scene.showRoarRing(x, y, range, obj?.data?.color || '#ff6b6b');
+    if (playerId === scene.myId) scene._camShake = 0.4;
+  });
+
+  s.on('prestigeSuccess', ({ prestige, speed, damage, defense, maxHp, hp, mps, regen, incomeBonus, milestone }) => {
+    const scene = gs(); if (!scene || !scene.myPlayer) return;
+    Object.assign(scene.myPlayer, { prestige, money: 0, upgrades: [], speed, damage, defense, maxHp, hp, mps, regen });
+    window.updateHUD?.(scene.myPlayer);
+    window.buildShop?.(window._allUpgrades, []);
+    const obj = scene.playerObjs[scene.myId];
+    if (obj) {
+      if (!obj._presLabel) {
+        const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 20;
+        const ctx = canvas.getContext('2d'); ctx.font = 'bold 14px Arial'; ctx.fillStyle = '#ffd700';
+        ctx.textAlign = 'center'; ctx.fillText(`★${prestige}`, 32, 14);
+        const tex = new THREE.CanvasTexture(canvas);
+        obj._presLabel = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+        obj._presLabel.scale.set(1.2 * WU * 24, 0.4 * WU * 24, 1);
+        obj.group.add(obj._presLabel);
+      }
+      obj._presLabel.position.y = 3.2 * WU * 24;
+    }
+    window.showToast?.(`⭐ PRESTIGE ${prestige}! +${incomeBonus || 0}% income bonus!`, 4000);
+    if (milestone) setTimeout(() => window.showToast?.(`🎁 ${milestone}`, 4000), 1600);
   });
 
   s.on('playerRespawned', ({ id, x, y, hp, maxHp }) => {

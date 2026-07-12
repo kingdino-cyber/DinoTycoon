@@ -674,6 +674,50 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 }
 #matchTimer.urgent{color:#ff4757;border-color:rgba(255,71,87,.4);animation:pulse .5s ease infinite;}
 
+/* ── ABILITY HUD ── */
+#abilityHud{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+  display:flex;gap:14px;z-index:5000;pointer-events:none;
+}
+.ability-slot{
+  width:62px;position:relative;display:flex;flex-direction:column;
+  align-items:center;gap:4px;
+}
+.ability-box{
+  width:62px;height:62px;border-radius:14px;
+  background:rgba(0,0,0,.75);border:2px solid rgba(100,200,80,.5);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 0 12px rgba(100,255,80,.2);position:relative;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
+}
+.ability-box.on-cd{border-color:rgba(100,100,100,.4);box-shadow:none;}
+.ability-box-icon{font-size:1.6rem;line-height:1;}
+.ability-key-badge{
+  position:absolute;top:3px;right:5px;
+  font-size:.58rem;font-weight:900;color:#7fff6a;letter-spacing:.5px;
+}
+.ability-cd-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,.75);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1rem;font-weight:900;border-radius:12px;
+}
+.ability-label-text{color:#aaa;font-size:.58rem;letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── DAILY QUEST PANEL ── */
+.quest-item{
+  padding:14px 16px;border-radius:12px;
+  background:rgba(30,60,30,.6);border:1px solid rgba(80,140,80,.25);
+  margin-bottom:12px;
+}
+.quest-item.done{background:rgba(30,80,30,.6);border-color:rgba(100,220,80,.3);}
+.quest-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.quest-desc{color:#ddd;font-size:.88rem;}
+.quest-reward{color:#ffd700;font-size:.78rem;font-weight:bold;}
+.quest-bar-bg{height:7px;background:rgba(0,0,0,.35);border-radius:99px;overflow:hidden;}
+.quest-bar-fill{height:100%;border-radius:99px;transition:width .5s ease;}
+.quest-footer{display:flex;justify-content:space-between;margin-top:5px;}
+.quest-prog-txt{color:#6a9a6a;font-size:.7rem;}
+
 /* ── MATCH OVER SCREEN ── */
 #matchOver{
   position:fixed;inset:0;z-index:60000;background:rgba(0,0,0,.85);
@@ -684,7 +728,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   padding:36px 40px;text-align:center;min-width:700px;max-width:860px;
   box-shadow:0 0 80px rgba(255,215,0,.15);
 }
-.matchover-boards{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;}
+.matchover-boards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px;}
 .matchover-board{background:rgba(0,0,0,.3);border-radius:14px;padding:14px;}
 .matchover-board-title{font-size:.85rem;font-weight:900;text-transform:uppercase;
   letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;
@@ -1109,7 +1153,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       </div>
 
       <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">🔑 Join by Code</button>
-      <button class="lby-left-btn lby-btn-rewards" onclick="openSavedGamesModal()">💾 Saved Games</button>
+      <button class="lby-left-btn" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,165,0,.1));border-color:rgba(255,215,0,.3);color:#ffd700;" onclick="openDailyQuestsModal()">📋 Daily Quests</button>
       <button class="lby-left-btn lby-btn-stats"   onclick="openStatsModal()">📊 My Stats</button>
       <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()">🏆 Achievements</button>
       <button class="lby-left-btn lby-btn-leaderboard" onclick="openLeaderboardModal()">🌍 Leaderboard</button>
@@ -1730,23 +1774,61 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
 <!-- Match Over Screen -->
 <div id="matchOver" class="hidden">
-  <div class="matchover-box">
+  <div class="matchover-box" style="min-width:820px;max-width:1000px;">
     <div class="matchover-title">🏆 MATCH OVER!</div>
     <div class="matchover-sub" id="matchoverWinner" style="font-size:.95rem;margin-bottom:4px;"></div>
+    <div id="matchoverQuestBanner" style="display:none;margin:8px 0;padding:10px 16px;border-radius:10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);color:#ffd700;font-size:.85rem;"></div>
     <div class="matchover-boards">
       <div class="matchover-board">
-        <div class="matchover-board-title wealth">💰 Wealth Leaderboard</div>
+        <div class="matchover-board-title wealth">💰 Wealth</div>
         <div id="matchoverWealth"></div>
       </div>
       <div class="matchover-board">
-        <div class="matchover-board-title kills">⚔️ Kill Leaderboard</div>
+        <div class="matchover-board-title kills">⚔️ Kills</div>
         <div id="matchoverKills"></div>
+      </div>
+      <div class="matchover-board">
+        <div class="matchover-board-title" style="color:#ff6b6b;">🗡️ Damage</div>
+        <div id="matchoverDamage"></div>
       </div>
     </div>
     <button onclick="matchOverQuit()" style="
       margin-top:20px;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
       background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;font-size:1rem;font-weight:bold;
     ">🚪 Back to Lobby</button>
+  </div>
+</div>
+
+<!-- Ability HUD (shown during matches) -->
+<div id="abilityHud" class="hidden">
+  <div class="ability-slot">
+    <div class="ability-box" id="abilityBoxQ">
+      <div class="ability-box-icon">⚡</div>
+      <div class="ability-key-badge">Q</div>
+      <div class="ability-cd-overlay hidden" id="abilityCdQ">6s</div>
+    </div>
+    <div class="ability-label-text">Charge</div>
+  </div>
+  <div class="ability-slot">
+    <div class="ability-box" id="abilityBoxE">
+      <div class="ability-box-icon">🦖</div>
+      <div class="ability-key-badge">E</div>
+      <div class="ability-cd-overlay hidden" id="abilityCdE">9s</div>
+    </div>
+    <div class="ability-label-text">Roar</div>
+  </div>
+</div>
+
+<!-- Daily Quests Modal -->
+<div class="modal-overlay hidden" id="dailyQuestsModal">
+  <div class="modal" style="width:420px;">
+    <h2>📋 Daily Quests</h2>
+    <p style="color:#557755;font-size:.82rem;text-align:center;margin-bottom:16px;">New quests every day — earn bonus Dino Points!</p>
+    <div id="dailyQuestsList"><div style="color:#557755;text-align:center;padding:20px;">Loading...</div></div>
+    <button onclick="document.getElementById('dailyQuestsModal').classList.add('hidden')" style="
+      margin-top:16px;width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;
+      background:rgba(45,122,30,.5);color:#7fff6a;font-size:.9rem;
+    ">Close</button>
   </div>
 </div>
 
@@ -2508,6 +2590,42 @@ function renderStats(s) {
   `;
 }
 
+// ── Daily Quests ──────────────────────────────────────────────────────────────
+function openDailyQuestsModal() {
+  document.getElementById('dailyQuestsModal').classList.remove('hidden');
+  const d = window._dailyQuestData;
+  if (d) {
+    renderDailyQuests(d.quests, d.progress, d.completed);
+  } else {
+    document.getElementById('dailyQuestsList').innerHTML = '<div style="color:#557755;text-align:center;padding:20px;">Loading...</div>';
+  }
+  if (window.gameSocket) window.gameSocket.emit('getDailyQuests');
+}
+
+function renderDailyQuests(quests, progress, completed) {
+  const el = document.getElementById('dailyQuestsList');
+  if (!el || !quests) return;
+  el.innerHTML = quests.map(q => {
+    const prog = progress[q.key] || 0;
+    const done = completed.includes(q.id);
+    const pct  = Math.min(100, Math.round(prog / q.target * 100));
+    const bar  = done ? '#7fff6a' : '#2ed573';
+    return `<div class="quest-item${done ? ' done' : ''}">
+      <div class="quest-header">
+        <span class="quest-desc">${q.icon} ${q.desc}</span>
+        <span class="quest-reward">+${q.reward} pts ${done ? '✅' : ''}</span>
+      </div>
+      <div class="quest-bar-bg">
+        <div class="quest-bar-fill" style="width:${pct}%;background:${bar}"></div>
+      </div>
+      <div class="quest-footer">
+        <span class="quest-prog-txt">${done ? 'Complete!' : Math.min(prog, q.target).toLocaleString() + ' / ' + q.target.toLocaleString()}</span>
+        <span class="quest-prog-txt">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── Achievements ──────────────────────────────────────────────────────────────
 function openAchievementsModal() {
   window.SFX?.pop();
@@ -3077,9 +3195,13 @@ function _leaveGame() {
   hideEventBanner();
   if (window._activeEvent) showEventBanner(window._activeEvent, window._nextEvent);
   else if (window._nextEvent) showEventBanner(window._nextEvent);
-  ['hud','shopToggle','lbPanel','chatPanel','controls'].forEach(id=>{
+  ['hud','shopToggle','lbPanel','chatPanel','controls','abilityHud'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add('hidden');
   });
+  // Clear any running ability cooldown timers
+  if (window._abilityCdTimers) { for (const k of Object.keys(window._abilityCdTimers)) clearInterval(window._abilityCdTimers[k]); }
+  ['abilityCdQ','abilityCdE'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.add('hidden'); });
+  ['abilityBoxQ','abilityBoxE'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('on-cd'); });
   const mt=document.getElementById('matchTimer'); if(mt){mt.style.display='none';mt.classList.add('hidden');}
   // Hide the countdown overlay if it was still showing (e.g. quit during the 5-sec pre-match countdown)
   document.getElementById('countdownOverlay')?.classList.add('hidden');
@@ -3931,12 +4053,12 @@ function initSocket(token){
   // ── Match over ──
   s.on('matchOver', ({leaderboard}) => {
     window.SFX?.roar();
+    document.getElementById('abilityHud').classList.add('hidden');
     const medals = ['🥇','🥈','🥉'];
 
-    // Sort by wealth
     const byWealth = [...leaderboard].sort((a,b) => b.money - a.money);
-    // Sort by kills
     const byKills  = [...leaderboard].sort((a,b) => b.kills - a.kills);
+    const byDamage = [...leaderboard].sort((a,b) => (b.damageDealt||0) - (a.damageDealt||0));
 
     const makeRow = (p, i, statHtml) => `
       <div class="matchover-row" style="${i===0?'background:rgba(255,215,0,.07);border-color:rgba(255,215,0,.2);':''}">
@@ -3948,20 +4070,69 @@ function initSocket(token){
 
     document.getElementById('matchoverWealth').innerHTML =
       byWealth.map((p,i) => makeRow(p, i, `<span style="color:#ffd700">$${fmt(p.money)}</span>`)).join('');
-
     document.getElementById('matchoverKills').innerHTML =
       byKills.map((p,i) => makeRow(p, i, `<span style="color:#ff6b6b">${p.kills} kill${p.kills!==1?'s':''}</span>`)).join('');
+    document.getElementById('matchoverDamage').innerHTML =
+      byDamage.map((p,i) => makeRow(p, i, `<span style="color:#ff9f43">${fmt(p.damageDealt||0)} dmg</span>`)).join('');
 
-    // Winner announcement
     const wealthWinner = byWealth[0], killsWinner = byKills[0];
     const sameWinner = wealthWinner?.username === killsWinner?.username;
     document.getElementById('matchoverWinner').innerHTML = sameWinner
       ? `👑 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> dominated — richest AND most kills!`
       : `💰 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> richest &nbsp;|&nbsp; ⚔️ <span style="color:#ff6b6b">${esc(killsWinner.username)}</span> most kills`;
 
+    document.getElementById('matchoverQuestBanner').style.display = 'none';
     document.getElementById('matchOver').classList.remove('hidden');
-    // Release pointer lock so buttons are clickable
     if (document.pointerLockElement) document.exitPointerLock();
+  });
+
+  // ── Ability cooldown UI ──
+  window._abilityCdTimers = window._abilityCdTimers || {};
+  function startAbilityCd(ability, cooldownMs) {
+    const isCharge = ability === 'charge';
+    const box = document.getElementById(isCharge ? 'abilityBoxQ' : 'abilityBoxE');
+    const overlay = document.getElementById(isCharge ? 'abilityCdQ' : 'abilityCdE');
+    if (!box || !overlay) return;
+    box.classList.add('on-cd');
+    overlay.classList.remove('hidden');
+    const endAt = Date.now() + cooldownMs;
+    clearInterval(window._abilityCdTimers[ability]);
+    window._abilityCdTimers[ability] = setInterval(() => {
+      const rem = Math.ceil((endAt - Date.now()) / 1000);
+      if (rem <= 0) {
+        clearInterval(window._abilityCdTimers[ability]);
+        overlay.classList.add('hidden');
+        box.classList.remove('on-cd');
+        window.SFX?.click?.();
+      } else { overlay.textContent = rem + 's'; }
+    }, 200);
+  }
+  s.on('abilityCooldown', ({ ability, cooldown }) => startAbilityCd(ability, cooldown));
+
+  // ── Quest progress (after match or prestige) ──
+  s.on('questProgress', ({ quests, progress, completed, newlyCompleted }) => {
+    window._dailyQuestData = { quests, progress, completed };
+    if (newlyCompleted && newlyCompleted.length) {
+      for (const q of newlyCompleted) {
+        showToast(`${q.icon} Quest complete: ${q.desc} +${q.reward} pts! 🎉`, 5000);
+        window.SFX?.fanfare?.();
+        spawnConfetti(null, 40);
+      }
+      // Show banner on matchOver screen if visible
+      const banner = document.getElementById('matchoverQuestBanner');
+      if (banner && !document.getElementById('matchOver').classList.contains('hidden')) {
+        banner.style.display = 'block';
+        banner.textContent = '🏅 Quest' + (newlyCompleted.length > 1 ? 's' : '') + ' completed: ' +
+          newlyCompleted.map(q => q.desc).join(', ') + '!';
+      }
+    }
+    renderDailyQuests(quests, progress, completed);
+  });
+
+  // ── Daily quests response ──
+  s.on('dailyQuests', ({ quests, progress, completed }) => {
+    window._dailyQuestData = { quests, progress, completed };
+    renderDailyQuests(quests, progress, completed);
   });
 
   s.on('lobbyPlayerJoined',data=>{ addWaitPlayer(data.socketId,data); showToast(`🦕 ${data.username} joined!`); });
@@ -3980,6 +4151,8 @@ function initSocket(token){
     if (window._currentSaveId) s.emit('markSavePlayed', window._currentSaveId);
     hideRankedWaitingScreen(); // safety net in case rankedMatchFound didn't fire first
     showScreen('game');
+    // Show ability HUD — abilities available from prestige 0, but cooldowns start fresh
+    document.getElementById('abilityHud').classList.remove('hidden');
     if (GAME_SETTINGS.musicEnabled !== false) window.SFX?.startMusic?.();
     if (data.difficulty === 'hard') showEventBanner({ icon: '☄️', name: 'Meteor Shower — Hard Mode' });
     else if (data.activeEvent) showEventBanner(data.activeEvent, data.nextEvent);
