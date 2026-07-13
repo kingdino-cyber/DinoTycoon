@@ -265,7 +265,7 @@ class Game3D {
       const sens = 0.0008 + ((window.GAME_SETTINGS?.mouseSensitivity ?? 50) / 100) * 0.004;
       this.yawObject.rotation.y -= e.movementX * sens;
       this.pitchObject.rotation.x += e.movementY * sens;
-      this.pitchObject.rotation.x = Math.max(-0.55, Math.min(0.65, this.pitchObject.rotation.x));
+      this.pitchObject.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitchObject.rotation.x));
     });
     window.addEventListener('keydown', (e) => {
       this.keys[e.code] = true;
