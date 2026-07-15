@@ -745,23 +745,51 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .matchover-stat{color:#ffd700;font-size:.85rem;font-weight:bold;}
 
 /* ── BUTTON FEEDBACK ── */
-/* Bulge effect on hover for all UI buttons except in-game shop/HUD */
+/* ── DRAMATIC BUTTON ANIMATIONS ── */
+@keyframes btn-ripple {
+  from { transform:scale(0); opacity:.55; }
+  to   { transform:scale(3.5); opacity:0; }
+}
+@keyframes btn-glow-pulse {
+  0%,100% { box-shadow:0 0 14px rgba(76,220,30,.45), 0 6px 22px rgba(0,0,0,.4); }
+  50%      { box-shadow:0 0 30px rgba(76,220,30,.8),  0 10px 34px rgba(0,0,0,.5); }
+}
+@keyframes play-pulse {
+  0%,100% { box-shadow:0 4px 24px rgba(76,220,30,.55), 0 0 0 0 rgba(76,220,30,.3); }
+  60%     { box-shadow:0 8px 40px rgba(76,220,30,.85), 0 0 0 12px rgba(76,220,30,0); }
+}
+@keyframes btn-click-flash {
+  0%   { filter:brightness(1.7) saturate(1.4); }
+  100% { filter:brightness(1);  }
+}
+
+/* Spring transition on all UI buttons */
 .auth-btn, .auth-tab,
 .sidebar-btn, .logout-btn,
 .room-join-btn, .room-card,
 .modal-confirm, .modal-cancel,
-.modal-select, .diff-btn,
+.diff-btn,
 .bot-btn, .invite-accept, .invite-decline,
 .invite-send-btn, .wait-chat-send,
 .start-btn, .leave-room-btn,
 .waiting-code, .slot-kick,
 .settings-btn, .toggle,
+.lby-left-btn, .lby-play-btn,
+.buy-btn, .prestige-btn, .shop-tab,
+.land-cta, .land-nav-login, .land-nav-signup,
 #joinCodeModal .modal-confirm,
 .matchover-box button,
 #pauseMenu button {
-  transition: transform .15s cubic-bezier(.2,1.6,.4,1), box-shadow .15s ease, filter .15s ease;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform .22s cubic-bezier(.18,1.8,.4,1),
+    box-shadow .22s cubic-bezier(.18,1.8,.4,1),
+    filter .18s ease,
+    background .18s ease;
 }
 
+/* Hover — pop up and glow */
 .auth-btn:hover, .auth-tab:hover,
 .sidebar-btn:hover, .logout-btn:hover,
 .room-join-btn:hover, .room-card:hover,
@@ -774,11 +802,12 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .settings-btn:hover, .toggle:hover,
 .matchover-box button:hover,
 #pauseMenu button:hover {
-  transform: scale(1.06) translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0,0,0,.35);
-  filter: brightness(1.08);
+  transform: scale(1.09) translateY(-3px);
+  box-shadow: 0 8px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(100,220,80,.25);
+  filter: brightness(1.13);
 }
 
+/* Active — fast squeeze down */
 .auth-btn:active, .auth-tab:active,
 .sidebar-btn:active, .logout-btn:active,
 .room-join-btn:active, .room-card:active,
@@ -791,9 +820,90 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .settings-btn:active, .toggle:active,
 .matchover-box button:active,
 #pauseMenu button:active {
-  transform: scale(.96) translateY(1px) !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,.2);
-  filter: brightness(.95);
+  transform: scale(.92) translateY(2px) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3) !important;
+  animation: btn-click-flash .22s ease-out;
+}
+
+/* Lobby sidebar buttons */
+.lby-left-btn:hover {
+  transform: translateX(6px) scale(1.03) !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,.4), 0 0 12px rgba(76,200,30,.3) !important;
+  filter: brightness(1.15) !important;
+}
+.lby-left-btn:active {
+  transform: translateX(2px) scale(.96) !important;
+  animation: btn-click-flash .18s ease-out;
+}
+
+/* Play button — persistent pulse + bigger pop */
+.lby-play-btn:hover {
+  transform: translateY(-5px) scale(1.04) !important;
+  animation: play-pulse .9s ease-in-out infinite !important;
+  filter: brightness(1.12) !important;
+}
+.lby-play-btn:active {
+  transform: scale(.94) translateY(2px) !important;
+  animation: btn-click-flash .2s ease-out !important;
+}
+
+/* Buy button */
+.buy-btn:hover {
+  transform: scale(1.1) translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(76,175,80,.5) !important;
+  filter: brightness(1.15) !important;
+}
+.buy-btn:active {
+  transform: scale(.9) !important;
+  animation: btn-click-flash .15s ease-out;
+}
+
+/* Prestige button — golden glow pulse on hover */
+.prestige-btn:hover {
+  transform: scale(1.05) translateY(-3px) !important;
+  animation: btn-glow-pulse .8s ease-in-out infinite !important;
+  filter: brightness(1.1) !important;
+}
+.prestige-btn:active {
+  transform: scale(.93) translateY(1px) !important;
+  animation: btn-click-flash .18s ease-out !important;
+}
+
+/* Shop tabs */
+.shop-tab:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  filter: brightness(1.15) !important;
+}
+.shop-tab:active {
+  transform: scale(.93) !important;
+  animation: btn-click-flash .15s ease-out;
+}
+
+/* Landing CTA */
+.land-cta:hover {
+  transform: scale(1.07) translateY(-4px) !important;
+  filter: brightness(1.1) !important;
+}
+.land-cta:active {
+  transform: scale(.95) translateY(0) !important;
+  animation: btn-click-flash .18s ease-out;
+}
+.land-nav-login:hover, .land-nav-signup:hover {
+  transform: translateY(-3px) scale(1.07) !important;
+  filter: brightness(1.15) !important;
+}
+
+/* Ripple ink spot injected by JS */
+.btn-ripple-dot {
+  position: absolute;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  margin-top: -30px;
+  margin-left: -30px;
+  background: rgba(255,255,255,.45);
+  pointer-events: none;
+  animation: btn-ripple .5s cubic-bezier(.4,0,.2,1) forwards;
 }
 
 /* ── CONTROLS HINT ── */
@@ -4191,6 +4301,28 @@ function initSocket(token){
 window.showToast=showToast;
 window.addChatMessage=addChatMessage;
 window.addKillFeed=addKillFeed;
+
+// ── RIPPLE EFFECT ON ALL BUTTONS ──
+(function(){
+  const SELECTORS = 'button, .lby-play-btn, .lby-left-btn, .buy-btn, .prestige-btn, .shop-tab, .land-cta, .land-nav-login, .land-nav-signup, .room-card, .modal-confirm, .modal-cancel, .lby-mode-box, .lby-nav-icon, .lby-drop-btn';
+  document.addEventListener('mousedown', e => {
+    const btn = e.target.closest(SELECTORS);
+    if (!btn) return;
+    const style = window.getComputedStyle(btn);
+    if (style.overflow === 'hidden' || style.overflow === 'clip') {
+      // already clipping, safe to inject ripple
+    } else {
+      btn.style.overflow = 'hidden';
+    }
+    const dot = document.createElement('span');
+    dot.className = 'btn-ripple-dot';
+    const rect = btn.getBoundingClientRect();
+    dot.style.left = (e.clientX - rect.left) + 'px';
+    dot.style.top  = (e.clientY - rect.top)  + 'px';
+    btn.appendChild(dot);
+    dot.addEventListener('animationend', () => dot.remove(), { once: true });
+  });
+})();
 </script>
 </body>
 </html>
