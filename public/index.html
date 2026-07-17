@@ -2133,6 +2133,8 @@ window.SFX = (() => {
   return {
     _muted: false,
     startMusic, stopMusic,
+    hover:     () => play(()=>{ osc(1400,'sine',0.018,0.06); }),
+    tick:      () => play(()=>{ osc(1050,'sine',0.025,0.09); }),
     pop:       () => play(()=>{ osc(900,'sine',0.07,0.5); osc(600,'sine',0.05,0.2); }),
     click:     () => play(()=>{ osc(700,'sine',0.06,0.4); }),
     crunch:    () => play(()=>{ noise(0.15,0.5,800); osc(90,'sawtooth',0.12,0.35); }),
@@ -2833,6 +2835,7 @@ function openLeaderboardModal() {
 }
 window.openLeaderboardModal = openLeaderboardModal;
 function switchLbCategory(cat) {
+  window.SFX?.click?.();
   _lbCategory = cat;
   document.querySelectorAll('#lbPanelCatTabs .lb-cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
   document.getElementById('lbPanelContent').innerHTML = '<div style="text-align:center;color:#557755;padding:40px 0;">Loading...</div>';
@@ -2922,6 +2925,7 @@ function renderGlobalLeaderboard(data) {
 }
 
 function openLbProfile(encodedUser) {
+  window.SFX?.pop?.();
   const username = decodeURIComponent(encodedUser);
   const entry = _lbEntries.find(e => e.username === username);
   if (!entry) return;
@@ -3106,10 +3110,11 @@ function hideEventBanner() {
 }
 
 function openJoinCodeModal() {
+  window.SFX?.pop?.();
   document.getElementById('joinCodeInput').value = '';
   document.getElementById('joinCodeModal').classList.remove('hidden');
 }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function closeModal(id) { window.SFX?.click?.(); document.getElementById(id).classList.add('hidden'); }
 
 function submitCreateRoom() {
   const name       = document.getElementById('roomName').value.trim() || currentUser + "'s Jungle";
@@ -3515,6 +3520,7 @@ function addKillFeed(html){
 
 // ── Lobby Tab Switcher ────────────────────────────────────────────────────────
 function switchLbyTab(tab) {
+  window.SFX?.pop?.();
   document.getElementById('lbyHomeView').style.display = 'none';
   document.getElementById('lbyShopPanel').classList.remove('active');
   document.getElementById('lbyRoomsPanel').classList.remove('active');
@@ -4465,18 +4471,24 @@ window.showToast=showToast;
 window.addChatMessage=addChatMessage;
 window.addKillFeed=addKillFeed;
 
-// ── RIPPLE EFFECT ON ALL BUTTONS ──
+// ── RIPPLE + GLOBAL SOUND EFFECTS ON ALL BUTTONS ──
 (function(){
-  const SELECTORS = 'button, .lby-play-btn, .lby-left-btn, .buy-btn, .prestige-btn, .shop-tab, .land-cta, .land-nav-login, .land-nav-signup, .room-card, .modal-confirm, .modal-cancel, .lby-mode-box, .lby-nav-icon, .lby-drop-btn';
+  const SELECTORS = 'button, .lby-play-btn, .lby-left-btn, .buy-btn, .prestige-btn, .shop-tab, .lb-cat-tab, .land-cta, .land-nav-login, .land-nav-signup, .room-card, .modal-confirm, .modal-cancel, .lby-mode-box, .lby-nav-icon, .lby-drop-btn, .lb-row, .lby-drop-card, .lby-invite-slot, .land-shot, .land-feature';
+
+  // Hover sound — fires once per element entry, not repeatedly
+  document.addEventListener('mouseover', e => {
+    const btn = e.target.closest(SELECTORS);
+    if (!btn || btn === e.relatedTarget || btn.contains(e.relatedTarget)) return;
+    window.SFX?.hover?.();
+  });
+
+  // Click ripple + tick sound
   document.addEventListener('mousedown', e => {
     const btn = e.target.closest(SELECTORS);
     if (!btn) return;
-    const style = window.getComputedStyle(btn);
-    if (style.overflow === 'hidden' || style.overflow === 'clip') {
-      // already clipping, safe to inject ripple
-    } else {
-      btn.style.overflow = 'hidden';
-    }
+    window.SFX?.tick?.();
+    const ov = window.getComputedStyle(btn).overflow;
+    if (ov !== 'hidden' && ov !== 'clip') btn.style.overflow = 'hidden';
     const dot = document.createElement('span');
     dot.className = 'btn-ripple-dot';
     const rect = btn.getBoundingClientRect();
