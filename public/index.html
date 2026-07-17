@@ -1278,7 +1278,6 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <button class="lby-left-btn" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,165,0,.1));border-color:rgba(255,215,0,.3);color:#ffd700;" onclick="openDailyQuestsModal()">📋 Daily Quests</button>
       <button class="lby-left-btn lby-btn-stats"   onclick="openStatsModal()">📊 My Stats</button>
       <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()">🏆 Achievements</button>
-      <button class="lby-left-btn lby-btn-leaderboard" onclick="openLeaderboardModal()">🌍 Leaderboard</button>
       <button class="lby-left-btn lby-btn-settings" onclick="openSettingsModal()">⚙️ Settings</button>
       <button class="lby-left-btn lby-btn-tutorial" onclick="openTutorialModal()">❓ How to Play</button>
 
@@ -1406,6 +1405,9 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     </button>
     <button class="lby-tab" id="lbyTab-saves" onclick="switchLbyTab('saves')">
       <span class="lby-tab-icon">💾</span> SAVED
+    </button>
+    <button class="lby-tab" onclick="openLeaderboardModal()">
+      <span class="lby-tab-icon">🌍</span> LEADERBOARD
     </button>
   </div>
 
