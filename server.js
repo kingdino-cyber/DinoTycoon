@@ -1719,7 +1719,25 @@ io.on('connection', (socket) => {
       for (const u of users) nameById[u.id] = u.username;
       const entries = top
         .filter(s => nameById[s.userId])
-        .map(s => ({ username: nameById[s.userId], value: Math.floor(s[field] || 0) }));
+        .map(s => {
+          const skinId = s.equippedSkin || 'default';
+          const skinDef = LOBBY_SHOP.skins.find(sk => sk.id === skinId);
+          const skinColor = skinDef ? skinDef.color : null;
+          const isCustomSkin = skinId.startsWith('custom_');
+          return {
+            username: nameById[s.userId],
+            value: Math.floor(s[field] || 0),
+            skinColor,
+            isCustomSkin,
+            kills: s.kills || 0,
+            deaths: s.deaths || 0,
+            prestige: s.prestige || 0,
+            level: s.level || 1,
+            totalEarned: Math.floor(s.total_earned || 0),
+            mmr: s.mmr || 1000,
+            rankedMatchesPlayed: s.rankedMatchesPlayed || 0,
+          };
+        });
       socket.emit('globalLeaderboard', { category: FIELD_BY_CATEGORY[category] ? category : 'earnings', entries });
     } catch (e) {
       console.error('getGlobalLeaderboard error:', e);

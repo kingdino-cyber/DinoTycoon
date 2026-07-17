@@ -1740,21 +1740,18 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ GLOBAL LEADERBOARD MODAL ═════════════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="leaderboardModal">
-  <div class="modal" style="width:480px;">
-    <h2>🌍 Global Leaderboard</h2>
-    <div class="shop-tabs" id="lbCatTabs" style="margin-bottom:12px;">
-      <button class="shop-tab active" data-cat="earnings" onclick="switchLbCategory('earnings')">💰 Earnings</button>
-      <button class="shop-tab" data-cat="kills" onclick="switchLbCategory('kills')">⚔️ Kills</button>
-      <button class="shop-tab" data-cat="prestige" onclick="switchLbCategory('prestige')">⭐ Prestige</button>
-      <button class="shop-tab" data-cat="mmr" onclick="switchLbCategory('mmr')">🏆 Ranked MMR</button>
+<!-- ══ PLAYER PROFILE MODAL (leaderboard click) ══════════════════════════════ -->
+<div class="modal-overlay hidden" id="lbProfileModal">
+  <div class="modal" style="width:360px;text-align:center;padding:28px 24px 20px;">
+    <div style="display:flex;justify-content:center;margin-bottom:4px;">
+      <canvas id="lbProfileCanvas" width="140" height="120"
+        style="filter:drop-shadow(0 0 18px rgba(100,220,80,.45));"></canvas>
     </div>
-    <div id="leaderboardContent" style="max-height:380px;overflow-y:auto;">
-      <div style="text-align:center;color:#557755;padding:20px;">Loading...</div>
-    </div>
-    <div class="modal-footer" style="margin-top:16px;">
-      <button class="modal-confirm" onclick="closeModal('leaderboardModal')">Close</button>
+    <div id="lbProfileName" style="font-size:1.3rem;font-weight:900;color:#7fff6a;margin-bottom:4px;"></div>
+    <div id="lbProfileTier" style="margin-bottom:16px;"></div>
+    <div id="lbProfileStats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;text-align:left;"></div>
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="modal-confirm" onclick="closeModal('lbProfileModal')">Close</button>
     </div>
   </div>
 </div>
@@ -2883,19 +2880,12 @@ function getLbTier(cat, value) {
   const tiers = LB_TIERS[cat] || LB_TIERS.earnings;
   return tiers.find(t => value >= t.min) || tiers[tiers.length - 1];
 }
-function lbAvatar(username) {
-  let hash = 0;
-  for (let i = 0; i < username.length; i++) hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
-  const DINOS = ['🦕','🦖','🐉','🦎','🐊','🦴','🥚','🌿'];
-  const COLORS = ['#1a3a1a','#1a1a3a','#3a1a1a','#1a3a2a','#2a1a3a','#3a2a1a','#1a2a3a','#3a1a2a'];
-  const dino = DINOS[hash % DINOS.length];
-  const bg = COLORS[(hash >> 4) % COLORS.length];
-  return `<div class="lb-avatar" style="background:${bg};">${dino}</div>`;
-}
+let _lbEntries = [];
 function renderGlobalLeaderboard(data) {
   if (data.category !== _lbCategory) return;
   const el = document.getElementById('lbPanelContent');
   if (!el) return;
+  _lbEntries = data.entries;
   const meta = LB_CAT_META[data.category] || LB_CAT_META.earnings;
   if (!data.entries.length) {
     el.innerHTML = '<div style="text-align:center;color:#557755;padding:40px 0;">No players yet — be the first!</div>';
@@ -2908,9 +2898,11 @@ function renderGlobalLeaderboard(data) {
     const tier = getLbTier(data.category, e.value);
     const isMe = e.username === myName;
     const badge = `<span class="lb-tier-badge" style="background:${tier.bg};color:${tier.color};border:1px solid ${tier.border};">${tier.label}</span>`;
-    return `<div class="lb-row ${rowClass[i]||''} ${isMe?'lb-you':''}">
+    const safeU = encodeURIComponent(e.username);
+    return `<div class="lb-row ${rowClass[i]||''} ${isMe?'lb-you':''}" style="cursor:pointer;" onclick="openLbProfile('${safeU}')">
       <span class="lb-rank ${rankClass[i]||''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</span>
-      ${lbAvatar(e.username)}
+      <canvas class="lb-dino-canvas" data-user="${safeU}" width="44" height="44"
+        style="border-radius:10px;flex-shrink:0;border:2px solid rgba(255,255,255,.1);"></canvas>
       <div class="lb-info">
         <div class="lb-username">${esc(e.username)}${isMe?' <span style="color:#7fff6a;font-size:.7rem;">(you)</span>':''}</div>
         <div>${badge}</div>
@@ -2918,7 +2910,53 @@ function renderGlobalLeaderboard(data) {
       <span class="lb-value" style="color:${meta.color};">${meta.fmt(e.value)}</span>
     </div>`;
   }).join('');
+
+  // Draw dino skins on each row canvas after DOM is updated
+  const DEFAULT_COLOR = '#4caf50';
+  el.querySelectorAll('.lb-dino-canvas').forEach(canvas => {
+    const username = decodeURIComponent(canvas.dataset.user);
+    const entry = _lbEntries.find(e => e.username === username);
+    const color = (entry && entry.skinColor) ? entry.skinColor : DEFAULT_COLOR;
+    if (window.drawDinoCanvas) window.drawDinoCanvas(canvas, color);
+  });
 }
+
+function openLbProfile(encodedUser) {
+  const username = decodeURIComponent(encodedUser);
+  const entry = _lbEntries.find(e => e.username === username);
+  if (!entry) return;
+  const tier = getLbTier(_lbCategory, entry.value);
+  const modal = document.getElementById('lbProfileModal');
+  document.getElementById('lbProfileName').textContent = entry.username;
+  document.getElementById('lbProfileTier').innerHTML =
+    `<span class="lb-tier-badge" style="font-size:.8rem;padding:4px 10px;background:${tier.bg};color:${tier.color};border:1px solid ${tier.border};">${tier.label}</span>`;
+  const kd = entry.deaths > 0 ? (entry.kills / entry.deaths).toFixed(2) : entry.kills.toFixed(2);
+  const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n;
+  document.getElementById('lbProfileStats').innerHTML = [
+    ['⚔️ Kills',    entry.kills],
+    ['💀 Deaths',   entry.deaths],
+    ['📊 K/D',      kd],
+    ['⭐ Prestige', entry.prestige],
+    ['💰 Earned',   '$' + fmt(entry.totalEarned)],
+    ['🏆 MMR',      entry.mmr],
+    ['🎮 Ranked',   entry.rankedMatchesPlayed + ' matches'],
+    ['📈 Level',    entry.level],
+  ].map(([label, val]) =>
+    `<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px;">
+       <div style="color:#557755;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">${label}</div>
+       <div style="color:#e8f5e9;font-weight:bold;font-size:.9rem;">${val}</div>
+     </div>`
+  ).join('');
+  modal.classList.remove('hidden');
+  // Draw profile dino
+  requestAnimationFrame(() => {
+    const canvas = document.getElementById('lbProfileCanvas');
+    const color = entry.skinColor || '#4caf50';
+    if (window.drawDinoCanvas) window.drawDinoCanvas(canvas, color);
+    canvas.style.filter = `drop-shadow(0 0 18px ${color}88)`;
+  });
+}
+window.openLbProfile = openLbProfile;
 
 // ── Onboarding Tutorial ───────────────────────────────────────────────────────
 const TUTORIAL_SLIDES = [
