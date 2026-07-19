@@ -1112,6 +1112,7 @@ function startRoomLoop(room) {
         const humanPlayers = Object.values(room.players).filter(p => !p.isBot && p.dbUserId);
         const wealthWinnerId = humanPlayers.sort((a,b) => b.totalEarned - a.totalEarned)[0]?.socketId;
         for (const p of humanPlayers) {
+          p._questProgressSaved = true;
           updateQuestProgress(p, {
             kills:     (p.kills)           - (p._questStartKills     || 0),
             earned:    (p.totalEarned)      - (p._questStartEarned    || 0),
@@ -1357,6 +1358,7 @@ async function startMatch(room) {
     player._questStartKills     = player.kills;
     player._questStartEarned    = player.totalEarned;
     player._questStartBuildings = player.buildingsPlaced;
+    player._questProgressSaved  = false;
     // Equipped skin — override color if a non-default skin is equipped
     const equippedSkinId = rawSave.equippedSkin || 'default';
     if (equippedSkinId.startsWith('custom_')) {
@@ -1956,7 +1958,26 @@ io.on('connection', (socket) => {
     // otherwise this check always sees it already gone and never actually persists
     // (money/points/kills earned in the final seconds before quitting were lost
     // until the next periodic sync tick happened to fire first).
-    if (leavingPlayer) persistPlayer(leavingPlayer);
+    if (leavingPlayer) {
+      persistPlayer(leavingPlayer);
+      // Save quest progress for mid-match quit so kills/earnings/damage count
+      // even if the match never reached a normal end. Guard with _questProgressSaved
+      // so we don't double-count if the match already ended normally first.
+      if (!leavingPlayer._questProgressSaved && leavingPlayer._questStartKills !== undefined) {
+        leavingPlayer._questProgressSaved = true;
+        updateQuestProgress(leavingPlayer, {
+          kills:     leavingPlayer.kills          - (leavingPlayer._questStartKills     || 0),
+          earned:    leavingPlayer.totalEarned     - (leavingPlayer._questStartEarned    || 0),
+          buildings: leavingPlayer.buildingsPlaced - (leavingPlayer._questStartBuildings || 0),
+          damage:    leavingPlayer.damageDealt || 0,
+          ranked: 0, wins: 0, prestiges: 0,
+        }).then(result => {
+          if (!result) return;
+          const sock = io.sockets.sockets.get(leavingPlayer.socketId);
+          if (sock) sock.emit('questProgress', result);
+        });
+      }
+    }
     delete room.players[socket.id];
 
     emitToRoom(room, 'roomPlayerLeft', { socketId: socket.id });
