@@ -2303,7 +2303,23 @@ io.on('connection', (socket) => {
         hitIds.push(e.id || e.socketId);
       }
     }
-    emitToRoom(room, 'roarResult', { playerId: socket.id, x: p.x, y: p.y, range: RANGE, hitIds });
+    // Roar also damages nearby enemy buildings
+    const myId = p.id || p.socketId;
+    const hitBuildingIds = [];
+    for (const [bid, b] of Object.entries(room.buildings)) {
+      if (b.ownerId === myId) continue;
+      if (Math.hypot(b.x - p.x, b.y - p.y) < RANGE) {
+        const dmg = Math.max(1, Math.floor(p.damage * 2.5));
+        b.hp -= dmg;
+        emitToRoom(room, 'buildingDamaged', { id: b.id, hp: b.hp, maxHp: b.maxHp, damage: dmg });
+        if (b.hp <= 0) {
+          destroyBuilding(room, bid, p);
+        } else {
+          hitBuildingIds.push(bid);
+        }
+      }
+    }
+    emitToRoom(room, 'roarResult', { playerId: socket.id, x: p.x, y: p.y, range: RANGE, hitIds, hitBuildingIds });
     socket.emit('abilityCooldown', { ability: 'roar', cooldown: cdMs });
   });
 
@@ -2313,10 +2329,22 @@ io.on('connection', (socket) => {
     const save = await getSave(authedUser.id);
     const today = todayKey();
     const quests = generateDailyQuests();
-    const dq = (save.dailyQuests && save.dailyQuests.date === today)
-      ? save.dailyQuests
-      : { date: today, progress: {}, completed: [] };
-    socket.emit('dailyQuests', { quests, progress: dq.progress, completed: dq.completed });
+    const isNewDay = !save.dailyQuests || save.dailyQuests.date !== today;
+    const dq = isNewDay
+      ? { date: today, progress: {}, completed: [] }
+      : save.dailyQuests;
+    if (isNewDay) {
+      save.dailyQuests = dq;
+      await putSave(authedUser.id, save);
+    }
+    // ms until next UTC midnight
+    const now = Date.now();
+    const nextReset = new Date();
+    nextReset.setUTCHours(24, 0, 0, 0);
+    socket.emit('dailyQuests', {
+      quests, progress: dq.progress, completed: dq.completed,
+      msUntilReset: nextReset.getTime() - now,
+    });
   });
 
   socket.on('chat', (msg) => {

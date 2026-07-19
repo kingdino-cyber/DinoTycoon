@@ -1989,9 +1989,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <div class="modal-overlay hidden" id="dailyQuestsModal">
   <div class="modal" style="width:420px;">
     <h2>📋 Daily Quests</h2>
-    <p style="color:#557755;font-size:.82rem;text-align:center;margin-bottom:16px;">New quests every day — earn bonus Dino Points!</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">
+      <span style="color:#557755;font-size:.8rem;">Resets in</span>
+      <span id="questResetTimer" style="color:#7fff6a;font-size:.85rem;font-weight:bold;background:rgba(100,200,80,.1);
+        border:1px solid rgba(100,200,80,.2);border-radius:6px;padding:2px 8px;">--:--:--</span>
+    </div>
     <div id="dailyQuestsList"><div style="color:#557755;text-align:center;padding:20px;">Loading...</div></div>
-    <button onclick="document.getElementById('dailyQuestsModal').classList.add('hidden')" style="
+    <button onclick="closeModal('dailyQuestsModal')" style="
       margin-top:16px;width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;
       background:rgba(45,122,30,.5);color:#7fff6a;font-size:.9rem;
     ">Close</button>
@@ -2760,10 +2764,13 @@ function renderStats(s) {
 
 // ── Daily Quests ──────────────────────────────────────────────────────────────
 function openDailyQuestsModal() {
+  window.SFX?.pop?.();
   document.getElementById('dailyQuestsModal').classList.remove('hidden');
   const d = window._dailyQuestData;
   if (d) {
     renderDailyQuests(d.quests, d.progress, d.completed);
+    const elapsed = Date.now() - (d.receivedAt || Date.now());
+    startQuestResetTimer(Math.max(0, (d.msUntilReset || 0) - elapsed));
   } else {
     document.getElementById('dailyQuestsList').innerHTML = '<div style="color:#557755;text-align:center;padding:20px;">Loading...</div>';
   }
@@ -2792,6 +2799,24 @@ function renderDailyQuests(quests, progress, completed) {
       </div>
     </div>`;
   }).join('');
+}
+
+let _questTimerInterval = null;
+function startQuestResetTimer(msUntilReset) {
+  clearInterval(_questTimerInterval);
+  const el = document.getElementById('questResetTimer');
+  if (!el) return;
+  let remaining = msUntilReset;
+  const tick = () => {
+    if (remaining <= 0) { el.textContent = 'Resetting...'; clearInterval(_questTimerInterval); return; }
+    const h = Math.floor(remaining / 3600000);
+    const m = Math.floor((remaining % 3600000) / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    remaining -= 1000;
+  };
+  tick();
+  _questTimerInterval = setInterval(tick, 1000);
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
@@ -4409,9 +4434,10 @@ function initSocket(token){
   });
 
   // ── Daily quests response ──
-  s.on('dailyQuests', ({ quests, progress, completed }) => {
-    window._dailyQuestData = { quests, progress, completed };
+  s.on('dailyQuests', ({ quests, progress, completed, msUntilReset }) => {
+    window._dailyQuestData = { quests, progress, completed, msUntilReset, receivedAt: Date.now() };
     renderDailyQuests(quests, progress, completed);
+    startQuestResetTimer(msUntilReset);
   });
 
   s.on('lobbyPlayerJoined',data=>{ addWaitPlayer(data.socketId,data); showToast(`🦕 ${data.username} joined!`); });
