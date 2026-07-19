@@ -924,9 +924,56 @@ class GameScene extends Phaser.Scene {
 
   removeBuilding(id) {
     const obj = this.buildingObjs[id]; if (!obj) return;
-    [obj.gfx, obj.hpBg, obj.hpBar, obj.label, obj.ring].filter(Boolean).forEach(o => {
-      this.tweens.add({ targets:o, alpha:0, scaleX:1.5, scaleY:1.5, duration:400, onComplete:()=>o.destroy() });
+    const cx = obj.gfx.x, cy = obj.gfx.y;
+    const ownerColor = parseInt((obj.data?.ownerColor || '#888888').replace('#',''), 16);
+
+    // Flying debris chunks
+    for (let i = 0; i < 10; i++) {
+      const frag = this.add.graphics().setDepth(60);
+      const sz = 3 + Math.random() * 7;
+      frag.fillStyle(i % 2 === 0 ? ownerColor : 0x888888, 1);
+      frag.fillRect(-sz / 2, -sz / 2, sz, sz);
+      frag.setPosition(cx + (Math.random() - 0.5) * 24, cy + (Math.random() - 0.5) * 24);
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 55 + Math.random() * 110;
+      this.tweens.add({
+        targets: frag,
+        x: frag.x + Math.cos(angle) * spd,
+        y: frag.y + Math.sin(angle) * spd + 35,
+        angle: (Math.random() - 0.5) * 400,
+        alpha: 0, scaleX: 0.1, scaleY: 0.1,
+        duration: 450 + Math.random() * 250,
+        ease: 'Quad.Out',
+        onComplete: () => frag.destroy(),
+      });
+    }
+
+    // Expanding dust puff
+    const dust = this.add.graphics().setDepth(58);
+    dust.fillStyle(0xccbbaa, 0.55);
+    dust.fillCircle(0, 0, 10);
+    dust.setPosition(cx, cy);
+    this.tweens.add({
+      targets: dust, scaleX: 5, scaleY: 5, alpha: 0,
+      duration: 480, ease: 'Quad.Out',
+      onComplete: () => dust.destroy(),
     });
+
+    // Flash red, then collapse building downward
+    this.tweens.add({
+      targets: obj.gfx, alpha: 0.4, duration: 60, yoyo: true, repeat: 1,
+      onComplete: () => {
+        [obj.gfx, obj.label, obj.ring].filter(Boolean).forEach(o =>
+          this.tweens.add({ targets: o, alpha: 0, scaleX: 0.05, scaleY: 0.05, y: o.y + 18, duration: 320, ease: 'Quad.In', onComplete: () => o.destroy() })
+        );
+      },
+    });
+
+    // HP bar fades instantly
+    [obj.hpBg, obj.hpBar].filter(Boolean).forEach(o =>
+      this.tweens.add({ targets: o, alpha: 0, duration: 150, onComplete: () => o.destroy() })
+    );
+
     delete this.buildingObjs[id];
   }
 

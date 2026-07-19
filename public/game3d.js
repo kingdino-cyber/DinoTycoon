@@ -551,8 +551,65 @@ class Game3D {
 
   removeBuilding(id) {
     const obj = this.buildingObjs[id]; if (!obj) return;
-    this.scene.remove(obj.group);
+    const pos = obj.group.position.clone();
+    const color = obj.data.ownerColor || '#888888';
+    this._spawnCrumble3D(pos, color);
+    // Shrink + sink the original group over 300ms, then remove
+    const startScale = obj.group.scale.x;
+    const startY = obj.group.position.y;
+    const startTime = performance.now();
+    const dur = 300;
+    const group = obj.group;
+    const scene = this.scene;
+    const tick = () => {
+      const t = Math.min(1, (performance.now() - startTime) / dur);
+      const ease = t * t;
+      group.scale.setScalar(startScale * (1 - ease));
+      group.position.y = startY - ease * 1.5;
+      if (t < 1) requestAnimationFrame(tick);
+      else scene.remove(group);
+    };
+    requestAnimationFrame(tick);
     delete this.buildingObjs[id];
+  }
+
+  _spawnCrumble3D(pos, colorHex) {
+    if (!this._crumbleFragments) this._crumbleFragments = [];
+    const baseColor = new THREE.Color(colorHex);
+    const grey = new THREE.Color(0x777777);
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      const s = (0.12 + Math.random() * 0.22);
+      const geo = new THREE.BoxGeometry(s, s, s);
+      const mat = new THREE.MeshLambertMaterial({
+        color: baseColor.clone().lerp(grey, 0.3 + Math.random() * 0.4),
+        transparent: true, opacity: 1,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(
+        pos.x + (Math.random() - 0.5) * 0.6,
+        pos.y + Math.random() * 1.2,
+        pos.z + (Math.random() - 0.5) * 0.6,
+      );
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 2.5 + Math.random() * 4;
+      mesh.userData = {
+        vx: Math.cos(angle) * spd, vy: 4 + Math.random() * 5, vz: Math.sin(angle) * spd,
+        rx: (Math.random() - 0.5) * 10, ry: (Math.random() - 0.5) * 10,
+        age: 0, maxAge: 0.65 + Math.random() * 0.35,
+      };
+      this.scene.add(mesh);
+      this._crumbleFragments.push(mesh);
+    }
+    // Expanding dust ring on the ground
+    const ringGeo = new THREE.RingGeometry(0.01, 0.15, 16);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xbbaa99, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(pos.x, 0.02, pos.z);
+    ring.userData = { isDustRing: true, age: 0, maxAge: 0.6 };
+    this.scene.add(ring);
+    this._crumbleFragments.push(ring);
   }
 
   spawnDrop(drop) {
@@ -1164,6 +1221,34 @@ class Game3D {
           obj._armSwinging = false; obj._armSwingT = 0;
           for (const pivot of obj.armPivots) pivot.rotation.x = 0;
         }
+      }
+    }
+
+    // Crumble fragments from destroyed buildings
+    if (this._crumbleFragments?.length) {
+      const GRAVITY = 16;
+      const dead = [];
+      for (const f of this._crumbleFragments) {
+        f.userData.age += dt;
+        const t = f.userData.age / f.userData.maxAge;
+        if (t >= 1) { dead.push(f); continue; }
+        if (f.userData.isDustRing) {
+          const s = 1 + t * 8;
+          f.scale.set(s, s, s);
+          f.material.opacity = 0.7 * (1 - t);
+        } else {
+          f.userData.vy -= GRAVITY * dt;
+          f.position.x += f.userData.vx * dt;
+          f.position.y += f.userData.vy * dt;
+          f.position.z += f.userData.vz * dt;
+          f.rotation.x += f.userData.rx * dt;
+          f.rotation.y += f.userData.ry * dt;
+          f.material.opacity = 1 - t * t;
+        }
+      }
+      for (const f of dead) {
+        this.scene.remove(f);
+        this._crumbleFragments.splice(this._crumbleFragments.indexOf(f), 1);
       }
     }
   }
