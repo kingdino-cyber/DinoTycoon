@@ -2315,12 +2315,15 @@ io.on('connection', (socket) => {
     if (now - (p._lastRoar || 0) < cdMs) return;
     p._lastRoar = now;
     const RANGE = 320; // bigger range
+    const diff = room.difficulty || 'medium';
+    const roarDiffMult = diff === 'easy' ? 0.75 : diff === 'hard' ? 0.50 : 0.70;
+    const roarDmg = 3 * roarDiffMult;
     const all = [...Object.values(room.players), ...Object.values(room.bots)];
     const hitIds = [];
     for (const e of all) {
       if (e.id === p.id || e.isDead) continue;
       if (Math.hypot(e.x - p.x, e.y - p.y) < RANGE) {
-        handleAttack(p, e, room, { damageMult: 3 }); // 3x damage — devastating roar
+        handleAttack(p, e, room, { damageMult: roarDmg });
         hitIds.push(e.id || e.socketId);
       }
     }
