@@ -10,6 +10,14 @@ const PICKUP_RADIUS = 42;   // server units — "touch" radius for coin pickup
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
 const CAM_BASE_HEIGHT = 2.0;// camera height above ground
 
+const MAP_THEMES = {
+  jungle:   { sky:0x6ec6ff, fogNear:45, fogFar:130, ground:0x3cb043, grid:0x2d8a35, ambient:0xcce4ff, sun:0xfff8e0 },
+  desert:   { sky:0xe8c16a, fogNear:50, fogFar:150, ground:0xc9a96e, grid:0xa8855a, ambient:0xffe8a0, sun:0xffe060 },
+  volcanic: { sky:0x1a0808, fogNear:30, fogFar:100, ground:0x3d1a0a, grid:0x6b2a0a, ambient:0xff6030, sun:0xff4400 },
+  arctic:   { sky:0xd0e8f4, fogNear:40, fogFar:120, ground:0xd8edf8, grid:0x90c0d8, ambient:0xd0eeff, sun:0xffffff },
+  swamp:    { sky:0x1e2e14, fogNear:25, fogFar: 90, ground:0x2a3e14, grid:0x1a2e0a, ambient:0x88aa60, sun:0xaabb80 },
+};
+
 const PADS_DATA = [
   { x:100,  y:100,  hex:0xe84393 },
   { x:2480, y:100,  hex:0x1e90ff },
@@ -122,10 +130,11 @@ class Game3D {
     container.appendChild(this.renderer.domElement);
 
     // Lighting — bright sunny daytime
-    this.scene.add(new THREE.AmbientLight(0xcce4ff, 1.0));
-    const sun = new THREE.DirectionalLight(0xfff8e0, 1.1);
-    sun.position.set(50, 80, 30);
-    this.scene.add(sun);
+    this._ambientLight = new THREE.AmbientLight(0xcce4ff, 1.0);
+    this.scene.add(this._ambientLight);
+    this._sunLight = new THREE.DirectionalLight(0xfff8e0, 1.1);
+    this._sunLight.position.set(50, 80, 30);
+    this.scene.add(this._sunLight);
 
     this.buildWorld();
 
@@ -203,16 +212,16 @@ class Game3D {
   buildWorld() {
     const W = WORLD_SIZE * WU;
     // Ground — bright sunny grass
-    const groundMat = new THREE.MeshLambertMaterial({ color: 0x3cb043 });
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(W, W), groundMat);
+    this._groundMat = new THREE.MeshLambertMaterial({ color: 0x3cb043 });
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(W, W), this._groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(W / 2, 0, W / 2);
     this.scene.add(ground);
 
     // Grid lines for depth perception
-    const grid = new THREE.GridHelper(W, 32, 0x2d8a35, 0x2d8a35);
-    grid.position.set(W / 2, 0.01, W / 2);
-    this.scene.add(grid);
+    this._grid = new THREE.GridHelper(W, 32, 0x2d8a35, 0x2d8a35);
+    this._grid.position.set(W / 2, 0.01, W / 2);
+    this.scene.add(this._grid);
 
     // World border (low walls)
     const borderMat = new THREE.MeshLambertMaterial({ color: 0x444444 });
@@ -244,6 +253,19 @@ class Game3D {
     );
     arena.position.set(sx(1600), 0.06, sz(1600));
     this.scene.add(arena);
+  }
+
+  applyMapTheme(map) {
+    const t = MAP_THEMES[map] || MAP_THEMES.jungle;
+    this.scene.background.setHex(t.sky);
+    this.scene.fog.color.setHex(t.sky);
+    this.scene.fog.near = t.fogNear;
+    this.scene.fog.far  = t.fogFar;
+    this._groundMat.color.setHex(t.ground);
+    this._grid.material[0].color.setHex(t.grid);
+    this._grid.material[1].color.setHex(t.grid);
+    this._ambientLight.color.setHex(t.ambient);
+    this._sunLight.color.setHex(t.sun);
   }
 
   setupInput() {
@@ -1276,6 +1298,8 @@ window.onGameReady = function (data) {
   s.playerObjs = {}; s.moneyDropObjs = {}; s.buildingObjs = {};
   s._collectedRecently = new Set();
   if (s._collectorHole) { s.scene.remove(s._collectorHole); s._collectorHole = null; s._collectorHolePos = null; }
+
+  s.applyMapTheme(data.map || 'jungle');
 
   s.myId = data.myPlayer.id;
   s.myPlayer = data.myPlayer;

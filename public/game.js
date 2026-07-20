@@ -261,6 +261,7 @@ class GameScene extends Phaser.Scene {
 
   buildWorld() {
     const g = this.add.graphics();
+    this._bgGraphics = g;
 
     // ── World background ──
     g.fillStyle(0x0d1f0d,1); g.fillRect(0,0,WORLD_SIZE,WORLD_SIZE);
@@ -1202,6 +1203,30 @@ window.onGameReady = function(data) {
   s.playerObjs    = {};
   s.moneyDropObjs = {};
   s.buildingObjs  = {};
+
+  // Apply map-specific ground palette
+  const MAP_BG_2D = {
+    jungle:   { bg:0x0d1f0d, blot:[0x0f300f,0x112211], grid:0x1a3a1a },
+    desert:   { bg:0x2a1e06, blot:[0x3a2a08,0x2e2008], grid:0x3a2a10 },
+    volcanic: { bg:0x1a0505, blot:[0x2a0808,0x1e0505], grid:0x3a1010 },
+    arctic:   { bg:0x0d1e2a, blot:[0x1a2e3a,0x102030], grid:0x1a3040 },
+    swamp:    { bg:0x0d1a06, blot:[0x101e08,0x0c1805], grid:0x162610 },
+  };
+  const mt = MAP_BG_2D[data.map] || MAP_BG_2D.jungle;
+  if (s._bgGraphics) { s._bgGraphics.destroy(); s._bgGraphics = null; }
+  const bg2d = s.add.graphics();
+  s._bgGraphics = bg2d;
+  bg2d.fillStyle(mt.bg, 1); bg2d.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+  for (let i = 0; i < 400; i++) {
+    const x = Math.random() * WORLD_SIZE, y = Math.random() * WORLD_SIZE;
+    bg2d.fillStyle(Math.random() < 0.5 ? mt.blot[0] : mt.blot[1], 0.35);
+    bg2d.fillEllipse(x, y, 60 + Math.random() * 100, 40 + Math.random() * 70);
+  }
+  bg2d.lineStyle(1, mt.grid, 0.2);
+  for (let x = 0; x <= WORLD_SIZE; x += 200) { bg2d.beginPath(); bg2d.moveTo(x, 0); bg2d.lineTo(x, WORLD_SIZE); bg2d.strokePath(); }
+  for (let y = 0; y <= WORLD_SIZE; y += 200) { bg2d.beginPath(); bg2d.moveTo(0, y); bg2d.lineTo(WORLD_SIZE, y); bg2d.strokePath(); }
+  bg2d.lineStyle(16, 0x444444, 1); bg2d.strokeRect(8, 8, WORLD_SIZE - 16, WORLD_SIZE - 16);
+  s.cameras.main.setBackgroundColor(mt.bg);
 
   s.myId      = data.myPlayer.id;
   s.myPlayer  = data.myPlayer;

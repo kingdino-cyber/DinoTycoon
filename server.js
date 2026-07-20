@@ -1422,6 +1422,7 @@ async function startMatch(room) {
       difficulty: room.difficulty,
       pads: PADS, worldSize: WORLD_SIZE, padSize: PAD_SIZE,
       gameMode: room.gameMode,
+      map: room.map || 'jungle',
       renderMode: room.renderMode || '3d',
       buildings: Object.values(room.buildings),
       savedGame: null,
