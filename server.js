@@ -264,16 +264,29 @@ async function updateQuestProgress(p, deltas) {
     : { date: today, progress: {}, completed: [] };
   const quests = generateDailyQuests();
   const newlyCompleted = [];
+
+  // Apply each key's delta exactly once (multiple quests can share the same key,
+  // e.g. q_kill3 and q_kill10 both use key='kills' — adding delta per-quest
+  // would double-count and let players complete quests far too easily).
+  const appliedKeys = new Set();
   for (const q of quests) {
     const delta = deltas[q.key] || 0;
-    if (!delta || dq.completed.includes(q.id)) continue;
+    if (!delta || appliedKeys.has(q.key)) continue;
+    appliedKeys.add(q.key);
     dq.progress[q.key] = (dq.progress[q.key] || 0) + delta;
-    if (dq.progress[q.key] >= q.target) {
+  }
+
+  // Check completion for every quest (separately, so the single accumulated
+  // progress value is compared against each quest's individual target).
+  for (const q of quests) {
+    if (dq.completed.includes(q.id)) continue;
+    if ((dq.progress[q.key] || 0) >= q.target) {
       dq.completed.push(q.id);
       p.points = (p.points || 0) + q.reward;
       newlyCompleted.push({ ...q });
     }
   }
+
   save.dailyQuests = dq;
   save.points = Math.floor(p.points || 0);
   await putSave(p.dbUserId, save);
