@@ -646,9 +646,11 @@ async function persistPlayer(p) {
   if (!p.dbUserId) return;
   const existing = await getSave(p.dbUserId);
   await putSave(p.dbUserId, {
-    money: Math.floor(p.money), total_earned: Math.floor(p.totalEarned),
+    money: Math.floor(p.money), total_earned: Math.max(Math.floor(p.totalEarned), existing.total_earned || 0),
     level: p.level, xp: p.xp, upgrades: p.upgrades,
-    kills: p.kills, deaths: p.deaths, prestige: p.prestige,
+    kills: Math.max(p.kills, existing.kills || 0),
+    deaths: Math.max(p.deaths, existing.deaths || 0),
+    prestige: Math.max(p.prestige, existing.prestige || 0),
     points: Math.floor(p.points || 0),
     achievements: p.achievements || existing.achievements || [],
     mmr: p.mmr || existing.mmr || 1000,
