@@ -1426,12 +1426,10 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <div class="lb-panel-header">
         <h2>🌍 Global Leaderboard</h2>
         <div class="lb-cat-tabs" id="lbPanelCatTabs">
-          <button class="lb-cat-tab active" data-cat="earnings"        onclick="switchLbCategory('earnings')">💰 Earnings</button>
-          <button class="lb-cat-tab" data-cat="kills"              onclick="switchLbCategory('kills')">⚔️ Kills</button>
-          <button class="lb-cat-tab" data-cat="prestige"           onclick="switchLbCategory('prestige')">⭐ Prestige</button>
-          <button class="lb-cat-tab" data-cat="mmr"                onclick="switchLbCategory('mmr')">🏆 Ranked MMR</button>
-          <button class="lb-cat-tab" data-cat="season_earnings"    onclick="switchLbCategory('season_earnings')">🗓️ Season $</button>
-          <button class="lb-cat-tab" data-cat="season_kills"       onclick="switchLbCategory('season_kills')">🗓️ Season ⚔️</button>
+          <button class="lb-cat-tab active" data-cat="earnings" onclick="switchLbCategory('earnings')">💰 Earnings</button>
+          <button class="lb-cat-tab" data-cat="kills"    onclick="switchLbCategory('kills')">⚔️ Kills</button>
+          <button class="lb-cat-tab" data-cat="prestige" onclick="switchLbCategory('prestige')">⭐ Prestige</button>
+          <button class="lb-cat-tab" data-cat="mmr"      onclick="switchLbCategory('mmr')">🏆 Ranked MMR</button>
         </div>
       </div>
       <div class="lb-list" id="lbPanelContent">
@@ -1952,44 +1950,12 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <!-- Match Timer -->
 <div id="matchTimer" class="hidden">⏱ 10:00</div>
 
-<!-- Spectator label -->
-<div id="spectateLabel" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.7);color:#7fff6a;padding:8px 18px;border-radius:20px;font-size:.85rem;
-  font-weight:bold;z-index:9000;pointer-events:none;border:1px solid rgba(100,200,80,.3);"></div>
-
-<!-- Steal indicator -->
-<div id="stealIndicator" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:rgba(255,80,0,.15);color:#ff9900;padding:6px 14px;border-radius:12px;font-size:.8rem;
-  font-weight:bold;z-index:9001;pointer-events:none;border:1px solid rgba(255,80,0,.4);">
-  🪙 Stealing income...
-</div>
-
-<!-- Bounty HUD -->
-<div id="bountyHud" style="display:none;position:fixed;top:70px;right:20px;z-index:9002;
-  background:rgba(30,10,0,.85);border:1px solid rgba(255,100,0,.4);border-radius:12px;
-  padding:8px 14px;color:#ff9944;font-size:.8rem;font-weight:bold;pointer-events:none;
-  text-align:center;min-width:140px;">
-  <div style="font-size:.65rem;color:#cc6600;margin-bottom:2px;">💀 BOUNTY TARGET</div>
-  <div id="bountyName" style="font-size:.9rem;color:#ffbb44;"></div>
-  <div style="font-size:.65rem;color:#cc6600;margin-top:2px;">Kill for 2× loot!</div>
-</div>
-
-<!-- Market ticker -->
-<div id="marketTicker" style="display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);
-  z-index:9002;background:rgba(0,20,40,.85);border:1px solid rgba(80,180,255,.3);border-radius:12px;
-  padding:6px 16px;color:#80cfff;font-size:.78rem;font-weight:bold;pointer-events:none;">
-  📈 Market: <span id="marketMult">1.00×</span>
-</div>
-
 <!-- Match Over Screen -->
 <div id="matchOver" class="hidden">
   <div class="matchover-box" style="min-width:820px;max-width:1000px;">
     <div class="matchover-title">🏆 MATCH OVER!</div>
     <div class="matchover-sub" id="matchoverWinner" style="font-size:.95rem;margin-bottom:4px;"></div>
     <div id="matchoverQuestBanner" style="display:none;margin:8px 0;padding:10px 16px;border-radius:10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);color:#ffd700;font-size:.85rem;"></div>
-    <!-- Match Highlights -->
-    <div id="matchHighlights" style="display:none;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 14px;">
-    </div>
     <div class="matchover-boards">
       <div class="matchover-board">
         <div class="matchover-board-title wealth">💰 Wealth</div>
@@ -2896,12 +2862,10 @@ window.openAchievementsModal = openAchievementsModal;
 // ── Global Leaderboard ────────────────────────────────────────────────────────
 let _lbCategory = 'earnings';
 const LB_CAT_META = {
-  earnings:        { label: '💰 Earnings',        fmt: v => '$' + fmt(v), color: '#ffd700' },
-  kills:           { label: '⚔️ Kills',            fmt: v => v,           color: '#ff4757' },
-  prestige:        { label: '⭐ Prestige',         fmt: v => '★' + v,     color: '#a29bfe' },
-  mmr:             { label: '🏆 Ranked MMR',       fmt: v => v,           color: '#d4af37' },
-  season_earnings: { label: '🗓️ Season Earnings',  fmt: v => '$' + fmt(v), color: '#56cfe1' },
-  season_kills:    { label: '🗓️ Season Kills',     fmt: v => v,           color: '#ff9f7f' },
+  earnings: { label: '💰 Earnings', fmt: v => '$' + fmt(v), color: '#ffd700' },
+  kills:    { label: '⚔️ Kills',    fmt: v => v, color: '#ff4757' },
+  prestige: { label: '⭐ Prestige', fmt: v => '★' + v, color: '#a29bfe' },
+  mmr:      { label: '🏆 Ranked MMR', fmt: v => v, color: '#d4af37' },
 };
 function openLeaderboardModal() {
   window.SFX?.pop();
@@ -2965,17 +2929,14 @@ function renderGlobalLeaderboard(data) {
   if (!el) return;
   _lbEntries = data.entries;
   const meta = LB_CAT_META[data.category] || LB_CAT_META.earnings;
-  const seasonBanner = data.isSeason
-    ? `<div style="text-align:center;font-size:.75rem;color:#56cfe1;background:rgba(86,207,225,.08);border:1px solid rgba(86,207,225,.2);border-radius:8px;padding:6px 12px;margin-bottom:8px;">🗓️ Season: ${data.seasonId || ''} — resets monthly</div>`
-    : '';
   if (!data.entries.length) {
-    el.innerHTML = seasonBanner + '<div style="text-align:center;color:#557755;padding:40px 0;">No players yet — be the first!</div>';
+    el.innerHTML = '<div style="text-align:center;color:#557755;padding:40px 0;">No players yet — be the first!</div>';
     return;
   }
   const myName = document.getElementById('heroUsername')?.textContent?.trim() || '';
   const rankClass = ['lb-rank-1','lb-rank-2','lb-rank-3'];
   const rowClass  = ['lb-row-top1','lb-row-top2','lb-row-top3'];
-  el.innerHTML = seasonBanner + data.entries.map((e, i) => {
+  el.innerHTML = data.entries.map((e, i) => {
     const tier = getLbTier(data.category, e.value);
     const isMe = e.username === myName;
     const badge = `<span class="lb-tier-badge" style="background:${tier.bg};color:${tier.color};border:1px solid ${tier.border};">${tier.label}</span>`;
@@ -3579,9 +3540,6 @@ document.addEventListener('keydown',e=>{
   }
   if(e.key==='Enter') document.getElementById('chatInput').focus();
   if(e.key==='b'||e.key==='B') toggleShop();
-  if(e.key==='g'||e.key==='G') {
-    if(window.gameSocket && window._gameScene) window.gameSocket.emit('sabotageBuilding');
-  }
 });
 function sendChat(){const i=document.getElementById('chatInput');const m=i.value.trim();if(!m)return;if(window.gameSocket)window.gameSocket.emit('chat',m);i.value='';}
 function addChatMessage(u,msg,color){
@@ -4412,7 +4370,7 @@ function initSocket(token){
   });
 
   // ── Match over ──
-  s.on('matchOver', ({leaderboard, highlights}) => {
+  s.on('matchOver', ({leaderboard}) => {
     window.SFX?.roar();
     document.getElementById('abilityHud').classList.add('hidden');
     const medals = ['🥇','🥈','🥉'];
@@ -4442,27 +4400,6 @@ function initSocket(token){
       ? `👑 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> dominated — richest AND most kills!`
       : `💰 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> richest &nbsp;|&nbsp; ⚔️ <span style="color:#ff6b6b">${esc(killsWinner.username)}</span> most kills`;
 
-    // Post-match highlights
-    const hl = document.getElementById('matchHighlights');
-    if (highlights) {
-      const cards = [
-        { icon:'⚔️', label:'Top Killer',  val:`${esc(highlights.topKiller.username)}`, sub:`${highlights.topKiller.value} kills` },
-        { icon:'💰', label:'Top Earner',  val:`${esc(highlights.topEarner.username)}`, sub:`$${fmt(highlights.topEarner.value)}` },
-        { icon:'💥', label:'Top Damage',  val:`${esc(highlights.topDamage.username)}`, sub:`${fmt(highlights.topDamage.value)} dmg` },
-        { icon:'🔥', label:'Kill Streak', val:`${esc(highlights.topStreak.username)}`, sub:`${highlights.topStreak.value}× streak` },
-      ];
-      hl.innerHTML = cards.map(c => `
-        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 8px;text-align:center;">
-          <div style="font-size:1.4rem">${c.icon}</div>
-          <div style="color:#aaa;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;margin:2px 0">${c.label}</div>
-          <div style="color:#fff;font-size:.85rem;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.val}</div>
-          <div style="color:#7fff6a;font-size:.75rem">${c.sub}</div>
-        </div>`).join('');
-      hl.style.display = 'grid';
-    } else {
-      hl.style.display = 'none';
-    }
-
     document.getElementById('matchoverQuestBanner').style.display = 'none';
     document.getElementById('matchOver').classList.remove('hidden');
     if (document.pointerLockElement) document.exitPointerLock();
@@ -4490,52 +4427,6 @@ function initSocket(token){
     }, 200);
   }
   s.on('abilityCooldown', ({ ability, cooldown }) => startAbilityCd(ability, cooldown));
-
-  // ── Kill streak toast ──
-  s.on('killStreak', ({ username, streak }) => {
-    const msgs = { 3:'Triple Kill!', 5:'KILLING SPREE!', 10:'UNSTOPPABLE!', 15:'GODLIKE!', 20:'LEGENDARY!' };
-    const label = msgs[streak] || `${streak}× Streak!`;
-    showToast(`🔥 ${esc(username)} — ${label}`, 3500);
-  });
-
-  // ── Bounty HUD ──
-  s.on('bountyUpdate', ({ id, username }) => {
-    const hud = document.getElementById('bountyHud');
-    const nm  = document.getElementById('bountyName');
-    if (username) {
-      nm.textContent = username;
-      hud.style.display = 'block';
-    } else {
-      hud.style.display = 'none';
-    }
-  });
-  s.on('bountyKilled', ({ killerUsername, targetUsername }) => {
-    showToast(`💀 ${esc(killerUsername)} claimed the bounty on ${esc(targetUsername)}! (2× loot)`, 4000);
-    document.getElementById('bountyHud').style.display = 'none';
-  });
-
-  // ── Market ticker ──
-  s.on('marketUpdate', ({ mult }) => {
-    const el = document.getElementById('marketTicker');
-    const sp = document.getElementById('marketMult');
-    if (!el || !sp) return;
-    sp.textContent = mult.toFixed(2) + '×';
-    const bullish = mult >= 1;
-    el.style.display = 'block';
-    el.style.color = bullish ? '#7fff6a' : '#ff6b6b';
-    el.querySelector('span') && (el.querySelector('span').style.fontWeight = 'bold');
-  });
-
-  // ── Sabotage feedback ──
-  s.on('buildingSabotaged', ({ id, by }) => {
-    showToast(`💣 ${esc(by || 'Someone')} sabotaged a building! Income disabled for 30s.`, 3000);
-  });
-  s.on('buildingUnsabotaged', ({ id }) => {
-    showToast('🔧 A sabotaged building is back online!', 2500);
-  });
-
-  // ── Generic server error toast ──
-  s.on('err', msg => showToast('❌ ' + msg, 3000));
 
   // ── Quest progress (after match or prestige) ──
   s.on('questProgress', ({ quests, progress, completed, newlyCompleted }) => {

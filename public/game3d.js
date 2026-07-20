@@ -298,16 +298,9 @@ class Game3D {
         // skips applying while paused, then fires unexpectedly the instant you resume.
         if (this.locked && this._jumpY === 0 && !this.myPlayer?.isDead) this._jumpVel = 9; // jump
       }
-      if (e.code === 'Tab') {
+      if (e.code === 'Tab' && this.locked && window.gameSocket) {
         e.preventDefault();
-        if (this._spectating && this._spectateIds?.length) {
-          this._spectateIdx = (this._spectateIdx + 1) % this._spectateIds.length;
-          const nextId = this._spectateIds[this._spectateIdx];
-          const label = document.getElementById('spectateLabel');
-          if (label) label.textContent = `👁 Spectating: ${this.playerObjs[nextId]?.data?.username || '?'} — [TAB] to switch`;
-        } else if (this.locked && window.gameSocket) {
-          window.gameSocket.emit('collectPadDrops');
-        }
+        window.gameSocket.emit('collectPadDrops');
       }
       if (e.code === 'F5') {
         e.preventDefault();
@@ -485,34 +478,6 @@ class Game3D {
     const nameSprite = makeNameSprite((data.tagPrefix || '') + data.username, data.color);
     nameSprite.position.set(0, 2.05, 0);
     group.add(nameSprite);
-
-    // Prestige crown above head
-    if ((data.prestige || 0) >= 1) {
-      const tier = data.prestige >= 5 ? 2 : data.prestige >= 3 ? 1 : 0;
-      const crownColors = [0xcd7f32, 0xc0c0c0, 0xffd700]; // bronze, silver, gold
-      const crownMat = new THREE.MeshLambertMaterial({ color: crownColors[tier] });
-      const crownGroup = new THREE.Group();
-      // Base ring
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 6, 12), crownMat);
-      crownGroup.add(ring);
-      // Spikes
-      const spikeCount = 3 + tier;
-      for (let i = 0; i < spikeCount; i++) {
-        const a = (i / spikeCount) * Math.PI * 2;
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14 + tier * 0.04, 5), crownMat);
-        spike.position.set(Math.cos(a) * 0.18, 0.09 + tier * 0.02, Math.sin(a) * 0.18);
-        crownGroup.add(spike);
-      }
-      crownGroup.position.set(0, 2.35, 0);
-      group.add(crownGroup);
-      // Glow for prestige 5+
-      if (data.prestige >= 5) {
-        const glow = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8),
-          new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.18, side: THREE.BackSide }));
-        glow.position.set(0, 2.35, 0);
-        group.add(glow);
-      }
-    }
 
     const hpSprite = makeHPBarSprite();
     hpSprite.position.set(0, 1.85, 0);
@@ -983,33 +948,6 @@ class Game3D {
 
   update(dt) {
     if (typeof _paused !== 'undefined' && _paused) return;
-
-    // Spectator mode — glide camera behind the target player
-    if (this._spectating && this._spectateIds?.length) {
-      const tid = this._spectateIds[this._spectateIdx % this._spectateIds.length];
-      const tobj = this.playerObjs[tid];
-      if (tobj && !tobj.data.isDead) {
-        const tp = tobj.group.position;
-        const behind = new THREE.Vector3(tp.x - Math.sin(tobj.group.rotation.y) * CAM_DISTANCE,
-          tp.y + CAM_BASE_HEIGHT + 0.8, tp.z - Math.cos(tobj.group.rotation.y) * CAM_DISTANCE);
-        this.camera.position.lerp(behind, 0.06);
-        this.camera.lookAt(tp.x, tp.y + 1, tp.z);
-      } else {
-        // target died — move to next living spectate target
-        this._spectateIds = this._spectateIds.filter(id => !this.playerObjs[id]?.data?.isDead);
-        this._spectateIdx = 0;
-      }
-      // Tick crumble fragments while spectating
-      if (this._crumbleFragments) {
-        for (let i = this._crumbleFragments.length - 1; i >= 0; i--) {
-          const f = this._crumbleFragments[i];
-          f._age = (f._age || 0) + dt;
-          if (f._age >= f._maxAge) { this.scene.remove(f); this._crumbleFragments.splice(i, 1); }
-        }
-      }
-      return;
-    }
-
     const phi = this.yawObject.rotation.y;     // mouse-controlled facing yaw (also the dino model's rotation.y)
     const pitch = this.pitchObject.rotation.x; // mouse-controlled camera pitch, clamped in setupInput
 
@@ -1477,18 +1415,9 @@ function setupGameSocketEvents() {
     if (victim) { victim.data.isDead = true; victim.group.visible = false; }
     if (victimId === scene.myId) {
       scene.myPlayer.isDead = true;
+      // Move camera to base immediately so player watches their base while waiting to respawn
+      if (scene.myBaseX !== undefined) { scene.myPlayer.x = scene.myBaseX; scene.myPlayer.y = scene.myBaseY; }
       window.SFX?.death();
-      // Enter spectator mode — pick first living player to follow
-      const livingIds = Object.keys(scene.playerObjs).filter(id => id !== scene.myId && !scene.playerObjs[id]?.data?.isDead);
-      scene._spectating = livingIds.length > 0;
-      scene._spectateIdx = 0;
-      scene._spectateIds = livingIds;
-      if (scene._spectating) {
-        const specLabel = document.getElementById('spectateLabel');
-        if (specLabel) { specLabel.style.display = 'flex'; specLabel.textContent = `👁 Spectating: ${scene.playerObjs[livingIds[0]]?.data?.username || '?'} — [TAB] to switch`; }
-      } else {
-        if (scene.myBaseX !== undefined) { scene.myPlayer.x = scene.myBaseX; scene.myPlayer.y = scene.myBaseY; }
-      }
       // Show death screen with respawn countdown (same as 2D mode)
       document.getElementById('deathScreen').classList.add('active');
       document.getElementById('deathMsg').textContent = 'Respawning 5...';
@@ -1686,22 +1615,8 @@ function setupGameSocketEvents() {
     for (const [id, st] of Object.entries(stats)) {
       const obj = scene.playerObjs[id]; if (!obj) continue;
       obj.data.hp = st.hp; obj.data.money = st.money; obj.data.mps = st.mps; obj.data.isDead = st.isDead;
-      if (obj.group) obj.group.visible = !st.isDead;
       redrawHPSprite(obj.hpSprite, st.hp, obj.data.maxHp || 100);
-      if (id === scene.myId) {
-        Object.assign(scene.myPlayer, st);
-        window.updateHUD(scene.myPlayer);
-        // Show steal indicator
-        const stealEl = document.getElementById('stealIndicator');
-        if (stealEl) stealEl.style.display = st.stealing ? 'block' : 'none';
-        // Exit spectator when respawned
-        if (!st.isDead && scene._spectating) {
-          scene._spectating = false;
-          scene._spectateIds = [];
-          const label = document.getElementById('spectateLabel');
-          if (label) label.style.display = 'none';
-        }
-      }
+      if (id === scene.myId) { Object.assign(scene.myPlayer, st); window.updateHUD(scene.myPlayer); }
     }
   });
 
@@ -1732,30 +1647,6 @@ function setupGameSocketEvents() {
     window.updateXPBar(0, level);
     window.SFX?.levelUp();
     window.showToast(`⭐ Level ${level}!`, 2500);
-    // Visual burst — ring of coloured sparks around the player
-    const obj = scene.playerObjs[scene.myId]; if (!obj) return;
-    const pos = obj.group.position.clone();
-    for (let i = 0; i < 20; i++) {
-      const angle = (i / 20) * Math.PI * 2;
-      const spark = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 4, 4),
-        new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(i / 20, 1, 0.6) })
-      );
-      spark.position.copy(pos).add(new THREE.Vector3(Math.cos(angle) * 0.3, 0.8, Math.sin(angle) * 0.3));
-      scene.scene.add(spark);
-      const vx = Math.cos(angle) * 3, vy = 4 + Math.random() * 2, vz = Math.sin(angle) * 3;
-      let t = 0;
-      const tick = () => {
-        t += 0.016;
-        spark.position.x += vx * 0.016;
-        spark.position.y += vy * 0.016 - 9.8 * t * 0.016;
-        spark.position.z += vz * 0.016;
-        spark.material.opacity = Math.max(0, 1 - t / 0.8);
-        spark.material.transparent = true;
-        if (t < 0.8) requestAnimationFrame(tick); else scene.scene.remove(spark);
-      };
-      requestAnimationFrame(tick);
-    }
   });
 
   s.on('leaderboard', lb => {
