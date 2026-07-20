@@ -254,6 +254,26 @@ function todayKey() {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
 }
+function getSeasonId() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+}
+
+function buildHighlights(players) {
+  const humans = players.filter(p => !p.isBot);
+  if (!humans.length) return null;
+  const pick = (arr, key) => arr.reduce((a, b) => (b[key] || 0) > (a[key] || 0) ? b : a, arr[0]);
+  const mvpKills    = pick(humans, 'kills');
+  const mvpEarned   = pick(humans, 'totalEarned');
+  const mvpDamage   = pick(humans, 'damageDealt');
+  const mvpStreak   = pick(humans, '_killStreak');
+  return {
+    topKiller:  { username: mvpKills.username,  value: mvpKills.kills || 0,                  label: 'kills' },
+    topEarner:  { username: mvpEarned.username,  value: Math.floor(mvpEarned.totalEarned||0), label: 'earned' },
+    topDamage:  { username: mvpDamage.username,  value: Math.floor(mvpDamage.damageDealt||0), label: 'damage dealt' },
+    topStreak:  { username: mvpStreak.username,  value: mvpStreak._killStreak || 0,           label: 'kill streak' },
+  };
+}
 
 async function updateQuestProgress(p, deltas) {
   if (!p.dbUserId) return null;
@@ -671,6 +691,17 @@ async function persistPlayer(p) {
     rankedMatchesPlayed: p.rankedMatchesPlayed || existing.rankedMatchesPlayed || 0,
     tutorialSeen: existing.tutorialSeen || false,
     savedGames: existing.savedGames || [],
+    season: (() => {
+      const sid = getSeasonId();
+      const prev = existing.season;
+      const same = prev && prev.id === sid;
+      return { id: sid,
+        kills:    same ? Math.max(p.kills, prev.kills||0)                        : p.kills,
+        earned:   same ? Math.max(Math.floor(p.totalEarned), prev.earned||0)     : Math.floor(p.totalEarned),
+        prestige: same ? Math.max(p.prestige, prev.prestige||0)                  : p.prestige,
+        mmr:      same ? Math.max(p.mmr||1000, prev.mmr||1000)                   : (p.mmr||1000),
+      };
+    })(),
     lobbyItems: existing.lobbyItems || { skins:[], tags:[] },
     equippedSkin: existing.equippedSkin || 'default',
     equippedTag: existing.equippedTag || 'none',
@@ -928,11 +959,22 @@ function handleAttack(attacker, target, room, opts = {}) {
   if (target.hp <= 0) {
     target.isDead = true; target.deaths++;
     attacker.kills++;
+    target._killStreak = 0;
+    attacker._killStreak = (attacker._killStreak || 0) + 1;
+    if ([3,5,10,15,20].includes(attacker._killStreak)) {
+      emitToRoom(room, 'killStreak', { id: attacker.id || attacker.socketId, username: attacker.username, streak: attacker._killStreak });
+    }
     // +10 Dino Points per kill, doubled during Bounty Thursday (casual matches only)
     const bountyEvent = !room.isRanked ? getActiveEvent() : null;
     const pointsGain = Math.round(10 * (bountyEvent?.pointsMult || 1));
     attacker.points = (attacker.points || 0) + pointsGain;
-    const loot = Math.floor(target.money * 0.25);
+    let loot = Math.floor(target.money * 0.25);
+    // Bounty kill — richest player pays 2× loot to whoever takes them down
+    if (room._bountyId && room._bountyId === (target.id || target.socketId)) {
+      loot *= 2;
+      room._bountyId = null;
+      emitToRoom(room, 'bountyKilled', { killer: attacker.username, target: target.username, bonus: loot });
+    }
     target.money = Math.max(0, target.money - loot);
     attacker.money += loot; attacker.totalEarned += loot;
     addXP(attacker, 80 + target.level*10, room);
@@ -963,13 +1005,66 @@ function startRoomLoop(room) {
     const allEntities = [...Object.values(room.players), ...Object.values(room.bots)];
     const activeEvent = room.isRanked ? null : getActiveEvent();
     const incomeMult = activeEvent?.mpsMultiplier || 1;
+
+    // ── Market fluctuation (every 45s) ──
+    if (!room._nextMarketTick || now >= room._nextMarketTick) {
+      room._nextMarketTick = now + 45000;
+      const prev = room._marketMult || 1.0;
+      const delta = (Math.random() - 0.5) * 0.25;
+      room._marketMult = Math.round(Math.max(0.6, Math.min(1.6, prev + delta)) * 100) / 100;
+      emitToRoom(room, 'marketUpdate', { mult: room._marketMult, trend: delta >= 0 ? 'up' : 'down' });
+    }
+    const marketMult = room._marketMult || 1.0;
+
+    // ── Bounty — richest living player (updates every 20s) ──
+    if (!room._nextBountyTick || now >= room._nextBountyTick) {
+      room._nextBountyTick = now + 20000;
+      const living = Object.values(room.players).filter(p => !p.isDead);
+      const richest = living.sort((a, b) => b.money - a.money)[0];
+      const newId = richest ? (richest.id || richest.socketId) : null;
+      if (newId !== room._bountyId) {
+        room._bountyId = newId;
+        emitToRoom(room, 'bountyUpdate', { id: newId, username: richest?.username || null });
+      }
+    }
+
+    // ── Expire sabotaged buildings ──
+    for (const b of Object.values(room.buildings)) {
+      if (b.sabotaged && now >= b.sabotagedUntil) {
+        b.sabotaged = false;
+        emitToRoom(room, 'buildingUnsabotaged', { id: b.id });
+      }
+    }
+
     for (const p of allEntities) {
       if (p.isDead) continue;
       // Each prestige level passively boosts income by 10%
       const prestigeBonus = 1 + (p.prestige || 0) * 0.1;
-      const earned = p.mps * incomeMult * prestigeBonus * dt;
+      // Subtract income from any sabotaged buildings this player owns
+      let sabotagedMps = 0;
+      for (const b of Object.values(room.buildings)) {
+        if (b.ownerId === (p.id || p.socketId) && b.sabotaged) sabotagedMps += b.mps || 0;
+      }
+      const effectiveMps = Math.max(0, p.mps - sabotagedMps);
+      const earned = effectiveMps * incomeMult * marketMult * prestigeBonus * dt;
       p.money += earned; p.totalEarned += earned;
       if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
+    }
+
+    // ── Steal mechanic — proximity income drain from nearby enemy buildings ──
+    for (const p of Object.values(room.players)) {
+      if (p.isDead) continue;
+      p._stealing = false;
+      for (const b of Object.values(room.buildings)) {
+        if (b.ownerId === (p.id || p.socketId) || b.type !== 'income' || b.hp <= 0 || b.sabotaged) continue;
+        if (dist(p, b) < 90) {
+          const stolen = b.mps * 0.06 * dt;
+          p.money += stolen; p.totalEarned += stolen;
+          const owner = room.players[b.ownerId];
+          if (owner) owner.money = Math.max(0, owner.money - stolen);
+          p._stealing = true;
+        }
+      }
     }
     // Tick bots — precompute shared arrays once per tick instead of per-bot to avoid O(bots*buildings) reallocation
     const buildingsArr = Object.values(room.buildings);
@@ -1123,7 +1218,8 @@ function startRoomLoop(room) {
           damageDealt: p.damageDealt || 0, damageTaken: p.damageTaken || 0,
           totalEarned: Math.floor(p.totalEarned),
         }));
-        emitToRoom(room, 'matchOver', { leaderboard: lb });
+        const highlights = buildHighlights(all);
+        emitToRoom(room, 'matchOver', { leaderboard: lb, highlights });
         // Update daily quest progress for human players
         const humanPlayers = Object.values(room.players).filter(p => !p.isBot && p.dbUserId);
         const wealthWinnerId = humanPlayers.sort((a,b) => b.totalEarned - a.totalEarned)[0]?.socketId;
@@ -1177,7 +1273,7 @@ function startRoomLoop(room) {
     // Stat sync
     const sync = {};
     for (const p of allPlayers) {
-      sync[p.id] = { hp: Math.round(p.hp), money: Math.floor(p.money), mps: p.mps, isDead: p.isDead };
+      sync[p.id] = { hp: Math.round(p.hp), money: Math.floor(p.money), mps: p.mps, isDead: p.isDead, stealing: p._stealing || false };
     }
     emitToRoom(room, 'statSync', sync);
 
@@ -1723,15 +1819,19 @@ io.on('connection', (socket) => {
   // usernames in from usersCol by userId.
   socket.on('getGlobalLeaderboard', async (category) => {
     if (!authedUser) return;
+    const SEASON_CATS = new Set(['season_earnings','season_kills']);
     const FIELD_BY_CATEGORY = { earnings: 'total_earned', kills: 'kills', prestige: 'prestige', mmr: 'mmr' };
-    const field = FIELD_BY_CATEGORY[category] || 'total_earned';
-    // mmr defaults to 1000 for every account that's ever played a single match
-    // (ranked or not), so filtering on "mmr > 0" would list everyone, not just
-    // people who've actually queued for ranked. Gate on rankedMatchesPlayed instead.
-    const filter = field === 'mmr' ? { rankedMatchesPlayed: { $gt: 0 } } : { [field]: { $gt: 0 } };
+    const isSeason = SEASON_CATS.has(category);
+    const seasonKey = category === 'season_kills' ? 'kills' : 'earned';
+    const field = isSeason ? 'season' : (FIELD_BY_CATEGORY[category] || 'total_earned');
+    const sid = getSeasonId();
+    const filter = isSeason
+      ? { [`season.id`]: sid, [`season.${seasonKey}`]: { $gt: 0 } }
+      : (field === 'mmr' ? { rankedMatchesPlayed: { $gt: 0 } } : { [field]: { $gt: 0 } });
+    const sortField = isSeason ? `season.${seasonKey}` : field;
     try {
       const top = await savesCol.find(filter)
-        .sort({ [field]: -1 }).limit(20).toArray();
+        .sort({ [sortField]: -1 }).limit(20).toArray();
       const userIds = top.map(s => s.userId);
       const users = await usersCol.find({ id: { $in: userIds } }).toArray();
       const nameById = {};
@@ -1743,9 +1843,10 @@ io.on('connection', (socket) => {
           const skinDef = LOBBY_SHOP.skins.find(sk => sk.id === skinId);
           const skinColor = skinDef ? skinDef.color : null;
           const isCustomSkin = skinId.startsWith('custom_');
+          const seasonVal = isSeason ? (s.season?.[seasonKey] || 0) : 0;
           return {
             username: nameById[s.userId],
-            value: Math.floor(s[field] || 0),
+            value: isSeason ? Math.floor(seasonVal) : Math.floor(s[field] || 0),
             skinColor,
             isCustomSkin,
             kills: s.kills || 0,
@@ -1757,7 +1858,7 @@ io.on('connection', (socket) => {
             rankedMatchesPlayed: s.rankedMatchesPlayed || 0,
           };
         });
-      socket.emit('globalLeaderboard', { category: FIELD_BY_CATEGORY[category] ? category : 'earnings', entries });
+      socket.emit('globalLeaderboard', { category, entries });
     } catch (e) {
       console.error('getGlobalLeaderboard error:', e);
       socket.emit('globalLeaderboard', { category, entries: [] });
@@ -2211,6 +2312,38 @@ io.on('connection', (socket) => {
     // Place building (income or defense) — at the dropped position if dragged from the
     // shop, otherwise falls back to the legacy "place near where you're standing" behavior
     placeBuilding(room, p, upgradeId, targetPos);
+  });
+
+  // ── Sabotage — pay money to disable an enemy building's income for 30s ──
+  socket.on('sabotageBuilding', (payload) => {
+    const room = rooms[socketRoom[socket.id]]; if (!room || room.status !== 'playing') return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    // If no specific buildingId, auto-pick the nearest enemy income building in range
+    let b;
+    if (payload && payload.buildingId) {
+      b = room.buildings[payload.buildingId];
+    } else {
+      const RANGE = 160;
+      let nearest = null, nearestDist = Infinity;
+      for (const bid in room.buildings) {
+        const bld = room.buildings[bid];
+        if (!bld || bld.hp <= 0 || bld.ownerId === socket.id || bld.type !== 'income' || bld.sabotaged) continue;
+        const d = dist(p, bld);
+        if (d <= RANGE && d < nearestDist) { nearest = bld; nearestDist = d; }
+      }
+      b = nearest;
+    }
+    if (!b || b.hp <= 0 || b.ownerId === socket.id || b.type !== 'income' || b.sabotaged) {
+      socket.emit('err', 'No enemy building in range to sabotage!'); return;
+    }
+    if (dist(p, b) > 160) { socket.emit('err', 'Too far away to sabotage!'); return; }
+    const cost = Math.max(500, Math.floor(b.mps * 15));
+    if (p.money < cost) { socket.emit('err', `Need $${cost.toLocaleString()} to sabotage`); return; }
+    p.money -= cost;
+    b.sabotaged = true;
+    b.sabotagedUntil = Date.now() + 30000;
+    socket.emit('upgradeSuccess', { upgradeId: null, money: p.money, stats: null }); // refresh money HUD
+    emitToRoom(room, 'buildingSabotaged', { id: buildingId, duration: 30000, by: p.username });
   });
 
   socket.on('wallContact', (buildingId) => {
