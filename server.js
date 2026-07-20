@@ -953,6 +953,8 @@ function startRoomLoop(room) {
   // Hard mode gets periodic meteor strikes — first one a bit into the match so
   // players have time to get settled before chaos starts
   if (room.difficulty === 'hard') room._nextMeteorAt = room.matchStartTime + 8000 + Math.random() * 5000;
+  room._marketMult = 1;
+  room._nextMarketTick = room.matchStartTime + 45000;
   let lastTick = Date.now();
 
   // Main tick
@@ -962,7 +964,15 @@ function startRoomLoop(room) {
     lastTick = now;
     const allEntities = [...Object.values(room.players), ...Object.values(room.bots)];
     const activeEvent = room.isRanked ? null : getActiveEvent();
-    const incomeMult = activeEvent?.mpsMultiplier || 1;
+    const incomeMult = (activeEvent?.mpsMultiplier || 1) * (room._marketMult || 1);
+
+    // Market tick every 45s
+    if (now >= room._nextMarketTick) {
+      room._nextMarketTick = now + 45000;
+      room._marketMult = parseFloat((0.6 + Math.random() * 1.0).toFixed(2)); // 0.60–1.60
+      emitToRoom(room, 'marketUpdate', { mult: room._marketMult });
+    }
+
     for (const p of allEntities) {
       if (p.isDead) continue;
       // Each prestige level passively boosts income by 10%
