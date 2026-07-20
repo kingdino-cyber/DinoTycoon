@@ -436,6 +436,7 @@ canvas{display:block;}
 .rmp-title{font-size:1.1rem;font-weight:900;color:#e8f5e9;margin-bottom:6px;letter-spacing:.5px;}
 .rmp-desc{font-size:.78rem;color:#557755;line-height:1.4;}
 .badge-render{background:rgba(150,100,255,.15);color:#c8a0ff;border:1px solid rgba(150,100,255,.3);}
+.badge-map{background:rgba(30,180,180,.12);color:#7ff0e0;border:1px solid rgba(30,180,180,.25);}
 
 /* ── CREATE ROOM MODAL ── */
 .modal-overlay{
@@ -1538,6 +1539,17 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       </div>
     </div>
 
+    <div style="margin-top:12px;">
+      <label class="modal-label">🗺️ Map</label>
+      <select class="modal-select" id="roomMap">
+        <option value="jungle">🌴 Jungle</option>
+        <option value="desert">🏜️ Desert</option>
+        <option value="volcanic">🌋 Volcanic</option>
+        <option value="arctic">❄️ Arctic</option>
+        <option value="swamp">🌿 Swamp</option>
+      </select>
+    </div>
+
     <label class="modal-label" style="margin-top:12px;">⚙️ Difficulty</label>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;" id="difficultyPicker">
       <button onclick="setDifficulty('easy')"   id="diff_easy"   class="diff-btn diff-easy   diff-active">🌿 Easy</button>
@@ -2401,6 +2413,7 @@ function renderRooms(rooms) {
       <div class="room-host">Host: ${esc(r.hostName||'?')}</div>
       <div class="room-meta">
         <span class="room-badge badge-mode">${modeLabel(r.gameMode)}</span>
+        ${r.map && r.map !== 'jungle' ? `<span class="room-badge badge-map">${mapLabel(r.map)}</span>` : ''}
         <span class="room-badge badge-render">${r.renderMode==='2d'?'🗺️ 2D':'🌐 3D'}</span>
         <span class="room-badge badge-players">🦕 ${r.playerCount}/${r.maxPlayers}</span>
         <span class="room-badge badge-status">${r.status==='playing'?'🎮 In Game':'⏳ Waiting'}</span>
@@ -2411,6 +2424,7 @@ function renderRooms(rooms) {
 }
 
 function modeLabel(m){return{classic:'🦕 Classic',rumble:'⚔️ Rumble',survival:'☄️ Survival'}[m]||m;}
+function mapLabel(m){return{jungle:'🌴 Jungle',desert:'🏜️ Desert',volcanic:'🌋 Volcanic',arctic:'❄️ Arctic',swamp:'🌿 Swamp'}[m]||m;}
 function esc(s){return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── Create room modal ─────────────────────────────────────────────────────────
@@ -3148,6 +3162,7 @@ function submitCreateRoom() {
   const isPublic   = document.getElementById('publicToggle').classList.contains('on');
   const freshStart = document.getElementById('freshStartToggle').classList.contains('on');
   const matchDuration = parseInt(document.getElementById('matchDuration').value);
+  const map        = document.getElementById('roomMap').value;
   const customCode = document.getElementById('customCode').value.trim().toUpperCase();
   if (customCode && (customCode.length < 4 || customCode.length > 8)) {
     showToast('❌ Code must be 4–8 characters'); return;
@@ -3160,7 +3175,7 @@ function submitCreateRoom() {
     const saveId = wantsLoad ? (window._loadSaveId || null) : null;
     window._loadSaveId = null;
     window.gameSocket.emit('createRoom', {
-      name, gameMode: mode, renderMode: _selectedRenderMode, maxPlayers: max, isPublic,
+      name, gameMode: mode, map, renderMode: _selectedRenderMode, maxPlayers: max, isPublic,
       freshStart, matchDuration,
       difficulty: _roomDifficulty,
       loadSavedGame: saveId,
