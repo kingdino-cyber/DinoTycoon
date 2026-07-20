@@ -262,8 +262,8 @@ class Game3D {
     this.scene.fog.near = t.fogNear;
     this.scene.fog.far  = t.fogFar;
     this._groundMat.color.setHex(t.ground);
-    this._grid.material[0].color.setHex(t.grid);
-    this._grid.material[1].color.setHex(t.grid);
+    const gridMats = Array.isArray(this._grid.material) ? this._grid.material : [this._grid.material];
+    gridMats.forEach(m => m.color.setHex(t.grid));
     this._ambientLight.color.setHex(t.ambient);
     this._sunLight.color.setHex(t.sun);
   }
