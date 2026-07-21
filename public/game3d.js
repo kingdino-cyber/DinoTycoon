@@ -296,7 +296,7 @@ class Game3D {
         // Gate on pointer lock like the other gameplay keys — without this, pressing
         // Space while paused (pointer unlocked) queues a jump impulse that update()
         // skips applying while paused, then fires unexpectedly the instant you resume.
-        if (this.locked && this._jumpY === 0 && !this.myPlayer?.isDead) this._jumpVel = 9; // jump
+        if (this.locked && this._jumpY === 0 && !this.myPlayer?.isDead) this._jumpVel = 11; // jump
       }
       if (e.code === 'Tab' && this.locked && window.gameSocket) {
         e.preventDefault();
