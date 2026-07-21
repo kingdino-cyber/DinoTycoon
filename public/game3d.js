@@ -253,6 +253,9 @@ class Game3D {
     );
     arena.position.set(sx(1600), 0.06, sz(1600));
     this.scene.add(arena);
+
+    this.buildSky();
+    this.buildDecorations();
   }
 
   applyMapTheme(map) {
@@ -266,6 +269,87 @@ class Game3D {
     gridMats.forEach(m => m.color.setHex(t.grid));
     this._ambientLight.color.setHex(t.ambient);
     this._sunLight.color.setHex(t.sun);
+    if (this._sunMesh) {
+      this._sunMesh.material.color.setHex(t.sun);
+      this._sunHalo.material.color.setHex(t.sun);
+    }
+  }
+
+  buildSky() {
+    const W = WORLD_SIZE * WU;
+    const rng = (a, b) => a + Math.random() * (b - a);
+
+    // Sun sphere + halo
+    const sunGeo = new THREE.SphereGeometry(3.5, 16, 16);
+    this._sunMesh = new THREE.Mesh(sunGeo, new THREE.MeshBasicMaterial({ color: 0xffe060 }));
+    this._sunMesh.position.set(W * 0.15, 55, W * 0.1);
+    this.scene.add(this._sunMesh);
+
+    const haloGeo = new THREE.SphereGeometry(5.8, 16, 16);
+    this._sunHalo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({ color: 0xffe060, transparent: true, opacity: 0.13 }));
+    this._sunHalo.position.copy(this._sunMesh.position);
+    this.scene.add(this._sunHalo);
+
+    // Drifting clouds
+    this._clouds = [];
+    for (let i = 0; i < 12; i++) {
+      const cw = rng(6, 16), ch = rng(0.5, 1.1), cd = rng(4, 10);
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: rng(0.5, 0.78) })
+      );
+      mesh.scale.set(cw, ch, cd);
+      mesh.position.set(rng(-10, W + 10), rng(20, 38), rng(0, W));
+      mesh._cloudSpeed = rng(0.25, 0.7);
+      this.scene.add(mesh);
+      this._clouds.push(mesh);
+    }
+  }
+
+  buildDecorations() {
+    const rng = (a, b) => a + Math.random() * (b - a);
+    // Exclude pad zones (65% of pad radius around each pad center)
+    const padZones = PADS_DATA.map(p => ({
+      cx: p.x + PAD_SIZE / 2, cy: p.y + PAD_SIZE / 2, r: PAD_SIZE * 0.65
+    }));
+    const inPad = (x, y) => padZones.some(z => Math.hypot(x - z.cx, y - z.cy) < z.r);
+
+    const rockMats = [
+      new THREE.MeshLambertMaterial({ color: 0x888880 }),
+      new THREE.MeshLambertMaterial({ color: 0x7a7060 }),
+      new THREE.MeshLambertMaterial({ color: 0x6a6555 }),
+    ];
+    // Rocks
+    let placed = 0, attempts = 0;
+    while (placed < 90 && attempts < 500) {
+      attempts++;
+      const sx2 = rng(60, WORLD_SIZE - 60), sy2 = rng(60, WORLD_SIZE - 60);
+      if (inPad(sx2, sy2)) continue;
+      const s = rng(0.14, 0.5);
+      const geo = new THREE.BoxGeometry(s * rng(0.7, 1.5), s * rng(0.5, 1.0), s * rng(0.7, 1.5));
+      const mesh = new THREE.Mesh(geo, rockMats[Math.floor(Math.random() * 3)]);
+      mesh.position.set(sx(sx2), s * 0.28, sz(sy2));
+      mesh.rotation.y = rng(0, Math.PI * 2);
+      mesh.rotation.z = rng(-0.18, 0.18);
+      this.scene.add(mesh);
+      placed++;
+    }
+    // Fossil/bone shard fragments
+    const fossilMat = new THREE.MeshLambertMaterial({ color: 0xd4b896 });
+    placed = 0; attempts = 0;
+    while (placed < 40 && attempts < 300) {
+      attempts++;
+      const sx2 = rng(60, WORLD_SIZE - 60), sy2 = rng(60, WORLD_SIZE - 60);
+      if (inPad(sx2, sy2)) continue;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(rng(0.18, 0.55), 0.07, rng(0.08, 0.22)),
+        fossilMat
+      );
+      mesh.position.set(sx(sx2), 0.035, sz(sy2));
+      mesh.rotation.y = rng(0, Math.PI * 2);
+      this.scene.add(mesh);
+      placed++;
+    }
   }
 
   setupInput() {
@@ -1247,6 +1331,28 @@ class Game3D {
       }
     }
 
+    // Drifting clouds
+    if (this._clouds) {
+      const W = WORLD_SIZE * WU;
+      for (const c of this._clouds) {
+        c.position.x += c._cloudSpeed * dt;
+        if (c.position.x > W + 15) c.position.x = -15;
+      }
+    }
+
+    // Hit wobble — brief roll of local player model on taking damage
+    if (this._hitWobble !== undefined) {
+      const myObj = this.playerObjs[this.myId];
+      const elapsed = performance.now() - this._hitWobble;
+      const dur = 380;
+      if (elapsed < dur) {
+        if (myObj) myObj.group.rotation.z = Math.sin((elapsed / dur) * Math.PI * 3) * (1 - elapsed / dur) * 0.28;
+      } else {
+        if (myObj) myObj.group.rotation.z = 0;
+        this._hitWobble = undefined;
+      }
+    }
+
     // Crumble fragments from destroyed buildings
     if (this._crumbleFragments?.length) {
       const GRAVITY = 16;
@@ -1394,6 +1500,7 @@ function setupGameSocketEvents() {
         scene._kbFromX = scene.myPlayer.x; scene._kbFromY = scene.myPlayer.y;
         scene._kbToX = knockback.x; scene._kbToY = knockback.y;
         scene._kbT = 0; scene._kbDur = KB_DUR;
+        scene._hitWobble = performance.now();
         if ((window.GAME_SETTINGS || {}).cameraShake !== false)
           scene._shakeUntil = performance.now() + 200;
       } else {
