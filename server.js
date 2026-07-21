@@ -2344,7 +2344,7 @@ io.on('connection', (socket) => {
     const RANGE = 320; // bigger range
     const diff = room.difficulty || 'medium';
     const roarDiffMult = diff === 'easy' ? 0.75 : diff === 'hard' ? 0.50 : 0.70;
-    const roarDmg = 3 * roarDiffMult;
+    const roarDmg = 3 * roarDiffMult * 1.05;
     const all = [...Object.values(room.players), ...Object.values(room.bots)];
     const hitIds = [];
     for (const e of all) {
@@ -2360,7 +2360,7 @@ io.on('connection', (socket) => {
     for (const [bid, b] of Object.entries(room.buildings)) {
       if (b.ownerId === myId) continue;
       if (Math.hypot(b.x - p.x, b.y - p.y) < RANGE) {
-        const dmg = Math.max(1, Math.floor(p.damage * 2.5));
+        const dmg = Math.max(1, Math.floor(p.damage * 2.625));
         b.hp -= dmg;
         emitToRoom(room, 'buildingDamaged', { id: b.id, hp: b.hp, maxHp: b.maxHp, damage: dmg });
         if (b.hp <= 0) {

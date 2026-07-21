@@ -784,9 +784,10 @@ class Game3D {
     const maxR = range * WU;
     // Three concentric rings staggered in time for a shockwave feel
     const rings = [
-      { delay: 0,   duration: 600, maxScale: maxR,       opacity: 0.8  },
-      { delay: 80,  duration: 700, maxScale: maxR * 1.3,  opacity: 0.55 },
-      { delay: 160, duration: 800, maxScale: maxR * 1.7,  opacity: 0.35 },
+      { delay: 0,   duration: 550, maxScale: maxR,        opacity: 1.0  },
+      { delay: 70,  duration: 650, maxScale: maxR * 1.35, opacity: 0.75 },
+      { delay: 140, duration: 780, maxScale: maxR * 1.75, opacity: 0.50 },
+      { delay: 220, duration: 950, maxScale: maxR * 2.2,  opacity: 0.28 },
     ];
     for (const cfg of rings) {
       const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, side: THREE.DoubleSide });
@@ -809,16 +810,16 @@ class Game3D {
       requestAnimationFrame(expand);
     }
     // Ground flash — brief bright disc at centre
-    const flashMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-    const flashGeo = new THREE.CircleGeometry(maxR * 0.5, 48);
+    const flashMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+    const flashGeo = new THREE.CircleGeometry(maxR * 0.7, 64);
     const flashMesh = new THREE.Mesh(flashGeo, flashMat);
     flashMesh.position.set(sx(x), 0.08 * WU, sz(y));
     flashMesh.rotation.x = -Math.PI / 2;
     this.scene.add(flashMesh);
     const ft0 = Date.now();
     const flashFade = () => {
-      const t = Math.min(1, (Date.now() - ft0) / 250);
-      flashMat.opacity = 0.7 * (1 - t);
+      const t = Math.min(1, (Date.now() - ft0) / 400);
+      flashMat.opacity = 0.9 * (1 - t);
       if (t >= 1) { this.scene.remove(flashMesh); flashGeo.dispose(); flashMat.dispose(); return; }
       requestAnimationFrame(flashFade);
     };
@@ -1489,7 +1490,7 @@ function setupGameSocketEvents() {
       const distToRoar = Math.hypot(scene.myPlayer.x - x, scene.myPlayer.y - y);
       const shakeMag = Math.max(0, 1 - distToRoar / (range * 2));
       if (shakeMag > 0) {
-        scene._camShake = 0.8 * shakeMag;
+        scene._camShake = 1.2 * shakeMag;
         // Screen flash overlay
         const flash = document.createElement('div');
         Object.assign(flash.style, {
