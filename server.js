@@ -126,6 +126,18 @@ const UPGRADES = {
   dinoVitality:{ name:'Dino Vitality',    cost:2500,  icon:'💚', effect:{regen:12},  req:'healingFern',  desc:'+12 HP/s',  cat:'health' },
   ancientBlood:{ name:'Ancient Blood',    cost:8000,  icon:'🩸', effect:{regen:30},  req:'dinoVitality', desc:'+30 HP/s',  cat:'health' },
   titanRegen:  { name:'Titan Regen',      cost:25000, icon:'💉', effect:{regen:80},  req:'ancientBlood', desc:'+80 HP/s — near unkillable!', cat:'health' },
+  // Attack (extended)
+  ancientFang:  { name:'Ancient Fang',    cost:22000, icon:'🦷', effect:{damage:150}, req:'meteorStrike', desc:'+150 Dmg — prehistoric power!', cat:'attack' },
+  // Defense (extended)
+  dinoShell:    { name:'Dino Shell',      cost:20000, icon:'🐢', effect:{defense:80}, req:'boneArmor',   desc:'+80 Def — nearly impenetrable', cat:'defense' },
+  // Loot — earn more from kills
+  scavenger:    { name:'Scavenger Gene',  cost:600,   icon:'🪙', effect:{lootMult:0.25}, req:null,          desc:'+25% loot from kills', cat:'loot' },
+  fossilHunter: { name:'Fossil Hunter',   cost:2500,  icon:'🏹', effect:{lootMult:0.5},  req:'scavenger',   desc:'+50% loot from kills', cat:'loot' },
+  apexHunter:   { name:'Apex Hunter',     cost:10000, icon:'💀', effect:{lootMult:1.0},  req:'fossilHunter',desc:'+100% loot from kills (2× total!)', cat:'loot' },
+  // XP — level up faster
+  dinoScholar:  { name:'Dino Scholar',    cost:300,   icon:'📚', effect:{xpBoost:0.3},  req:null,          desc:'+30% XP gain', cat:'xp' },
+  ancientMind:  { name:'Ancient Mind',    cost:1200,  icon:'🧠', effect:{xpBoost:0.7},  req:'dinoScholar', desc:'+70% XP gain', cat:'xp' },
+  fossilSage:   { name:'Fossil Sage',     cost:5000,  icon:'🔮', effect:{xpBoost:1.5},  req:'ancientMind', desc:'+150% XP gain — level up blazing fast!', cat:'xp' },
   // ── Defense Buildings (placed on your base) ──
   stoneWall:     { name:'Stone Wall',      cost:120,   icon:'🪨', effect:{}, req:null, desc:'Blocks everyone including you (250 HP). Damages on contact.', cat:'build' },
   spikeTrap:     { name:'Spike Trap',      cost:300,   icon:'🔺', effect:{}, req:null, desc:'Damages enemies on your base (20 dmg)',    cat:'build' },
@@ -137,6 +149,9 @@ const UPGRADES = {
   boneCannon:    { name:'Bone Cannon',     cost:2000,  icon:'💣', effect:{}, req:null, desc:'Long range cannon (55 dmg, slow fire rate)', cat:'build' },
   healingTotem:  { name:'Healing Totem',   cost:800,   icon:'🪄', effect:{}, req:null, desc:'Heals YOU when you stand near it (+20 HP/s)', cat:'build' },
   tarPit:        { name:'Tar Pit',         cost:500,   icon:'🕳️', effect:{}, req:null, desc:'Severely slows enemies who walk through it', cat:'build' },
+  megaTurret:    { name:'Mega Turret',     cost:5000,  icon:'🔫', effect:{}, req:null, desc:'Massive auto-turret (80 dmg, long range)',  cat:'build' },
+  poisonSpewer:  { name:'Poison Spewer',   cost:1500,  icon:'☠️', effect:{}, req:null, desc:'Spews poison at enemies in range (25 dmg, slows)', cat:'build' },
+  fossilWall:    { name:'Fossil Wall',     cost:400,   icon:'🧱', effect:{}, req:null, desc:'Reinforced wall — 400 HP, hard to break',   cat:'build' },
 };
 
 // ── Achievements ────────────────────────────────────────────────────────────────
@@ -334,6 +349,9 @@ const BUILDING_DATA = {
   boneCannon:    { maxHp:350,  type:'defense', defType:'turret',  damage:55, range:520, cooldown:3500 },
   healingTotem:  { maxHp:200,  type:'defense', defType:'totem',   healRate:20, range:120 },
   tarPit:        { maxHp:100,  type:'defense', defType:'trap',    damage:5,  range:90,  slow:true, slowAmt:0.25 },
+  megaTurret:    { maxHp:450,  type:'defense', defType:'turret',  damage:80, range:500, cooldown:2200 },
+  poisonSpewer:  { maxHp:180,  type:'defense', defType:'trap',    damage:25, range:110, slow:true, slowAmt:0.35 },
+  fossilWall:    { maxHp:400,  type:'defense', defType:'wall' },
 };
 // Slot offsets from player's base (income slots then defense slots)
 const INCOME_OFFSETS  = [{dx:-90,dy:-70},{dx:0,dy:-90},{dx:90,dy:-70},{dx:-50,dy:60},{dx:50,dy:60}];
@@ -343,7 +361,7 @@ let buildingIdCounter = 1;
 // ── Building Helpers ──────────────────────────────────────────────────────────
 // Buildings that physically block movement
 function isWallBuilding(upgradeId) {
-  return upgradeId === 'stoneWall' || upgradeId === 'fossilFortress';
+  return upgradeId === 'stoneWall' || upgradeId === 'fossilFortress' || upgradeId === 'fossilWall';
 }
 
 // Smart wall placement — snaps new wall adjacent to existing wall chain
@@ -591,17 +609,19 @@ function emitToRoom(room, event, data) {
 
 // ── Stats calc ────────────────────────────────────────────────────────────────
 function calcStats(upgrades) {
-  let mps=1, speed=260, damage=15, defense=0, maxHp=100, regen=0;
+  let mps=1, speed=260, damage=15, defense=0, maxHp=100, regen=0, lootMult=1, xpBoost=1;
   for (const id of upgrades) {
     const u = UPGRADES[id]; if (!u) continue;
-    if (u.effect.mps)     mps     += u.effect.mps;
-    if (u.effect.speed)   speed   += u.effect.speed;
-    if (u.effect.damage)  damage  += u.effect.damage;
-    if (u.effect.defense) defense += u.effect.defense;
-    if (u.effect.maxHp)   maxHp   += u.effect.maxHp;
-    if (u.effect.regen)   regen   += u.effect.regen;
+    if (u.effect.mps)      mps      += u.effect.mps;
+    if (u.effect.speed)    speed    += u.effect.speed;
+    if (u.effect.damage)   damage   += u.effect.damage;
+    if (u.effect.defense)  defense  += u.effect.defense;
+    if (u.effect.maxHp)    maxHp    += u.effect.maxHp;
+    if (u.effect.regen)    regen    += u.effect.regen;
+    if (u.effect.lootMult) lootMult += u.effect.lootMult;
+    if (u.effect.xpBoost)  xpBoost  += u.effect.xpBoost;
   }
-  return { mps, speed, damage, defense, maxHp, regen };
+  return { mps, speed, damage, defense, maxHp, regen, lootMult, xpBoost };
 }
 
 function xpForLevel(l) { return Math.floor(100 * Math.pow(1.4, l-1)); }
@@ -611,6 +631,7 @@ function addXP(player, amount, room) {
     const ev = getActiveEvent();
     if (ev?.xpMult) amount = Math.round(amount * ev.xpMult);
   }
+  if (player.xpBoost && player.xpBoost > 1) amount = Math.round(amount * player.xpBoost);
   player.xp += amount;
   while (player.xp >= xpForLevel(player.level)) {
     player.xp -= xpForLevel(player.level);
@@ -932,7 +953,7 @@ function handleAttack(attacker, target, room, opts = {}) {
     const bountyEvent = !room.isRanked ? getActiveEvent() : null;
     const pointsGain = Math.round(10 * (bountyEvent?.pointsMult || 1));
     attacker.points = (attacker.points || 0) + pointsGain;
-    const loot = Math.floor(target.money * 0.25);
+    const loot = Math.floor(target.money * 0.25 * (attacker.lootMult || 1));
     target.money = Math.max(0, target.money - loot);
     attacker.money += loot; attacker.totalEarned += loot;
     addXP(attacker, 80 + target.level*10, room);
