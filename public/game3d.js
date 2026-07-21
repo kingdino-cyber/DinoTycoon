@@ -290,19 +290,27 @@ class Game3D {
     this._sunHalo.position.copy(this._sunMesh.position);
     this.scene.add(this._sunHalo);
 
-    // Drifting clouds
+    // Drifting clouds — grid-distributed so they stay spread apart
     this._clouds = [];
-    for (let i = 0; i < 12; i++) {
-      const cw = rng(6, 16), ch = rng(0.5, 1.1), cd = rng(4, 10);
-      const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 8, 6),
-        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: rng(0.5, 0.78) })
-      );
-      mesh.scale.set(cw, ch, cd);
-      mesh.position.set(rng(-10, W + 10), rng(20, 38), rng(0, W));
-      mesh._cloudSpeed = rng(0.25, 0.7);
-      this.scene.add(mesh);
-      this._clouds.push(mesh);
+    const COLS = 4, ROWS = 3;
+    const cellW = (W + 20) / COLS, cellD = (W + 20) / ROWS;
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const cw = rng(7, 17), ch = rng(0.5, 1.1), cd = rng(4, 10);
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(1, 8, 6),
+          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: rng(0.5, 0.78) })
+        );
+        mesh.scale.set(cw, ch, cd);
+        mesh.position.set(
+          -10 + col * cellW + rng(cellW * 0.1, cellW * 0.9),
+          rng(18, 45),
+          row * cellD + rng(cellD * 0.1, cellD * 0.9)
+        );
+        mesh._cloudSpeed = rng(0.25, 0.65);
+        this.scene.add(mesh);
+        this._clouds.push(mesh);
+      }
     }
   }
 
