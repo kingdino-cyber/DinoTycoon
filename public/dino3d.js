@@ -371,6 +371,58 @@ function buildBuilding3DModel(THREE, upgradeId, ownerColorHex) {
       pit.position.y = 0.06; group.add(pit);
       break;
     }
+    case 'megaTurret': {
+      // Heavy reinforced base + wide double barrel
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, 0.5, 8), new THREE.MeshLambertMaterial({ color: 0x555566 }));
+      base.position.y = 0.25; group.add(base);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 1.2, 8), new THREE.MeshLambertMaterial({ color: 0x444455 }));
+      body.position.y = 1.1; group.add(body);
+      const turretHead = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 1.1), new THREE.MeshLambertMaterial({ color: 0x333344 }));
+      turretHead.position.y = 1.95; group.add(turretHead);
+      // Double barrels
+      for (const ox of [-0.22, 0.22]) {
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.1, 8), new THREE.MeshLambertMaterial({ color: 0x222233 }));
+        barrel.rotation.z = Math.PI / 2; barrel.position.set(0.9, 1.95, ox); group.add(barrel);
+      }
+      // Red glowing eye
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshLambertMaterial({ color: 0xff2200, emissive: 0xff0000, emissiveIntensity: 0.8 }));
+      eye.position.set(0.5, 1.95, 0); group.add(eye);
+      break;
+    }
+    case 'poisonSpewer': {
+      // Toxic green cauldron on a stone base
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.35, 8), new THREE.MeshLambertMaterial({ color: 0x556655 }));
+      base.position.y = 0.18; group.add(base);
+      const cauldron = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.75), new THREE.MeshLambertMaterial({ color: 0x2a3a2a }));
+      cauldron.position.y = 0.5; group.add(cauldron);
+      // Bubbling toxic liquid surface
+      const liquid = new THREE.Mesh(new THREE.CircleGeometry(0.48, 10), new THREE.MeshLambertMaterial({ color: 0x44ff44, emissive: 0x22aa00, emissiveIntensity: 0.5, transparent: true, opacity: 0.85 }));
+      liquid.rotation.x = -Math.PI / 2; liquid.position.y = 0.72; group.add(liquid);
+      // Poison drip nozzles
+      for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2;
+        const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.25, 6), new THREE.MeshLambertMaterial({ color: 0x228822 }));
+        nozzle.position.set(Math.cos(angle) * 0.42, 0.55, Math.sin(angle) * 0.42);
+        nozzle.rotation.z = Math.PI / 4; group.add(nozzle);
+      }
+      break;
+    }
+    case 'fossilWall': {
+      // Thick stone wall with embedded fossil imprints — wider and taller than stoneWall
+      const wallMat = new THREE.MeshLambertMaterial({ color: 0x8a7a6a });
+      const accentMat = new THREE.MeshLambertMaterial({ color: 0xd4b896 });
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 0.55), wallMat);
+      wall.position.y = 0.9; group.add(wall);
+      // Fossil spiral imprints on the face
+      for (const pos of [[-0.6, 1.1], [0.6, 0.7], [0, 1.45]]) {
+        const ammonite = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.06, 6, 10), accentMat);
+        ammonite.position.set(pos[0], pos[1], 0.28); group.add(ammonite);
+      }
+      // Stone cap on top
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.22, 0.65), new THREE.MeshLambertMaterial({ color: 0x7a6a5a }));
+      cap.position.y = 1.91; group.add(cap);
+      break;
+    }
     default:
       addBox(1, 1, 1, hexStr2numTHREE(ownerColorHex || '#888888'), 0, 0.5, 0);
   }
