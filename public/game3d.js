@@ -125,7 +125,9 @@ class Game3D {
     vmSun.position.set(50, 80, 30);
     this.viewmodelScene.add(vmSun);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    const lowQ = window.GAME_SETTINGS?.lowQuality === true;
+    this.renderer = new THREE.WebGLRenderer({ antialias: !lowQ, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(lowQ ? 1 : Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(this.renderer.domElement);
 
@@ -278,6 +280,7 @@ class Game3D {
   buildSky() {
     const W = WORLD_SIZE * WU;
     const rng = (a, b) => a + Math.random() * (b - a);
+    const lowQ = window.GAME_SETTINGS?.lowQuality === true;
 
     // Sun sphere + halo
     const sunGeo = new THREE.SphereGeometry(3.5, 16, 16);
@@ -290,8 +293,9 @@ class Game3D {
     this._sunHalo.position.copy(this._sunMesh.position);
     this.scene.add(this._sunHalo);
 
-    // Drifting clouds — grid-distributed so they stay spread apart
+    // Drifting clouds — skip in low quality mode
     this._clouds = [];
+    if (lowQ) return;
     const COLS = 4, ROWS = 3;
     const cellW = (W + 20) / COLS, cellD = (W + 20) / ROWS;
     for (let row = 0; row < ROWS; row++) {
@@ -315,49 +319,56 @@ class Game3D {
   }
 
   buildDecorations() {
+    if (window.GAME_SETTINGS?.lowQuality === true) return;
     const rng = (a, b) => a + Math.random() * (b - a);
-    // Exclude pad zones (65% of pad radius around each pad center)
     const padZones = PADS_DATA.map(p => ({
       cx: p.x + PAD_SIZE / 2, cy: p.y + PAD_SIZE / 2, r: PAD_SIZE * 0.65
     }));
     const inPad = (x, y) => padZones.some(z => Math.hypot(x - z.cx, y - z.cy) < z.r);
+    const dummy = new THREE.Object3D();
 
-    const rockMats = [
-      new THREE.MeshLambertMaterial({ color: 0x888880 }),
-      new THREE.MeshLambertMaterial({ color: 0x7a7060 }),
-      new THREE.MeshLambertMaterial({ color: 0x6a6555 }),
-    ];
-    // Rocks
+    // Rocks — single InstancedMesh for all 90 rocks (1 draw call instead of 90)
+    const rockGeo = new THREE.BoxGeometry(1, 1, 1);
+    const rockMat = new THREE.MeshLambertMaterial({ color: 0x7a7060 });
+    const ROCK_COUNT = 90;
+    const rockMesh = new THREE.InstancedMesh(rockGeo, rockMat, ROCK_COUNT);
+    rockMesh.castShadow = false; rockMesh.receiveShadow = false;
     let placed = 0, attempts = 0;
-    while (placed < 90 && attempts < 500) {
+    while (placed < ROCK_COUNT && attempts < 500) {
       attempts++;
-      const sx2 = rng(60, WORLD_SIZE - 60), sy2 = rng(60, WORLD_SIZE - 60);
-      if (inPad(sx2, sy2)) continue;
+      const wx = rng(60, WORLD_SIZE - 60), wy = rng(60, WORLD_SIZE - 60);
+      if (inPad(wx, wy)) continue;
       const s = rng(0.14, 0.5);
-      const geo = new THREE.BoxGeometry(s * rng(0.7, 1.5), s * rng(0.5, 1.0), s * rng(0.7, 1.5));
-      const mesh = new THREE.Mesh(geo, rockMats[Math.floor(Math.random() * 3)]);
-      mesh.position.set(sx(sx2), s * 0.28, sz(sy2));
-      mesh.rotation.y = rng(0, Math.PI * 2);
-      mesh.rotation.z = rng(-0.18, 0.18);
-      this.scene.add(mesh);
+      dummy.position.set(sx(wx), s * 0.28, sz(wy));
+      dummy.rotation.set(rng(-0.18, 0.18), rng(0, Math.PI * 2), rng(-0.18, 0.18));
+      dummy.scale.set(s * rng(0.7, 1.5), s * rng(0.5, 1.0), s * rng(0.7, 1.5));
+      dummy.updateMatrix();
+      rockMesh.setMatrixAt(placed, dummy.matrix);
       placed++;
     }
-    // Fossil/bone shard fragments
+    rockMesh.instanceMatrix.needsUpdate = true;
+    this.scene.add(rockMesh);
+
+    // Fossil shards — single InstancedMesh (1 draw call instead of 40)
+    const fossilGeo = new THREE.BoxGeometry(1, 1, 1);
     const fossilMat = new THREE.MeshLambertMaterial({ color: 0xd4b896 });
+    const FOSSIL_COUNT = 40;
+    const fossilMesh = new THREE.InstancedMesh(fossilGeo, fossilMat, FOSSIL_COUNT);
+    fossilMesh.castShadow = false; fossilMesh.receiveShadow = false;
     placed = 0; attempts = 0;
-    while (placed < 40 && attempts < 300) {
+    while (placed < FOSSIL_COUNT && attempts < 300) {
       attempts++;
-      const sx2 = rng(60, WORLD_SIZE - 60), sy2 = rng(60, WORLD_SIZE - 60);
-      if (inPad(sx2, sy2)) continue;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(rng(0.18, 0.55), 0.07, rng(0.08, 0.22)),
-        fossilMat
-      );
-      mesh.position.set(sx(sx2), 0.035, sz(sy2));
-      mesh.rotation.y = rng(0, Math.PI * 2);
-      this.scene.add(mesh);
+      const wx = rng(60, WORLD_SIZE - 60), wy = rng(60, WORLD_SIZE - 60);
+      if (inPad(wx, wy)) continue;
+      dummy.position.set(sx(wx), 0.035, sz(wy));
+      dummy.rotation.set(0, rng(0, Math.PI * 2), 0);
+      dummy.scale.set(rng(0.18, 0.55), 0.07, rng(0.08, 0.22));
+      dummy.updateMatrix();
+      fossilMesh.setMatrixAt(placed, dummy.matrix);
       placed++;
     }
+    fossilMesh.instanceMatrix.needsUpdate = true;
+    this.scene.add(fossilMesh);
   }
 
   setupInput() {
