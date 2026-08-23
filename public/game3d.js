@@ -8,6 +8,7 @@ const WU = 1 / 24;          // server units -> three.js units — bigger than be
 const DINO_SCALE = 1.4;     // base scale for all dino models
 const REACH = 320;          // server units — matches old click-to-attack reach
 const PICKUP_RADIUS = 42;   // server units — "touch" radius for coin pickup
+const CAM_DISTANCE_DEFAULT = 4.2;
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
 const CAM_BASE_HEIGHT = 2.0;// camera height above ground
 
@@ -1271,21 +1272,21 @@ class Game3D {
         const lz = pz + forwardCam.z * Math.cos(pitch) * 10;
         this.camera.lookAt(lx, ly, lz);
       } else if (this._camMode === 2) {
-        // ── Third-person front (facing camera) ────────────────────────────
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
+        const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
         this.camera.position.set(
-          px + forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
+          px + forwardCam.x * _cd * pitchPull + shakeX,
           CAM_BASE_HEIGHT + pitchLift + shakeY + jY,
-          pz + forwardCam.z * CAM_DISTANCE * pitchPull
+          pz + forwardCam.z * _cd * pitchPull
         );
         this.camera.lookAt(px, 1.3 + jY, pz);
       } else {
-        // ── Third-person back (default) ───────────────────────────────────
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
+        const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
         this.camera.position.set(
-          px - forwardCam.x * CAM_DISTANCE * pitchPull + shakeX,
+          px - forwardCam.x * _cd * pitchPull + shakeX,
           CAM_BASE_HEIGHT + pitchLift + shakeY + jY,
-          pz - forwardCam.z * CAM_DISTANCE * pitchPull
+          pz - forwardCam.z * _cd * pitchPull
         );
         this.camera.lookAt(px, 1.3 + jY, pz);
       }
@@ -1604,7 +1605,7 @@ function setupGameSocketEvents() {
     const victim = scene.playerObjs[victimId];
     const killer = scene.playerObjs[killerId];
     if (victim) {
-      scene.showKillExplosion(victim.data.x, victim.data.y, victim.data.color);
+      if ((window.GAME_SETTINGS?.killExplosions) !== false) scene.showKillExplosion(victim.data.x, victim.data.y, victim.data.color);
       victim.data.isDead = true; victim.group.visible = false;
     }
     if (victimId === scene.myId) {
@@ -1630,7 +1631,7 @@ function setupGameSocketEvents() {
       scene.myPlayer.money = killerMoney;
       window.updateHUD(scene.myPlayer);
       const vName = victim?.data?.username || 'enemy';
-      window.showKillBanner?.(`☠️ ${vName} eliminated! +$${loot}`);
+      if ((window.GAME_SETTINGS?.killBannerOn) !== false) window.showKillBanner?.(`☠️ ${vName} eliminated! +$${loot}`);
     }
     const vName = victim?.data?.username || 'A dinosaur';
     const kName = killer?.data?.username || 'something';
@@ -1803,7 +1804,7 @@ function setupGameSocketEvents() {
   s.on('dropCollected', ({ dropId, playerId, money }) => {
     const scene = gs(); if (!scene) return;
     const dropObj = scene.moneyDropObjs[dropId];
-    if (dropObj) scene.showCoinSparkle(dropObj.data.x, dropObj.data.y);
+    if (dropObj && (window.GAME_SETTINGS?.coinSparkles) !== false) scene.showCoinSparkle(dropObj.data.x, dropObj.data.y);
     scene.removeDrop(dropId);
     if (playerId === scene.myId) { scene.myPlayer.money = money; window.updateHUD(scene.myPlayer); window.SFX?.coin(); }
   });

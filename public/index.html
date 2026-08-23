@@ -1306,7 +1306,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <span class="lby-nav-username" id="lobbyUsername"></span>
     </div>
     <div class="lby-nav-icon" onclick="openSettingsModal()" title="Settings">⚙️</div>
-    <div class="lby-nav-icon" onclick="doLogout()" title="Logout" style="color:#ff8888;">🚪</div>
+    <div class="lby-nav-icon" onclick="doLogout()" title="Logout" style="color:#ff8888;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </div>
   </div>
 
   <!-- MAIN AREA — HOME tab default view -->
@@ -2422,7 +2428,7 @@ function showScreen(name) {
 
   if (name === 'lobby') {
     document.getElementById('lobbyScreen').classList.remove('hidden');
-    spawnLobbyParticles();
+    if ((window.GAME_SETTINGS?.lobbyParticles) !== false) spawnLobbyParticles();
   } else if (name === 'waiting') {
     document.getElementById('waitingRoom').classList.remove('hidden');
   } else if (name === 'game') {
@@ -2531,15 +2537,25 @@ function _openCreateRoomForm() {
 
 // ── Settings ──────────────────────────────────────────────────────────────────
 const SETTINGS_DEFS = [
+  // ── Performance ──
   { key:'lowQuality',      label:'⚡ Low Quality Mode',     desc:'Disables clouds, decorations & antialiasing — big FPS boost on slow devices', default:false },
-  { key:'cameraShake',     label:'📷 Camera Shake',        desc:'Screen wobbles when you take damage or knockback', default:true },
-  { key:'soundEnabled',    label:'🔊 Sound Effects',        desc:'All in-game sounds (hits, buys, level ups, etc.)', default:true },
-  { key:'damageNumbers',   label:'💢 Damage Numbers',       desc:'Floating numbers showing damage dealt/received',   default:true },
-  { key:'knockbackEffect', label:'💥 Knockback Animation',  desc:'Smooth slide when you or enemies get knocked back', default:true },
-  { key:'arenaFlash',      label:'⚡ Hit Screen Flash',     desc:'Brief red flash on screen when you take damage',   default:true },
-  { key:'viewBobbing',     label:'👀 View Bobbing (3D)',    desc:'Arms and camera bob as you walk in first-person mode', default:true },
-  { key:'musicEnabled',    label:'🎵 Background Music',     desc:'Soft ambient music loop while playing',             default:true },
+  // ── Visuals ──
+  { key:'killExplosions',  label:'💥 Kill Explosions',       desc:'Particle burst when a dino is eliminated',          default:true },
+  { key:'coinSparkles',    label:'✨ Coin Sparkles',          desc:'Gold particles when you pick up dropped money',      default:true },
+  { key:'killBannerOn',    label:'🏆 Kill Banner',           desc:'Animated on-screen banner when you eliminate someone', default:true },
+  { key:'damageNumbers',   label:'💢 Damage Numbers',        desc:'Floating numbers showing damage dealt/received',     default:true },
+  { key:'arenaFlash',      label:'🔴 Hit Screen Flash',      desc:'Brief red flash on screen when you take damage',    default:true },
+  { key:'cameraShake',     label:'📷 Camera Shake',          desc:'Screen wobbles when you take damage or knockback',   default:true },
+  { key:'knockbackEffect', label:'🌀 Knockback Animation',   desc:'Smooth slide when you or enemies get knocked back',  default:true },
+  { key:'comboCounter',    label:'🔥 Combo Counter',         desc:'Shows a combo multiplier when you land rapid hits',  default:true },
+  { key:'roarEffect',      label:'🦖 Roar Visual Effect',    desc:'Shockwave rings and camera shake when you or others roar', default:true },
+  { key:'lobbyParticles',  label:'🌿 Lobby Particles',       desc:'Floating emoji animations in the lobby background', default:true },
+  // ── Gameplay UI ──
+  { key:'viewBobbing',     label:'👀 View Bobbing (3D)',     desc:'Arms and camera bob as you walk in first-person mode', default:true },
   { key:'colorblindHpBar', label:'🎨 Colorblind-Friendly HP Bars', desc:'Switch HP bar colors from green/red to blue/orange', default:false },
+  // ── Audio ──
+  { key:'soundEnabled',    label:'🔊 Sound Effects',         desc:'All in-game sounds (hits, buys, level ups, etc.)',   default:true },
+  { key:'musicEnabled',    label:'🎵 Background Music',      desc:'Soft ambient music loop while playing',              default:true },
 ];
 let GAME_SETTINGS = {};
 
@@ -2554,7 +2570,16 @@ function loadSettings() {
 
 function applySettings() {
   window.GAME_SETTINGS = GAME_SETTINGS;
+  if (GAME_SETTINGS.camDist === undefined) GAME_SETTINGS.camDist = 7;
+  if (GAME_SETTINGS.renderDist === undefined) GAME_SETTINGS.renderDist = 5;
   if (window.SFX) window.SFX._muted = !GAME_SETTINGS.soundEnabled;
+  // Apply render distance to 3D fog live
+  const fog = window._gameScene?.scene?.fog;
+  if (fog) {
+    const scale = GAME_SETTINGS.renderDist / 5;
+    fog.near = (fog._baseNear || 45) * scale;
+    fog.far  = (fog._baseFar  || 130) * scale;
+  }
   // Apply FOV live if a 3D scene is already running
   const cam = window._gameScene?.camera;
   if (cam && cam.isPerspectiveCamera) {
@@ -2570,14 +2595,28 @@ function applySettings() {
 function openSettingsModal() {
   window.SFX?.pop();
   loadSettings();
-  document.getElementById('settingsContent').innerHTML = SETTINGS_DEFS.map(d => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-      <div>
-        <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">${d.label}</div>
-        <div style="color:#557755;font-size:.72rem;margin-top:2px;">${d.desc}</div>
-      </div>
-      <button class="toggle ${GAME_SETTINGS[d.key]?'on':''}" id="setting_${d.key}" onclick="this.classList.toggle('on')"></button>
-    </div>`).join('') + `
+  const SECTIONS = { 'Performance':'⚡', 'Visuals':'🎨', 'Gameplay UI':'🖥️', 'Audio':'🔊' };
+  const SECTION_KEYS = {
+    'Performance': ['lowQuality'],
+    'Visuals': ['killExplosions','coinSparkles','killBannerOn','damageNumbers','arenaFlash','cameraShake','knockbackEffect','comboCounter','roarEffect','lobbyParticles'],
+    'Gameplay UI': ['viewBobbing','colorblindHpBar'],
+    'Audio': ['soundEnabled','musicEnabled'],
+  };
+  let html = '';
+  for (const [sec, keys] of Object.entries(SECTION_KEYS)) {
+    html += `<div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4a7a4a;padding:14px 0 6px;">${SECTIONS[sec]} ${sec}</div>`;
+    for (const key of keys) {
+      const d = SETTINGS_DEFS.find(x => x.key === key); if (!d) continue;
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+        <div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">${d.label}</div>
+          <div style="color:#557755;font-size:.7rem;margin-top:2px;">${d.desc}</div>
+        </div>
+        <button class="toggle ${GAME_SETTINGS[d.key]?'on':''}" id="setting_${d.key}" onclick="this.classList.toggle('on')"></button>
+      </div>`;
+    }
+  }
+  document.getElementById('settingsContent').innerHTML = html + `
     <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div>
@@ -2607,6 +2646,37 @@ function openSettingsModal() {
       <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
         <span>Narrow</span><span>Default (70°)</span><span>Wide</span>
       </div>
+    </div>
+    <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4a7a4a;padding:14px 0 6px;">🎮 Camera</div>
+    <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">📏 Camera Distance (3D)</div>
+          <div style="color:#557755;font-size:.7rem;margin-top:2px;">How far behind the dino the camera sits</div>
+        </div>
+        <span id="camDistDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.camDist ?? 7}</span>
+      </div>
+      <input type="range" id="setting_camDist" min="3" max="14" step="0.5" value="${GAME_SETTINGS.camDist ?? 7}"
+        style="width:100%;accent-color:#4caf50;"
+        oninput="document.getElementById('camDistDisplay').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
+        <span>Close</span><span>Default (7)</span><span>Far</span>
+      </div>
+    </div>
+    <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">🌫️ Render Distance</div>
+          <div style="color:#557755;font-size:.7rem;margin-top:2px;">How far into the distance you can see (lower = better FPS)</div>
+        </div>
+        <span id="fogDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.renderDist ?? 5}</span>
+      </div>
+      <input type="range" id="setting_renderDist" min="1" max="10" value="${GAME_SETTINGS.renderDist ?? 5}"
+        style="width:100%;accent-color:#4caf50;"
+        oninput="document.getElementById('fogDisplay').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
+        <span>Low</span><span>Default (5)</span><span>Max</span>
+      </div>
     </div>`;
   document.getElementById('settingsModal').classList.remove('hidden');
 }
@@ -2619,6 +2689,10 @@ function saveSettings() {
   if (sensSlider) GAME_SETTINGS.mouseSensitivity = parseInt(sensSlider.value);
   const fovSlider = document.getElementById('setting_fov');
   if (fovSlider) GAME_SETTINGS.fov = parseInt(fovSlider.value);
+  const camDistSlider = document.getElementById('setting_camDist');
+  if (camDistSlider) GAME_SETTINGS.camDist = parseFloat(camDistSlider.value);
+  const renderDistSlider = document.getElementById('setting_renderDist');
+  if (renderDistSlider) GAME_SETTINGS.renderDist = parseInt(renderDistSlider.value);
   localStorage.setItem('dt_settings', JSON.stringify(GAME_SETTINGS));
   applySettings();
   closeModal('settingsModal');
@@ -4453,6 +4527,7 @@ function initSocket(token){
   // ── Combo counter ──
   let _comboTimeout = null;
   s.on('comboUpdate', ({ count }) => {
+    if ((window.GAME_SETTINGS?.comboCounter) === false) return;
     const hud = document.getElementById('comboHUD');
     const cnt = document.getElementById('comboCount');
     if (!hud || !cnt) return;
