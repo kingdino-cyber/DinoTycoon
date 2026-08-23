@@ -3534,7 +3534,7 @@ function _leaveGame() {
   ['abilityBoxQ','abilityBoxE'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('on-cd'); });
   const mt=document.getElementById('matchTimer'); if(mt){mt.style.display='none';mt.classList.add('hidden');}
   const mkt=document.getElementById('marketTicker'); if(mkt) mkt.style.display='none';
-  const ch=document.getElementById('comboHUD'); if(ch) ch.style.display='none';
+  const comboHud=document.getElementById('comboHUD'); if(comboHud) comboHud.style.display='none';
   // Hide the countdown overlay if it was still showing (e.g. quit during the 5-sec pre-match countdown)
   document.getElementById('countdownOverlay')?.classList.add('hidden');
   if (shopOpen) toggleShop();
