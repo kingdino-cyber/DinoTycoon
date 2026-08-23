@@ -515,7 +515,7 @@ class Game3D {
     }
     if (chosen) {
       if (chosen.type === 'player') {
-        window.gameSocket.emit('attack', chosen.id);
+        window.gameSocket.emit('attack', { id: chosen.id, crit: (this._jumpY || 0) > 0.1 });
         this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
         this._armSwinging = true; this._armSwingT = 0;
@@ -1013,6 +1013,48 @@ class Game3D {
     requestAnimationFrame(tick);
   }
 
+  showCritEffect(x, y) {
+    // Golden burst + "CRIT!" label
+    for (let i = 0; i < 10; i++) {
+      const spark = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 4, 4),
+        new THREE.MeshBasicMaterial({ color: 0xffdd00, transparent: true, opacity: 1 })
+      );
+      const angle = (i / 10) * Math.PI * 2;
+      const spd = 0.04 + Math.random() * 0.06;
+      spark.position.set(sx(x), 1.4 + Math.random() * 0.6, sz(y));
+      this.scene.add(spark);
+      let t = 0;
+      const vx = Math.cos(angle) * spd, vz = Math.sin(angle) * spd, vy = 0.02 + Math.random() * 0.03;
+      const tick = () => {
+        t += 1;
+        spark.position.x += vx; spark.position.y += vy - t * 0.001;
+        spark.position.z += vz;
+        spark.material.opacity = 1 - t / 30;
+        if (t < 30) requestAnimationFrame(tick); else this.scene.remove(spark);
+      };
+      requestAnimationFrame(tick);
+    }
+    // "CRIT!" text sprite
+    const cv = document.createElement('canvas'); cv.width = 160; cv.height = 60;
+    const ctx = cv.getContext('2d');
+    ctx.font = 'bold 42px Segoe UI'; ctx.textAlign = 'center';
+    ctx.strokeStyle = '#884400'; ctx.lineWidth = 5;
+    ctx.strokeText('CRIT!', 80, 46);
+    ctx.fillStyle = '#ffee00'; ctx.fillText('CRIT!', 80, 46);
+    const tex = new THREE.CanvasTexture(cv);
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false }));
+    spr.scale.set(0.15, 0.055, 1);
+    spr.position.set(sx(x), 2.6, sz(y));
+    this.scene.add(spr);
+    let t2 = 0;
+    const tick2 = () => {
+      t2 += 1; spr.position.y += 0.018; spr.material.opacity = t2 < 10 ? 1 : 1 - (t2 - 10) / 30;
+      if (t2 < 40) requestAnimationFrame(tick2); else this.scene.remove(spr);
+    };
+    requestAnimationFrame(tick2);
+  }
+
   showRangeIndicator(x, y) {
     window.showToast?.('⚔️ Too far!', 1200);
   }
@@ -1146,7 +1188,11 @@ class Game3D {
       const px = sx(this.myPlayer.x), pz = sz(this.myPlayer.y);
       if (myObj) {
         myObj.group.position.set(px, jY, pz);
-        myObj.group.rotation.y = phi;
+        if (myObj._dinoRotY === undefined) myObj._dinoRotY = phi;
+        const _rd = phi - myObj._dinoRotY;
+        const _rn = _rd - Math.round(_rd / (Math.PI * 2)) * (Math.PI * 2);
+        myObj._dinoRotY += _rn * (1 - Math.pow(0.88, dt * 60));
+        myObj.group.rotation.y = myObj._dinoRotY;
         myObj.group.rotation.x = -pitch * 0.4;
         myObj.group.scale.set(jumpScaleXZ, jumpScaleY, jumpScaleXZ);
         myObj.group.visible = !this.myPlayer.isDead;
@@ -1495,19 +1541,18 @@ function setupGameSocketEvents() {
     }
   });
 
-  s.on('attackResult', ({ attackerId, targetId, damage, targetHp, targetMaxHp, knockback }) => {
+  s.on('attackResult', ({ attackerId, targetId, damage, targetHp, targetMaxHp, knockback, crit, combo }) => {
     const scene = gs(); if (!scene) return;
     const tgt = scene.playerObjs[targetId]; if (!tgt) return;
     tgt.data.hp = targetHp; tgt.data.maxHp = targetMaxHp;
     redrawHPSprite(tgt.hpSprite, targetHp, targetMaxHp);
     const predicted = attackerId === scene.myId && scene._lastAttackTargetId === targetId;
     if (predicted) scene._lastAttackTargetId = null;
-    // Always show authoritative damage number and hit animation
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
     scene.showHitAnim(targetId);
-    // Only show laser/hit-flash/bite if we didn't already predict them locally
+    if (crit) scene.showCritEffect(tgt.data.x, tgt.data.y);
     if (!predicted) {
-      scene.showHitEffect(tgt.data.x, tgt.data.y, hexStr2num(tgt.data.color || '#ffffff'));
+      scene.showHitEffect(tgt.data.x, tgt.data.y, crit ? 0xffcc00 : hexStr2num(tgt.data.color || '#ffffff'));
       scene.showBite(attackerId);
       const atk = scene.playerObjs[attackerId];
       if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);

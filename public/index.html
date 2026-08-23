@@ -13,6 +13,7 @@
 
 /* ── ANIMATIONS ── */
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes comboBounce{0%{transform:translateX(-50%) scale(1.4)}60%{transform:translateX(-50%) scale(0.9)}100%{transform:translateX(-50%) scale(1)}}
 @keyframes pulse{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes roar{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
 @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -1954,6 +1955,14 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   📈 Market: <span id="marketMult">1.00×</span>
 </div>
 
+<!-- Combo Counter HUD -->
+<div id="comboHUD" style="display:none;position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+  text-align:center;pointer-events:none;z-index:500;">
+  <div id="comboCount" style="font-size:2.2rem;font-weight:900;color:#ffee00;
+    text-shadow:0 0 8px #ff8800,0 2px 0 #000;letter-spacing:2px;line-height:1;"></div>
+  <div style="font-size:.7rem;color:#ffcc44;letter-spacing:4px;text-transform:uppercase;margin-top:2px;">COMBO</div>
+</div>
+
 <!-- Match Timer -->
 <div id="matchTimer" class="hidden">⏱ 10:00</div>
 
@@ -3525,6 +3534,7 @@ function _leaveGame() {
   ['abilityBoxQ','abilityBoxE'].forEach(id => { const el=document.getElementById(id); if(el) el.classList.remove('on-cd'); });
   const mt=document.getElementById('matchTimer'); if(mt){mt.style.display='none';mt.classList.add('hidden');}
   const mkt=document.getElementById('marketTicker'); if(mkt) mkt.style.display='none';
+  const ch=document.getElementById('comboHUD'); if(ch) ch.style.display='none';
   // Hide the countdown overlay if it was still showing (e.g. quit during the 5-sec pre-match countdown)
   document.getElementById('countdownOverlay')?.classList.add('hidden');
   if (shopOpen) toggleShop();
@@ -4376,6 +4386,22 @@ function initSocket(token){
     el.textContent = `⏱ ${m}:${String(sec).padStart(2,'0')}`;
     el.classList.toggle('urgent', remaining <= 30);
     if (remaining <= 10 && remaining > 0) window.SFX?.countdown();
+  });
+
+  // ── Combo counter ──
+  let _comboTimeout = null;
+  s.on('comboUpdate', ({ count }) => {
+    const hud = document.getElementById('comboHUD');
+    const cnt = document.getElementById('comboCount');
+    if (!hud || !cnt) return;
+    cnt.textContent = count + 'x';
+    const scale = 1 + Math.min(count - 2, 8) * 0.1;
+    hud.style.transform = `translateX(-50%) scale(${scale})`;
+    hud.style.display = 'block';
+    hud.style.animation = 'none'; void hud.offsetWidth;
+    hud.style.animation = 'comboBounce 0.25s ease-out';
+    clearTimeout(_comboTimeout);
+    _comboTimeout = setTimeout(() => { hud.style.display = 'none'; }, 2500);
   });
 
   // ── Market ticker ──
