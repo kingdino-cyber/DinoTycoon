@@ -5,7 +5,7 @@
 const WORLD_SIZE = 3200;
 const PAD_SIZE = 620;
 const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
-const DINO_SCALE = 1.6;     // base scale for all dino models
+const DINO_SCALE = 1.4;     // base scale for all dino models
 const REACH = 320;          // server units — matches old click-to-attack reach
 const PICKUP_RADIUS = 42;   // server units — "touch" radius for coin pickup
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
@@ -995,22 +995,83 @@ class Game3D {
   }
 
   showDamageNum(x, y, amount) {
-    const cv = document.createElement('canvas'); cv.width = 96; cv.height = 48;
+    const big = amount >= 30;
+    const size = big ? 48 : 32;
+    const cv = document.createElement('canvas'); cv.width = 128; cv.height = 64;
     const ctx = cv.getContext('2d');
-    ctx.font = 'bold 32px Segoe UI'; ctx.textAlign = 'center'; ctx.fillStyle = '#ff5555';
-    ctx.strokeStyle = '#000'; ctx.lineWidth = 4;
-    ctx.strokeText('-' + amount, 48, 32); ctx.fillText('-' + amount, 48, 32);
+    ctx.font = `bold ${size}px Segoe UI`; ctx.textAlign = 'center';
+    ctx.fillStyle = big ? '#ffdd00' : '#ff5555';
+    ctx.strokeStyle = '#000'; ctx.lineWidth = big ? 6 : 4;
+    ctx.strokeText('-' + amount, 64, 44); ctx.fillText('-' + amount, 64, 44);
     const tex = new THREE.CanvasTexture(cv);
     const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false }));
-    spr.scale.set(0.1, 0.05, 1);
-    spr.position.set(sx(x), 1.8, sz(y));
+    spr.scale.set(big ? 0.14 : 0.1, big ? 0.065 : 0.05, 1);
+    spr.position.set(sx(x), 1.8 + (big ? 0.3 : 0), sz(y));
     this.scene.add(spr);
     let t = 0;
     const tick = () => {
-      t += 1; spr.position.y += 0.012; spr.material.opacity = 1 - t / 40;
-      if (t < 40) requestAnimationFrame(tick); else this.scene.remove(spr);
+      t++; spr.position.y += big ? 0.018 : 0.012; spr.material.opacity = 1 - t / 42;
+      if (t < 42) requestAnimationFrame(tick); else this.scene.remove(spr);
     };
     requestAnimationFrame(tick);
+  }
+
+  showKillExplosion(x, y, colorHex) {
+    const col = new THREE.Color(colorHex || '#ff4444');
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const size = 0.06 + Math.random() * 0.1;
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(size, 4, 4),
+        new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0xffdd00 : col, transparent: true, opacity: 1 })
+      );
+      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+      const spd = 0.06 + Math.random() * 0.1;
+      m.position.set(sx(x), 0.8 + Math.random() * 0.8, sz(y));
+      this.scene.add(m);
+      const vx = Math.cos(angle) * spd, vz = Math.sin(angle) * spd, vy = 0.04 + Math.random() * 0.06;
+      let t = 0;
+      const tick = () => {
+        t += 1; m.position.x += vx; m.position.y += vy - t * 0.003; m.position.z += vz;
+        m.material.opacity = 1 - t / 35;
+        if (t < 35) requestAnimationFrame(tick); else this.scene.remove(m);
+      };
+      requestAnimationFrame(tick);
+    }
+    // Big flash ring
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.1, 0.5, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffdd00, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(sx(x), 0.05, sz(y));
+    this.scene.add(ring);
+    let rt = 0;
+    const rtick = () => {
+      rt += 1; ring.scale.setScalar(1 + rt * 0.18); ring.material.opacity = 0.9 * (1 - rt / 20);
+      if (rt < 20) requestAnimationFrame(rtick); else this.scene.remove(ring);
+    };
+    requestAnimationFrame(rtick);
+  }
+
+  showCoinSparkle(x, y) {
+    for (let i = 0; i < 8; i++) {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(0.04, 4, 4),
+        new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 1 })
+      );
+      const angle = (i / 8) * Math.PI * 2;
+      m.position.set(sx(x), 0.6, sz(y));
+      this.scene.add(m);
+      const vx = Math.cos(angle) * 0.04, vz = Math.sin(angle) * 0.04;
+      let t = 0;
+      const tick = () => {
+        t++; m.position.x += vx; m.position.y += 0.025 - t * 0.002; m.position.z += vz;
+        m.material.opacity = 1 - t / 20;
+        if (t < 20) requestAnimationFrame(tick); else this.scene.remove(m);
+      };
+      requestAnimationFrame(tick);
+    }
   }
 
   showRangeIndicator(x, y) {
@@ -1149,7 +1210,8 @@ class Game3D {
         if (myObj._dinoRotY === undefined) myObj._dinoRotY = phi;
         const _rd = phi - myObj._dinoRotY;
         const _rn = _rd - Math.round(_rd / (Math.PI * 2)) * (Math.PI * 2);
-        myObj._dinoRotY += _rn * (1 - Math.pow(0.88, dt * 60));
+        const _maxStep = Math.PI * 6 * dt; // max 1080°/s — fast but physically bounded, never snaps
+        myObj._dinoRotY += Math.max(-_maxStep, Math.min(_maxStep, _rn));
         myObj.group.rotation.y = myObj._dinoRotY;
         myObj.group.rotation.x = -pitch * 0.4;
         myObj.group.scale.set(jumpScaleXZ * DINO_SCALE, jumpScaleY * DINO_SCALE, jumpScaleXZ * DINO_SCALE);
@@ -1541,7 +1603,10 @@ function setupGameSocketEvents() {
     const scene = gs(); if (!scene) return;
     const victim = scene.playerObjs[victimId];
     const killer = scene.playerObjs[killerId];
-    if (victim) { victim.data.isDead = true; victim.group.visible = false; }
+    if (victim) {
+      scene.showKillExplosion(victim.data.x, victim.data.y, victim.data.color);
+      victim.data.isDead = true; victim.group.visible = false;
+    }
     if (victimId === scene.myId) {
       scene.myPlayer.isDead = true;
       // Move camera to base immediately so player watches their base while waiting to respawn
@@ -1564,6 +1629,8 @@ function setupGameSocketEvents() {
     if (killer && killerId === scene.myId) {
       scene.myPlayer.money = killerMoney;
       window.updateHUD(scene.myPlayer);
+      const vName = victim?.data?.username || 'enemy';
+      window.showKillBanner?.(`☠️ ${vName} eliminated! +$${loot}`);
     }
     const vName = victim?.data?.username || 'A dinosaur';
     const kName = killer?.data?.username || 'something';
@@ -1735,6 +1802,8 @@ function setupGameSocketEvents() {
 
   s.on('dropCollected', ({ dropId, playerId, money }) => {
     const scene = gs(); if (!scene) return;
+    const dropObj = scene.moneyDropObjs[dropId];
+    if (dropObj) scene.showCoinSparkle(dropObj.data.x, dropObj.data.y);
     scene.removeDrop(dropId);
     if (playerId === scene.myId) { scene.myPlayer.money = money; window.updateHUD(scene.myPlayer); window.SFX?.coin(); }
   });
