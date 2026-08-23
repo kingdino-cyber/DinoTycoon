@@ -5,6 +5,7 @@
 const WORLD_SIZE = 3200;
 const PAD_SIZE = 620;
 const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
+const DINO_SCALE = 1.6;     // base scale for all dino models
 const REACH = 320;          // server units — matches old click-to-attack reach
 const PICKUP_RADIUS = 42;   // server units — "touch" radius for coin pickup
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
@@ -515,7 +516,7 @@ class Game3D {
     }
     if (chosen) {
       if (chosen.type === 'player') {
-        window.gameSocket.emit('attack', { id: chosen.id, crit: (this._jumpY || 0) > 0.1 });
+        window.gameSocket.emit('attack', chosen.id);
         this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
         this._armSwinging = true; this._armSwingT = 0;
@@ -575,7 +576,7 @@ class Game3D {
 
   spawnPlayer(data) {
     const group = window.buildDino3DModel(THREE, data.customSkin ? '#4caf50' : (data.skinColor || data.color));
-    group.scale.setScalar(1);
+    group.scale.setScalar(DINO_SCALE);
     this.scene.add(group);
 
     const nameSprite = makeNameSprite((data.tagPrefix || '') + data.username, data.color);
@@ -816,8 +817,8 @@ class Game3D {
 
   showBite(id) {
     const obj = this.playerObjs[id]; if (!obj) return;
-    obj.group.scale.set(1.08, 1.08, 1.15);
-    setTimeout(() => { obj.group.scale.set(1, 1, 1); }, 160);
+    obj.group.scale.set(1.08 * DINO_SCALE, 1.08 * DINO_SCALE, 1.15 * DINO_SCALE);
+    setTimeout(() => { obj.group.scale.setScalar(DINO_SCALE); }, 160);
     if (obj.armPivots) { obj._armSwinging = true; obj._armSwingT = 0; }
   }
 
@@ -825,12 +826,11 @@ class Game3D {
     const obj = this.playerObjs[id]; if (!obj) return;
     // Turn red
     obj.group.traverse(o => { if (o.isMesh) o.material.color.set(0xff1111); });
-    obj.group.scale.set(0.88, 1.12, 0.88);
-    // Cancel any in-flight restore so rapid hits don't compound
+    obj.group.scale.set(0.88 * DINO_SCALE, 1.12 * DINO_SCALE, 0.88 * DINO_SCALE);
     clearTimeout(obj._hitT1); clearTimeout(obj._hitT2);
-    obj._hitT1 = setTimeout(() => obj.group.scale.set(1.1, 0.9, 1.1), 60);
+    obj._hitT1 = setTimeout(() => obj.group.scale.set(1.1 * DINO_SCALE, 0.9 * DINO_SCALE, 1.1 * DINO_SCALE), 60);
     obj._hitT2 = setTimeout(() => {
-      obj.group.scale.set(1, 1, 1);
+      obj.group.scale.setScalar(DINO_SCALE);
       // Always restore from the snapshot taken at spawn, never from current (red) state
       const oc = obj.group.userData.origColors;
       if (oc) obj.group.traverse(o => { if (o.isMesh && oc.has(o.uuid)) o.material.color.copy(oc.get(o.uuid)); });
@@ -1013,48 +1013,6 @@ class Game3D {
     requestAnimationFrame(tick);
   }
 
-  showCritEffect(x, y) {
-    // Golden burst + "CRIT!" label
-    for (let i = 0; i < 10; i++) {
-      const spark = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 4, 4),
-        new THREE.MeshBasicMaterial({ color: 0xffdd00, transparent: true, opacity: 1 })
-      );
-      const angle = (i / 10) * Math.PI * 2;
-      const spd = 0.04 + Math.random() * 0.06;
-      spark.position.set(sx(x), 1.4 + Math.random() * 0.6, sz(y));
-      this.scene.add(spark);
-      let t = 0;
-      const vx = Math.cos(angle) * spd, vz = Math.sin(angle) * spd, vy = 0.02 + Math.random() * 0.03;
-      const tick = () => {
-        t += 1;
-        spark.position.x += vx; spark.position.y += vy - t * 0.001;
-        spark.position.z += vz;
-        spark.material.opacity = 1 - t / 30;
-        if (t < 30) requestAnimationFrame(tick); else this.scene.remove(spark);
-      };
-      requestAnimationFrame(tick);
-    }
-    // "CRIT!" text sprite
-    const cv = document.createElement('canvas'); cv.width = 160; cv.height = 60;
-    const ctx = cv.getContext('2d');
-    ctx.font = 'bold 42px Segoe UI'; ctx.textAlign = 'center';
-    ctx.strokeStyle = '#884400'; ctx.lineWidth = 5;
-    ctx.strokeText('CRIT!', 80, 46);
-    ctx.fillStyle = '#ffee00'; ctx.fillText('CRIT!', 80, 46);
-    const tex = new THREE.CanvasTexture(cv);
-    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false }));
-    spr.scale.set(0.15, 0.055, 1);
-    spr.position.set(sx(x), 2.6, sz(y));
-    this.scene.add(spr);
-    let t2 = 0;
-    const tick2 = () => {
-      t2 += 1; spr.position.y += 0.018; spr.material.opacity = t2 < 10 ? 1 : 1 - (t2 - 10) / 30;
-      if (t2 < 40) requestAnimationFrame(tick2); else this.scene.remove(spr);
-    };
-    requestAnimationFrame(tick2);
-  }
-
   showRangeIndicator(x, y) {
     window.showToast?.('⚔️ Too far!', 1200);
   }
@@ -1194,7 +1152,7 @@ class Game3D {
         myObj._dinoRotY += _rn * (1 - Math.pow(0.88, dt * 60));
         myObj.group.rotation.y = myObj._dinoRotY;
         myObj.group.rotation.x = -pitch * 0.4;
-        myObj.group.scale.set(jumpScaleXZ, jumpScaleY, jumpScaleXZ);
+        myObj.group.scale.set(jumpScaleXZ * DINO_SCALE, jumpScaleY * DINO_SCALE, jumpScaleXZ * DINO_SCALE);
         myObj.group.visible = !this.myPlayer.isDead;
         myObj.data.x = this.myPlayer.x; myObj.data.y = this.myPlayer.y;
       }
@@ -1541,7 +1499,7 @@ function setupGameSocketEvents() {
     }
   });
 
-  s.on('attackResult', ({ attackerId, targetId, damage, targetHp, targetMaxHp, knockback, crit, combo }) => {
+  s.on('attackResult', ({ attackerId, targetId, damage, targetHp, targetMaxHp, knockback, combo }) => {
     const scene = gs(); if (!scene) return;
     const tgt = scene.playerObjs[targetId]; if (!tgt) return;
     tgt.data.hp = targetHp; tgt.data.maxHp = targetMaxHp;
@@ -1550,9 +1508,8 @@ function setupGameSocketEvents() {
     if (predicted) scene._lastAttackTargetId = null;
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
     scene.showHitAnim(targetId);
-    if (crit) scene.showCritEffect(tgt.data.x, tgt.data.y);
     if (!predicted) {
-      scene.showHitEffect(tgt.data.x, tgt.data.y, crit ? 0xffcc00 : hexStr2num(tgt.data.color || '#ffffff'));
+      scene.showHitEffect(tgt.data.x, tgt.data.y, hexStr2num(tgt.data.color || '#ffffff'));
       scene.showBite(attackerId);
       const atk = scene.playerObjs[attackerId];
       if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);

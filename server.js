@@ -937,8 +937,7 @@ function scheduleRespawn(target, room) {
 function handleAttack(attacker, target, room, opts = {}) {
   if (attacker.isDead || target.isDead) return;
   const now = Date.now();
-  const critMult = opts.crit ? 1.5 : 1;
-  const mult = (opts.damageMult || 1) * critMult;
+  const mult = opts.damageMult || 1;
   const rawDmg = (attacker.damage + Math.floor(Math.random()*10) - 5) * mult;
   const dmg = Math.max(1, rawDmg - target.defense);
   target.hp -= dmg;
@@ -949,7 +948,7 @@ function handleAttack(attacker, target, room, opts = {}) {
   const kbLen = Math.hypot(target.x - attacker.x, target.y - attacker.y) || 1;
   const kbDx  = (target.x - attacker.x) / kbLen;
   const kbDy  = (target.y - attacker.y) / kbLen;
-  const KNOCKBACK = opts.crit ? 180 : 120;
+  const KNOCKBACK = 120;
   target.x = Math.max(20, Math.min(WORLD_SIZE-20, target.x + kbDx * KNOCKBACK));
   target.y = Math.max(20, Math.min(WORLD_SIZE-20, target.y + kbDy * KNOCKBACK));
 
@@ -957,7 +956,6 @@ function handleAttack(attacker, target, room, opts = {}) {
     attackerId: attacker.id, targetId: target.id,
     damage: dmg, targetHp: target.hp, targetMaxHp: target.maxHp,
     knockback: { x: target.x, y: target.y },
-    crit: opts.crit || false,
     combo: opts.comboCount || 1,
   });
 
@@ -2167,7 +2165,6 @@ io.on('connection', (socket) => {
     const now = Date.now();
     if (now - atk.lastAttack < 200) return;
     const targetId = typeof payload === 'string' ? payload : payload?.id;
-    const isCrit   = typeof payload === 'object' && payload?.crit === true;
     const tgt = room.players[targetId] || room.bots[targetId];
     if (!tgt || tgt.isDead) return;
     if (dist(atk, tgt) > 450) return;
@@ -2177,7 +2174,7 @@ io.on('connection', (socket) => {
     atk._comboCount = (atk._comboCount || 0) + 1;
     atk._comboExpiry = now + 2500;
     if (atk._comboCount >= 2) socket.emit('comboUpdate', { count: atk._comboCount });
-    handleAttack(atk, tgt, room, { crit: isCrit, comboCount: atk._comboCount });
+    handleAttack(atk, tgt, room, { comboCount: atk._comboCount });
   });
 
   socket.on('collectPadDrops', () => {
