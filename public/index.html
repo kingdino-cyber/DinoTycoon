@@ -386,22 +386,21 @@ canvas{display:block;}
   display:flex;flex-direction:column;align-items:center;
   position:relative;
 }
-/* Rotating arena ring behind the dino */
-.lby-dino-stage::before{
-  content:'';position:absolute;
-  width:260px;height:260px;
+/* Rotating glow ring around the container using its own pseudo-element */
+#heroDinoContainer::after{
+  content:'';position:absolute;inset:-18px;
   border-radius:50%;
-  background:conic-gradient(transparent 0deg,rgba(127,255,106,.18) 60deg,transparent 120deg,rgba(127,255,106,.06) 240deg,transparent 300deg);
-  animation:arenaRing 12s linear infinite;
-  pointer-events:none;top:50%;left:50%;transform:translate(-50%,-58%);
+  border:1.5px solid rgba(127,255,106,.22);
+  background:conic-gradient(transparent 0deg,rgba(127,255,106,.15) 60deg,transparent 130deg);
+  animation:arenaRing 10s linear infinite;
+  pointer-events:none;
 }
-.lby-dino-stage::after{
-  content:'';position:absolute;
-  width:200px;height:200px;
+#heroDinoContainer::before{
+  content:'';position:absolute;inset:-8px;
   border-radius:50%;
-  border:1px solid rgba(127,255,106,.12);
-  pointer-events:none;top:50%;left:50%;transform:translate(-50%,-58%);
-  animation:arenaRing 20s linear infinite reverse;
+  border:1px solid rgba(127,255,106,.1);
+  animation:arenaRing 16s linear infinite reverse;
+  pointer-events:none;
 }
 
 .lby-dino-hero{font-size:9rem;line-height:1;
@@ -1483,9 +1482,6 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
           <canvas id="heroDinoCanvas" width="220" height="200" style="display:block;width:100%;height:100%;"></canvas>
           </div><!-- /heroDinoContainer -->
           <div class="lby-hero-pedestal"></div>
-          <button class="lby-play-btn" onclick="openPlayModeModal()" style="margin-top:14px;width:220px;justify-content:center;">
-            ▶ PLAY NOW!
-          </button>
         </div><!-- /lby-dino-stage -->
 
         <!-- Right invite slot -->
@@ -1495,6 +1491,11 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
           <span>Invite a Dino</span>
         </div>
       </div>
+
+      <!-- PLAY NOW below the row -->
+      <button class="lby-play-btn" onclick="openPlayModeModal()" style="margin-top:18px;min-width:260px;padding:18px 40px;">
+        ▶ PLAY NOW!
+      </button>
     </div>
 
     <!-- RIGHT PANEL — embedded chat -->
