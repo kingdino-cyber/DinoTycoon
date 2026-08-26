@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>🦕 Dino Tycoon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Nunito:wght@400;700;900&display=swap">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
 :root{
@@ -73,57 +75,187 @@ canvas{display:block;}
 .auth-back:hover{color:#7fff6a;}
 
 /* ── LANDING PAGE ── */
+/* ── LANDING — full redesign ─────────────────────────────────────────────── */
+@keyframes landHeroIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes titleGlow{0%,100%{text-shadow:0 0 40px rgba(127,255,106,.45),0 0 80px rgba(127,255,106,.18)}
+  50%{text-shadow:0 0 60px rgba(127,255,106,.7),0 0 120px rgba(127,255,106,.3)}}
+@keyframes ctaPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,154,46,.5),0 8px 32px rgba(255,154,46,.4)}
+  50%{box-shadow:0 0 0 10px rgba(255,154,46,0),0 8px 32px rgba(255,154,46,.6)}}
+@keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+
 #landingScreen{
   position:fixed;inset:0;z-index:2100;overflow-y:auto;
-  background:radial-gradient(ellipse at 50% 0%,#16401a 0%,#0a1a08 55%,#060f05 100%);
-  color:var(--text);
+  background:#050d04;
+  color:#e8f5e9;
+  font-family:'Nunito',sans-serif;
 }
-.land-bg-fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;opacity:.45;}
-.land-bg-fx span{position:absolute;font-size:3rem;animation:float 4s ease-in-out infinite;}
-.land-bg-fx span:nth-child(1){left:4%;top:10%;}
-.land-bg-fx span:nth-child(2){right:6%;top:18%;animation-delay:1s;font-size:4rem;}
-.land-bg-fx span:nth-child(3){left:10%;top:68%;animation-delay:.4s;}
-.land-bg-fx span:nth-child(4){right:9%;top:76%;animation-delay:1.3s;font-size:2.5rem;}
-.land-bg-fx span:nth-child(5){left:46%;top:4%;animation-delay:.7s;font-size:2rem;}
+#landCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
 
-.land-nav{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
-  padding:22px 40px;flex-wrap:wrap;gap:12px;}
-.land-logo{font-size:1.3rem;font-weight:900;color:#7fff6a;text-shadow:0 0 16px rgba(100,255,80,.5);
-  letter-spacing:1px;display:flex;align-items:center;gap:8px;}
+/* scanline atmospheric overlay */
+#landingScreen::after{
+  content:'';position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);
+}
+
+/* ── NAV ── */
+.land-nav{
+  position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;
+  padding:20px 40px;flex-wrap:wrap;gap:12px;
+  background:linear-gradient(180deg,rgba(5,13,4,.9) 0%,transparent 100%);
+}
+.land-logo{
+  font-family:'Anton',sans-serif;font-size:1.5rem;letter-spacing:2px;
+  color:#7fff6a;text-shadow:0 0 20px rgba(127,255,106,.4);
+  display:flex;align-items:center;gap:10px;
+}
 .land-nav-btns{display:flex;gap:10px;}
-.land-nav-login{padding:9px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.06);color:#e8f5e9;font-size:.85rem;cursor:pointer;}
-.land-nav-signup{padding:9px 18px;border-radius:10px;border:none;
-  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;font-size:.85rem;cursor:pointer;}
-.land-nav-login:hover,.land-nav-signup:hover{transform:translateY(-1px);filter:brightness(1.1);}
+.land-nav-login{
+  padding:8px 20px;border-radius:8px;border:1px solid rgba(127,255,106,.25);
+  background:rgba(127,255,106,.06);color:#c8edc8;font-size:.85rem;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:700;transition:all .15s;
+}
+.land-nav-login:hover{background:rgba(127,255,106,.14);border-color:rgba(127,255,106,.5);}
+.land-nav-signup{
+  padding:8px 22px;border-radius:8px;border:none;cursor:pointer;font-weight:900;font-size:.85rem;
+  font-family:'Nunito',sans-serif;
+  background:linear-gradient(135deg,#ff7a00,#ff9a2e);color:#fff;
+  box-shadow:0 4px 16px rgba(255,120,0,.35);transition:all .15s;
+}
+.land-nav-signup:hover{filter:brightness(1.1);transform:translateY(-1px);}
 
-.land-hero{position:relative;z-index:2;max-width:780px;margin:0 auto;text-align:center;padding:50px 24px 30px;}
-.land-hero-badge{display:inline-block;padding:6px 16px;border-radius:20px;background:rgba(100,255,80,.1);
-  border:1px solid rgba(100,255,80,.3);color:#7fff6a;font-size:.78rem;font-weight:bold;letter-spacing:.5px;
-  margin-bottom:18px;animation:pulse 2.4s ease-in-out infinite;}
-.land-hero-title{font-size:2.6rem;font-weight:900;line-height:1.18;color:#e8f5e9;margin-bottom:18px;letter-spacing:-1px;}
-.land-hero-title-accent{color:#7fff6a;text-shadow:0 0 30px rgba(100,255,80,.5);}
-.land-hero-sub{color:#9bc99b;font-size:1rem;line-height:1.6;max-width:600px;margin:0 auto 30px;}
-.land-hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:26px;}
-.land-cta{padding:16px 30px;border-radius:14px;font-size:1.05rem;font-weight:900;cursor:pointer;border:none;
-  transition:transform .15s cubic-bezier(.2,1.6,.4,1),box-shadow .15s ease,filter .15s ease;}
-.land-cta-primary{background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;
-  box-shadow:0 8px 26px rgba(76,175,80,.4);}
-.land-cta-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e8f5e9;}
-.land-cta:hover{transform:scale(1.05) translateY(-2px);filter:brightness(1.08);}
-.land-cta:active{transform:scale(.97) translateY(0);}
-.land-hero-stats{display:flex;gap:28px;justify-content:center;color:#668866;font-size:.8rem;flex-wrap:wrap;}
-.land-hero-stats b{color:#7fff6a;}
+/* ── HERO ── */
+.land-hero{
+  position:relative;z-index:4;
+  display:grid;grid-template-columns:1fr auto;align-items:center;
+  max-width:1140px;margin:0 auto;padding:60px 40px 40px;
+  gap:0 20px;
+  animation:landHeroIn .7s ease-out both;
+}
+.land-hero-text{grid-column:1;}
+.land-hero-dino-wrap{
+  grid-column:2;width:280px;height:320px;flex-shrink:0;
+  position:relative;display:flex;align-items:center;justify-content:center;
+}
+#landDinoCanvas{width:280px;height:320px;}
 
-.land-section{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:30px 24px;}
-.land-section-title{text-align:center;font-size:1.5rem;font-weight:900;color:#e8f5e9;margin-bottom:26px;}
-.land-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;}
-.land-shot{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.15);border-radius:18px;
-  padding:14px;transition:transform .2s ease,border-color .2s ease;}
-.land-shot:hover{transform:translateY(-4px);border-color:rgba(100,200,80,.4);}
-.land-shot-frame{position:relative;border-radius:12px;overflow:hidden;height:160px;margin-bottom:12px;
-  background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 45%,#3cb043 45%,#2d8a35 100%);}
-.land-shot-caption{font-size:.8rem;color:#9bc99b;text-align:center;}
+.land-hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 14px;border-radius:20px;
+  background:rgba(127,255,106,.1);border:1px solid rgba(127,255,106,.35);
+  color:#7fff6a;font-size:.72rem;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:22px;
+}
+.land-hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#7fff6a;animation:pulse 1.6s ease-in-out infinite;}
+
+.land-hero-title{
+  font-family:'Anton',sans-serif;
+  font-size:clamp(3.2rem,8vw,6.4rem);
+  line-height:.97;letter-spacing:1px;
+  color:#e8f5e9;margin-bottom:24px;
+  text-wrap:balance;
+}
+.land-hero-title-accent{
+  color:#7fff6a;
+  animation:titleGlow 3s ease-in-out infinite;
+  display:block;
+}
+.land-hero-sub{
+  color:#8aac8a;font-size:1.05rem;line-height:1.65;
+  max-width:520px;margin-bottom:36px;font-weight:400;
+}
+
+.land-hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:32px;}
+.land-cta{
+  padding:15px 32px;border-radius:10px;font-size:1rem;font-weight:900;cursor:pointer;border:none;
+  font-family:'Nunito',sans-serif;letter-spacing:.3px;
+  transition:transform .18s cubic-bezier(.2,1.6,.4,1),box-shadow .18s ease,filter .15s ease;
+}
+.land-cta-primary{
+  background:linear-gradient(135deg,#e06500,#ff9a2e);color:#fff;
+  box-shadow:0 8px 26px rgba(255,120,0,.4);
+  animation:ctaPulse 2.4s ease-in-out infinite;
+}
+.land-cta-primary:hover{filter:brightness(1.1);transform:scale(1.06) translateY(-3px);}
+.land-cta-secondary{
+  background:rgba(127,255,106,.07);border:1px solid rgba(127,255,106,.3);
+  color:#c8edc8;
+}
+.land-cta-secondary:hover{background:rgba(127,255,106,.14);transform:translateY(-2px);}
+.land-cta:active{transform:scale(.96)!important;}
+
+.land-hero-stats{display:flex;gap:32px;flex-wrap:wrap;}
+.land-stat{display:flex;flex-direction:column;gap:2px;}
+.land-stat-val{font-family:'Anton',sans-serif;font-size:1.6rem;color:#7fff6a;line-height:1;}
+.land-stat-label{font-size:.7rem;color:#4a7a4a;letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── DIVIDER ── */
+.land-divider{
+  position:relative;z-index:4;max-width:1140px;margin:0 auto 0;padding:0 40px;
+  border-top:1px solid rgba(127,255,106,.08);
+}
+
+/* ── GALLERY ── */
+.land-section{position:relative;z-index:4;max-width:1140px;margin:0 auto;padding:48px 40px;}
+.land-section-title{
+  font-family:'Anton',sans-serif;font-size:clamp(1.4rem,3vw,2rem);
+  color:#e8f5e9;letter-spacing:1px;margin-bottom:8px;
+}
+.land-section-sub{color:#4a7a4a;font-size:.85rem;margin-bottom:28px;letter-spacing:.3px;}
+.land-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+.land-shot{
+  background:rgba(127,255,106,.03);border:1px solid rgba(127,255,106,.1);border-radius:16px;
+  padding:12px;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;
+  cursor:default;
+}
+.land-shot:hover{
+  transform:translateY(-6px);border-color:rgba(127,255,106,.35);
+  box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 0 1px rgba(127,255,106,.12);
+}
+.land-shot-frame{
+  position:relative;border-radius:10px;overflow:hidden;height:155px;margin-bottom:10px;
+  background:linear-gradient(180deg,#1a3a2a 0%,#0d2010 100%);
+}
+.land-shot-caption{font-size:.76rem;color:#6a9a6a;text-align:center;font-weight:600;letter-spacing:.2px;}
+
+/* ── FEATURES ── */
+.land-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2px;}
+.land-feature{
+  display:flex;align-items:flex-start;gap:16px;padding:22px 18px;
+  border-radius:0;border-bottom:1px solid rgba(127,255,106,.06);
+  transition:background .18s ease;cursor:pointer;
+}
+.land-feature:hover{background:rgba(127,255,106,.05);}
+.land-feature>span:first-child{
+  font-size:1.6rem;flex-shrink:0;
+  width:46px;height:46px;border-radius:10px;
+  background:rgba(127,255,106,.08);border:1px solid rgba(127,255,106,.15);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s,border-color .18s;
+}
+.land-feature:hover>span:first-child{background:rgba(127,255,106,.16);border-color:rgba(127,255,106,.4);}
+.land-feature h3{font-size:.95rem;font-weight:900;color:#d4ecd4;margin-bottom:5px;}
+.land-feature p{font-size:.8rem;color:#5a8a5a;line-height:1.55;}
+.land-feature-more{font-size:.72rem;color:#3a6a3a;letter-spacing:.3px;}
+
+/* ── FOOTER CTA ── */
+.land-footer-cta{
+  position:relative;z-index:4;text-align:center;padding:72px 24px 80px;
+  background:linear-gradient(180deg,transparent 0%,rgba(127,255,106,.04) 50%,transparent 100%);
+}
+.land-footer-cta h2{
+  font-family:'Anton',sans-serif;font-size:clamp(1.8rem,4vw,3rem);
+  color:#e8f5e9;letter-spacing:1px;margin-bottom:28px;line-height:1.1;
+}
+.land-footer-cta .land-hero-ctas{justify-content:center;}
+
+@media(max-width:720px){
+  .land-hero{grid-template-columns:1fr;padding:40px 24px 20px;}
+  .land-hero-dino-wrap{display:none;}
+  .land-hero-title{font-size:clamp(2.8rem,13vw,4rem);}
+  .land-nav{padding:16px 20px;}
+  .land-section{padding:36px 20px;}
+}
 
 /* combat preview mockup — mirrors the real floating world-space HP bar/nametag/crosshair */
 .land-mock-hpbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:90px;height:8px;
@@ -1124,38 +1256,44 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
 <!-- ══ LANDING PAGE ═════════════════════════════════════════════════════════ -->
 <div id="landingScreen">
-  <div class="land-bg-fx">
-    <span>🦕</span><span>🦖</span><span>🦴</span><span>🌿</span><span>⛰️</span>
-  </div>
+  <canvas id="landCanvas"></canvas>
 
   <div class="land-nav">
-    <div class="land-logo"><span>🦕</span>DINO TYCOON</div>
+    <div class="land-logo">🦕 DINO TYCOON</div>
     <div class="land-nav-btns">
       <button class="land-nav-login" onclick="goToAuth('login')">Log In</button>
-      <button class="land-nav-signup" onclick="goToAuth('register')">Sign Up</button>
+      <button class="land-nav-signup" onclick="goToAuth('register')">Sign Up Free</button>
     </div>
   </div>
 
   <div class="land-hero">
-    <div class="land-hero-badge">🔥 FREE MULTIPLAYER DINO BATTLER</div>
-    <h1 class="land-hero-title">BUILD. BATTLE.<br><span class="land-hero-title-accent">BECOME A DINO LEGEND.</span></h1>
-    <p class="land-hero-sub">
-      Hatch your prehistoric empire, fight rival dinosaurs in real 3D combat, defend your base with
-      turrets &amp; walls, and prestige your way to the top of the leaderboard — live, with friends.
-    </p>
-    <div class="land-hero-ctas">
-      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now — It's Free</button>
-      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
+    <div class="land-hero-text">
+      <div class="land-hero-badge"><span class="land-hero-badge-dot"></span>FREE MULTIPLAYER — PLAY NOW</div>
+      <h1 class="land-hero-title">BUILD.<br>BATTLE.<br><span class="land-hero-title-accent">DOMINATE.</span></h1>
+      <p class="land-hero-sub">
+        Grow your prehistoric empire, crush rivals in real 3D combat,
+        and claw your way to the top of the leaderboard — live, with friends.
+      </p>
+      <div class="land-hero-ctas">
+        <button class="land-cta land-cta-primary" onclick="goToAuth('register')">Play Now — It's Free</button>
+        <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">Log In</button>
+      </div>
+      <div class="land-hero-stats">
+        <div class="land-stat"><span class="land-stat-val">3D</span><span class="land-stat-label">Combat Arena</span></div>
+        <div class="land-stat"><span class="land-stat-val">∞</span><span class="land-stat-label">Prestige Ranks</span></div>
+        <div class="land-stat"><span class="land-stat-val">0$</span><span class="land-stat-label">To Start Playing</span></div>
+      </div>
     </div>
-    <div class="land-hero-stats">
-      <div><b>🦖</b> Multiplayer dino battles</div>
-      <div><b>2D + 3D</b> game modes</div>
-      <div><b>100%</b> free to play</div>
+    <div class="land-hero-dino-wrap">
+      <canvas id="landDinoCanvas" width="280" height="320"></canvas>
     </div>
   </div>
 
+  <div class="land-divider"></div>
+
   <div class="land-section">
-    <div class="land-section-title">⚔️ See It In Action</div>
+    <div class="land-section-title">WHAT YOU'LL DO</div>
+    <div class="land-section-sub">Four ways to earn your place at the top</div>
     <div class="land-gallery">
       <div class="land-shot">
         <div class="land-shot-frame">
@@ -1231,7 +1369,8 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 
   <div class="land-section">
-    <div class="land-section-title">🌴 Why You'll Love It</div>
+    <div class="land-section-title">WHY IT SLAPS</div>
+    <div class="land-section-sub">Everything a dino battler needs, nothing it doesn't</div>
     <div class="land-features">
       <div class="land-feature" onclick="showLandFeature('modes')"><span>🎮</span><h3>2D &amp; 3D Modes</h3><p>Switch between the classic top-down tycoon view and full first/third-person 3D combat.</p><span class="land-feature-more">Learn more →</span></div>
       <div class="land-feature" onclick="showLandFeature('build')"><span>🏗️</span><h3>Build Your Base</h3><p>Income towers, turrets, walls, traps &amp; healing totems defend what's yours.</p><span class="land-feature-more">Learn more →</span></div>
@@ -1255,10 +1394,10 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 
   <div class="land-footer-cta">
-    <h2>Ready to dominate the Jurassic? 🦖</h2>
+    <h2>YOUR EMPIRE<br>AWAITS.</h2>
     <div class="land-hero-ctas">
-      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now</button>
-      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
+      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">Play Now — Free</button>
+      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">Log In</button>
     </div>
   </div>
 </div>
@@ -3536,6 +3675,168 @@ function renderShopItems(upgrades, owned) {
 }
 
 // ── Visual effects ──────────────────────────────────────────────────────────
+/* ── LANDING CANVAS PARTICLE FIELD ── */
+(function initLandCanvas() {
+  const cv = document.getElementById('landCanvas');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  let W, H, particles = [], meteors = [];
+
+  function resize() {
+    W = cv.width  = window.innerWidth;
+    H = cv.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Spore particles
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: Math.random() * W, y: Math.random() * H,
+      r: 0.5 + Math.random() * 1.8,
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: -0.08 - Math.random() * 0.2,
+      alpha: 0.15 + Math.random() * 0.45,
+      hue: Math.random() < 0.7 ? 120 : 35
+    });
+  }
+
+  function spawnMeteor() {
+    meteors.push({
+      x: Math.random() * W * 1.5 - W * 0.25,
+      y: -20,
+      vx: 1.8 + Math.random() * 2.5,
+      vy: 0.9 + Math.random() * 1.4,
+      len: 80 + Math.random() * 120,
+      alpha: 0.6 + Math.random() * 0.4
+    });
+  }
+  spawnMeteor();
+  setInterval(spawnMeteor, 3200 + Math.random() * 2000);
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Background gradient
+    const bg = ctx.createRadialGradient(W * 0.35, H * 0.3, 0, W * 0.35, H * 0.3, Math.max(W, H) * 0.8);
+    bg.addColorStop(0, 'rgba(10,30,8,0.98)');
+    bg.addColorStop(0.55, 'rgba(5,13,4,0.99)');
+    bg.addColorStop(1, 'rgba(3,8,2,1)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Hex grid subtle
+    ctx.strokeStyle = 'rgba(127,255,106,0.028)';
+    ctx.lineWidth = 0.5;
+    const hex = 48;
+    for (let row = 0; row < H / hex + 2; row++) {
+      for (let col = 0; col < W / (hex * 1.73) + 2; col++) {
+        const cx = col * hex * 1.73 + (row % 2 ? hex * 0.865 : 0);
+        const cy = row * hex * 0.75;
+        ctx.beginPath();
+        for (let s = 0; s < 6; s++) {
+          const a = Math.PI / 3 * s - Math.PI / 6;
+          const px = cx + hex * 0.5 * Math.cos(a);
+          const py = cy + hex * 0.5 * Math.sin(a);
+          s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+
+    // Spore particles
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
+      grd.addColorStop(0, `hsla(${p.hue},100%,65%,${p.alpha})`);
+      grd.addColorStop(1, `hsla(${p.hue},100%,65%,0)`);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+    });
+
+    // Meteors
+    meteors = meteors.filter(m => {
+      m.x += m.vx; m.y += m.vy;
+      if (m.x > W + 50 || m.y > H + 50) return false;
+      const ex = m.x - m.vx * (m.len / Math.hypot(m.vx, m.vy));
+      const ey = m.y - m.vy * (m.len / Math.hypot(m.vx, m.vy));
+      const grad = ctx.createLinearGradient(ex, ey, m.x, m.y);
+      grad.addColorStop(0, `rgba(127,255,106,0)`);
+      grad.addColorStop(0.7, `rgba(200,255,160,${m.alpha * 0.5})`);
+      grad.addColorStop(1, `rgba(255,255,220,${m.alpha})`);
+      ctx.beginPath();
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(ex, ey); ctx.lineTo(m.x, m.y);
+      ctx.stroke();
+      return true;
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  // Animated hero dino
+  const dc = document.getElementById('landDinoCanvas');
+  if (dc) {
+    const dctx = dc.getContext('2d');
+    let t = 0;
+    function drawHeroDino(color, bob, scaleX, scaleY) {
+      dctx.clearRect(0, 0, 280, 320);
+      dctx.save();
+      dctx.translate(140, 200 + bob);
+      dctx.scale(scaleX * 3.5, scaleY * 3.5);
+      // tail
+      dctx.fillStyle = color;
+      dctx.beginPath(); dctx.ellipse(-28, 8, 18, 7, -0.3, 0, Math.PI * 2); dctx.fill();
+      // legs
+      const legY = Math.sin(t * 1.5) * 3;
+      dctx.fillRect(-12, 14, 7, 16 + legY); dctx.fillRect(4, 14, 7, 16 - legY);
+      // body
+      dctx.beginPath(); dctx.ellipse(-2, 4, 22, 14, 0, 0, Math.PI * 2); dctx.fill();
+      // belly
+      dctx.fillStyle = 'rgba(255,255,255,0.18)';
+      dctx.beginPath(); dctx.ellipse(-2, 7, 14, 9, 0, 0, Math.PI * 2); dctx.fill();
+      // spines
+      dctx.fillStyle = color;
+      [-8,-2,4,10].forEach((sx, i) => {
+        dctx.beginPath();
+        dctx.moveTo(sx, -8 - i * 1.5);
+        dctx.lineTo(sx - 3, -2); dctx.lineTo(sx + 3, -2);
+        dctx.fill();
+      });
+      // arm
+      dctx.fillRect(14, 2, 10, 5);
+      // neck
+      dctx.beginPath(); dctx.ellipse(18, -6, 7, 11, 0.4, 0, Math.PI * 2); dctx.fill();
+      // head
+      dctx.beginPath(); dctx.ellipse(26, -16, 13, 9, 0.2, 0, Math.PI * 2); dctx.fill();
+      // snout
+      dctx.beginPath(); dctx.ellipse(36, -14, 7, 5, 0.1, 0, Math.PI * 2); dctx.fill();
+      // eye
+      dctx.fillStyle = '#000'; dctx.beginPath(); dctx.arc(29, -19, 3, 0, Math.PI * 2); dctx.fill();
+      dctx.fillStyle = '#fff'; dctx.beginPath(); dctx.arc(30, -20, 1.2, 0, Math.PI * 2); dctx.fill();
+      dctx.restore();
+    }
+    (function animDino() {
+      if (document.getElementById('landingScreen').classList.contains('hidden')) return;
+      t += 0.025;
+      const bob = Math.sin(t) * 7;
+      const scaleX = 1 + Math.sin(t * 2) * 0.018;
+      const scaleY = 1 - Math.sin(t * 2) * 0.018;
+      drawHeroDino('#7fff6a', bob, scaleX, scaleY);
+      dc.style.filter = `drop-shadow(0 0 ${20 + Math.sin(t) * 8}px rgba(127,255,106,0.7))`;
+      requestAnimationFrame(animDino);
+    })();
+  }
+})();
+
 function spawnLobbyParticles() {
   const c = document.getElementById('lobbyParticles'); if (!c) return;
   c.innerHTML = '';
