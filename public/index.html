@@ -1126,6 +1126,106 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:#224422;border-radius:2px;}
 
+/* ══ ACTION / QUICK-PLAY SCREEN ══════════════════════════════════════════ */
+@keyframes actCardPop{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes goldGlow{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.55),0 4px 20px rgba(255,180,0,.4);}
+  50%{box-shadow:0 0 0 12px rgba(255,215,0,0),0 4px 28px rgba(255,180,0,.7);}
+}
+#actionScreen{
+  position:fixed;inset:0;z-index:2200;background:#050d04;
+  display:flex;flex-direction:column;overflow:hidden;font-family:'Segoe UI',sans-serif;
+}
+#actionScreen::before{
+  content:'';position:absolute;inset:-20%;z-index:0;
+  background:
+    radial-gradient(ellipse 55% 45% at 15% 85%,rgba(30,120,10,.5) 0%,transparent 60%),
+    radial-gradient(ellipse 45% 55% at 85% 15%,rgba(10,80,5,.4) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 40% at 60% 65%,rgba(50,150,20,.18) 0%,transparent 55%);
+  animation:auroraPulse 7s ease-in-out infinite;pointer-events:none;
+}
+#actionScreen::after{
+  content:'';position:absolute;inset:0;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.03) 3px,rgba(0,0,0,.03) 4px);
+  pointer-events:none;
+}
+.act-nav{
+  position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px;
+  background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,transparent 100%);
+}
+.act-logo{font-size:1.4rem;font-weight:900;color:#7fff6a;letter-spacing:3px;
+  text-shadow:0 0 24px rgba(127,255,106,.5);display:flex;align-items:center;gap:8px;}
+.act-nav-btns{display:flex;gap:10px;align-items:center;}
+.act-login-btn{
+  padding:9px 22px;border-radius:10px;border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.08);color:#ddd;font-size:.88rem;font-weight:700;cursor:pointer;
+  transition:all .15s;
+}
+.act-login-btn:hover{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.4);}
+.act-signup-btn{
+  padding:9px 22px;border-radius:10px;border:none;cursor:pointer;font-weight:900;font-size:.9rem;
+  background:linear-gradient(135deg,#b87800,#ffd700,#b87800);background-size:200% auto;
+  color:#1a0a00;animation:goldGlow 2.2s ease-in-out infinite;transition:filter .15s,transform .15s;
+}
+.act-signup-btn:hover{filter:brightness(1.1);transform:translateY(-2px);}
+.act-center{
+  position:relative;z-index:2;flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 24px 40px;gap:28px;
+}
+.act-subtitle{font-size:.85rem;color:#4a7a4a;letter-spacing:2px;text-transform:uppercase;font-weight:700;}
+.act-step-label{
+  font-size:.7rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  color:#3a6a3a;margin-bottom:14px;text-align:center;
+}
+.act-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+.act-card{
+  width:188px;padding:26px 18px;border-radius:18px;cursor:pointer;
+  border:2px solid rgba(127,255,106,.15);background:rgba(0,0,0,.4);
+  backdrop-filter:blur(10px);text-align:center;transition:all .22s;color:#e8f5e9;
+  animation:actCardPop .4s ease-out both;
+}
+.act-card:nth-child(2){animation-delay:.07s;}
+.act-card:hover{
+  border-color:rgba(127,255,106,.5);background:rgba(127,255,106,.07);
+  transform:translateY(-6px);box-shadow:0 14px 40px rgba(30,200,20,.2);
+}
+.act-card.selected{
+  border-color:#4cde1e;background:rgba(76,222,30,.1);
+  box-shadow:0 0 0 3px rgba(76,222,30,.2),0 14px 40px rgba(30,200,20,.22);
+  transform:translateY(-6px);
+}
+.act-card-ranked{border-color:rgba(212,175,55,.2);}
+.act-card-ranked:hover,.act-card-ranked.selected{
+  border-color:#d4af37;background:rgba(212,175,55,.1);
+  box-shadow:0 0 0 3px rgba(212,175,55,.25),0 14px 40px rgba(200,150,0,.2);
+}
+.act-card-icon{font-size:2.6rem;margin-bottom:10px;display:block;}
+.act-card-title{font-weight:900;font-size:1.05rem;margin-bottom:6px;letter-spacing:.3px;}
+.act-card-desc{font-size:.7rem;color:#5a8a5a;line-height:1.55;}
+.act-step2{display:none;}
+.act-step2.visible{display:block;animation:fadeSlideUp .35s ease-out both;}
+.act-play-wrap{display:none;}
+.act-play-wrap.visible{display:flex;flex-direction:column;align-items:center;gap:8px;animation:fadeSlideUp .3s ease-out both;}
+.act-play-btn{
+  padding:16px 60px;border:none;border-radius:14px;cursor:pointer;font-size:1.2rem;font-weight:900;
+  letter-spacing:2px;
+  background:linear-gradient(135deg,#1a8a00 0%,#3de81a 50%,#1a8a00 100%);background-size:200% auto;
+  color:#fff;animation:playBtnPulse 2.2s ease-in-out infinite;
+  transition:transform .18s cubic-bezier(.2,1.6,.4,1),filter .15s;
+  position:relative;overflow:hidden;
+}
+.act-play-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.18) 50%,transparent 60%);
+  background-size:200% auto;animation:dropCardShine 3s linear infinite;pointer-events:none;
+}
+.act-play-btn:hover{filter:brightness(1.1);transform:scale(1.05) translateY(-3px);}
+.act-play-btn:active{transform:scale(.96);}
+.act-save-note{font-size:.7rem;color:#3a5a3a;}
+.act-save-note a{color:#7fff6a;cursor:pointer;font-weight:700;}
+
 /* ── POINTS PILL ── */
 .lby-nav-points{display:flex;align-items:center;gap:5px;background:rgba(255,215,0,.1);
   border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:5px 12px;
@@ -1254,8 +1354,62 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 })();
 </script>
 
+<!-- ══ ACTION / QUICK-PLAY SCREEN ══════════════════════════════════════════ -->
+<div id="actionScreen">
+  <div class="act-nav">
+    <div class="act-logo">🦕 DINO TYCOON</div>
+    <div class="act-nav-btns">
+      <button class="act-login-btn" onclick="goToAuth('login')">Log In</button>
+      <button class="act-signup-btn" onclick="goToAuth('register')">✨ Sign Up — Free</button>
+    </div>
+  </div>
+  <div class="act-center">
+    <div class="act-subtitle">Choose your game</div>
+
+    <!-- Step 1 -->
+    <div>
+      <div class="act-step-label">How do you want to play?</div>
+      <div class="act-cards">
+        <div class="act-card" id="actCard2d" onclick="actSelectRender('2d')">
+          <span class="act-card-icon">🗺️</span>
+          <div class="act-card-title">2D Classic</div>
+          <div class="act-card-desc">Top-down tycoon view. Build your base, manage income &amp; dominate from above.</div>
+        </div>
+        <div class="act-card" id="actCard3d" onclick="actSelectRender('3d')">
+          <span class="act-card-icon">🦖</span>
+          <div class="act-card-title">3D Combat</div>
+          <div class="act-card-desc">First/third-person 3D arena with mouse-look, jumping &amp; crosshair attacks.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="act-step2" id="actStep2">
+      <div class="act-step-label">What kind of match?</div>
+      <div class="act-cards">
+        <div class="act-card" id="actCardCasual" onclick="actSelectMatch('casual')">
+          <span class="act-card-icon">🎮</span>
+          <div class="act-card-title">Casual</div>
+          <div class="act-card-desc">Bots, friends, custom maps &amp; settings. No MMR pressure — just have fun.</div>
+        </div>
+        <div class="act-card act-card-ranked" id="actCardRanked" onclick="actSelectMatch('ranked')">
+          <span class="act-card-icon">🏆</span>
+          <div class="act-card-title">Ranked</div>
+          <div class="act-card-desc">1v1 skill-based matchmaking that tracks your Ranked MMR. Play to win.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Play button -->
+    <div class="act-play-wrap" id="actPlayWrap">
+      <button class="act-play-btn" onclick="quickPlay()">▶ PLAY NOW</button>
+      <div class="act-save-note">Playing as guest — <a onclick="goToAuth('register')">sign up free</a> to save your progress</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ LANDING PAGE ═════════════════════════════════════════════════════════ -->
-<div id="landingScreen">
+<div id="landingScreen" class="hidden">
   <div class="land-bg-fx">
     <span>🦕</span><span>🦖</span><span>🦴</span><span>🌿</span><span>⛰️</span>
   </div>
@@ -2440,9 +2594,10 @@ function loadGameScripts(mode, cb) {
 // ── Landing page ──────────────────────────────────────────────────────────────
 function goToAuth(mode) {
   window.SFX?.pop();
-  document.getElementById('landingScreen').classList.add('hidden');
+  document.getElementById('landingScreen')?.classList.add('hidden');
+  document.getElementById('actionScreen')?.classList.add('hidden');
   const auth = document.getElementById('authScreen');
-  auth.style.display = ''; // clear any stale inline override
+  auth.style.display = '';
   auth.classList.remove('hidden');
   switchTab(mode);
 }
@@ -2451,7 +2606,7 @@ window.goToAuth = goToAuth;
 function backToLanding() {
   window.SFX?.click();
   document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('landingScreen').classList.remove('hidden');
+  document.getElementById('actionScreen').classList.remove('hidden');
 }
 window.backToLanding = backToLanding;
 
@@ -2536,6 +2691,7 @@ function doLogout() {
 
 function enterGame(token) {
   document.getElementById('landingScreen')?.classList.add('hidden');
+  document.getElementById('actionScreen')?.classList.add('hidden');
   // Immediately kill pointer events on auth screen so lobby buttons work during fade
   const auth = document.getElementById('authScreen');
   auth.style.pointerEvents = 'none';
@@ -2552,7 +2708,9 @@ function enterGame(token) {
 
 window.addEventListener('load', () => {
   const tok = localStorage.getItem('dt_token'), u = localStorage.getItem('dt_user');
+  // Logged-in users skip the action screen and go straight to lobby
   if (tok && u) { currentUser = u; enterGame(tok); }
+  // else: action screen is already visible by default
 
   // Draw the landing page's skin showcase using the same renderer as the real game
   const landColors = ['#00bcd4', '#ff4757', '#ffd700'];
@@ -4498,6 +4656,56 @@ function playAsGuest() {
 }
 window.playAsGuest = playAsGuest;
 
+// ── Action screen (quick-play) ─────────────────────────────────────────────
+let _actRender = null, _actMatch = null;
+
+function actSelectRender(mode) {
+  _actRender = mode;
+  window.SFX?.pop();
+  document.getElementById('actCard2d').classList.toggle('selected', mode === '2d');
+  document.getElementById('actCard3d').classList.toggle('selected', mode === '3d');
+  document.getElementById('actStep2').classList.add('visible');
+  if (_actMatch) _checkActReady();
+}
+window.actSelectRender = actSelectRender;
+
+function actSelectMatch(mode) {
+  _actMatch = mode;
+  window.SFX?.pop();
+  document.getElementById('actCardCasual').classList.toggle('selected', mode === 'casual');
+  document.getElementById('actCardRanked').classList.toggle('selected', mode === 'ranked');
+  _checkActReady();
+}
+window.actSelectMatch = actSelectMatch;
+
+function _checkActReady() {
+  if (_actRender && _actMatch)
+    document.getElementById('actPlayWrap').classList.add('visible');
+}
+
+function quickPlay() {
+  window.SFX?.roar?.();
+  const render = _actRender || '2d';
+  const match  = _actMatch  || 'casual';
+  window._quickPlayRender = render;
+  window._quickPlayMatch  = match;
+  document.getElementById('actionScreen').classList.add('hidden');
+  const tok = localStorage.getItem('dt_token');
+  const u   = localStorage.getItem('dt_user');
+  if (tok && u) {
+    currentUser = u;
+    showScreen('lobby');
+    document.getElementById('lobbyUsername').textContent = u;
+    const hu = document.getElementById('heroUsername'); if (hu) hu.textContent = u;
+    initSocket(tok);
+  } else {
+    currentUser = '';
+    showScreen('lobby');
+    initSocket(null, true);
+  }
+}
+window.quickPlay = quickPlay;
+
 function initSocket(token, guest=false){
   const s=io(); window.gameSocket=s;
 
@@ -4535,6 +4743,22 @@ function initSocket(token, guest=false){
     if (window._activeEvent) showEventBanner(window._activeEvent, window._nextEvent);
     else if (window._nextEvent) showEventBanner(window._nextEvent);
     if (!data.tutorialSeen) setTimeout(() => openTutorialModal(true), 600);
+
+    // Quick-play auto-trigger — user picked mode on the action screen
+    if (window._quickPlayRender) {
+      const render = window._quickPlayRender;
+      const match  = window._quickPlayMatch;
+      window._quickPlayRender = null;
+      window._quickPlayMatch  = null;
+      setTimeout(() => {
+        if (match === 'ranked') {
+          chooseRanked();
+        } else {
+          // Pre-set render mode and open the create-room form directly
+          selectRenderMode(render);
+        }
+      }, 450);
+    }
 
     // Guest mode — set username from server and show banner
     if (data.isGuest) {
