@@ -1568,7 +1568,45 @@ function applyRankedResult(room, winnerSocketId, loserSocketId) {
 
 // ── Socket.io ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
-  let authedUser = null; // { id, username }
+  let authedUser = null; // { id, username, isGuest? }
+
+  // ── Guest Auth ──
+  socket.on('authenticateGuest', () => {
+    const guestName = 'Guest#' + Math.floor(1000 + Math.random() * 9000);
+    // Make sure name is unique among online users
+    let name = guestName;
+    let attempts = 0;
+    while (onlineByName[name.toLowerCase()] && attempts++ < 20)
+      name = 'Guest#' + Math.floor(1000 + Math.random() * 9000);
+
+    authedUser = { id: null, username: name, isGuest: true };
+    onlineByName[name.toLowerCase()] = socket.id;
+
+    const publicRooms = Object.values(rooms).filter(r=>r.isPublic).map(getRoomPublicInfo);
+    socket.emit('lobbyReady', {
+      username: name,
+      rooms: publicRooms,
+      online: Object.keys(onlineByName).length,
+      upgrades: UPGRADES,
+      stats: { username: name, money: 0, kills: 0, deaths: 0, gamesPlayed: 0, prestige: 0 },
+      points: 0,
+      lobbyItems: { skins: [], tags: [] },
+      equippedSkin: 'default',
+      equippedTag: 'none',
+      lobbyShop: LOBBY_SHOP,
+      customSkins: [],
+      lastDailyReward: Date.now(), // prevent claiming
+      achievementsList: ACHIEVEMENTS,
+      myAchievements: [],
+      mmr: 1000,
+      tutorialSeen: false,
+      activeEvent: getActiveEvent(),
+      nextEvent: getNextEvent(),
+      isGuest: true,
+    });
+    broadcastLobbyUpdate();
+    io.emit('lobbyChatMsg', { username: 'System', text: `${name} joined the lobby! 🦕`, system: true });
+  });
 
   // ── Auth ──
   socket.on('authenticate', async (token) => {
@@ -1636,7 +1674,7 @@ io.on('connection', (socket) => {
 
   // ── Save / Load game ──
   socket.on('saveGame', async (saveName) => {
-    if (!authedUser) return;
+    if (!authedUser || authedUser.isGuest) return;
     const room = rooms[socketRoom[socket.id]]; if (!room || room.status !== 'playing') return;
     const p = room.players[socket.id]; if (!p) return;
     const myBuildings = Object.values(room.buildings)
@@ -1834,7 +1872,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('claimDailyReward', async () => {
-    if (!authedUser) return;
+    if (!authedUser || authedUser.isGuest) return;
     const save = await getSave(authedUser.id);
     const now = Date.now();
     const last = save.lastDailyReward || 0;
@@ -1864,7 +1902,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('buyLobbyItem', async ({ type, itemId }) => {
-    if (!authedUser) return;
+    if (!authedUser || authedUser.isGuest) return;
     const items = type === 'skin' ? LOBBY_SHOP.skins : LOBBY_SHOP.tags;
     const item = items.find(i => i.id === itemId);
     if (!item || item.cost === 0) return;
