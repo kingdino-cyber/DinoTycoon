@@ -112,21 +112,6 @@ canvas{display:block;}
 .land-cta-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e8f5e9;}
 .land-cta:hover{transform:scale(1.05) translateY(-2px);filter:brightness(1.08);}
 .land-cta:active{transform:scale(.97) translateY(0);}
-.land-cta-guest{
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
-  color:#aaa;font-size:.88rem;padding:12px 22px;
-}
-.land-cta-guest:hover{background:rgba(255,255,255,.12);color:#ddd;transform:translateY(-1px);}
-/* ── GUEST BANNER ── */
-#guestBanner{
-  display:none;width:100%;padding:9px 20px;
-  background:linear-gradient(90deg,rgba(255,152,0,.2),rgba(255,152,0,.08));
-  border-bottom:1px solid rgba(255,152,0,.35);
-  font-size:.8rem;color:#ffb74d;text-align:center;
-  flex-shrink:0;z-index:2;position:relative;
-}
-#guestBanner a{color:#ffd080;font-weight:900;text-decoration:underline;cursor:pointer;}
-#guestBanner.visible{display:block;}
 .land-hero-stats{display:flex;gap:28px;justify-content:center;color:#668866;font-size:.8rem;flex-wrap:wrap;}
 .land-hero-stats b{color:#7fff6a;}
 
@@ -1278,7 +1263,6 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <div class="land-hero-ctas">
       <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now — It's Free</button>
       <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
-      <button class="land-cta land-cta-guest" onclick="playAsGuest()">▶ Play as Guest</button>
     </div>
     <div class="land-hero-stats">
       <div><b>🦖</b> Multiplayer dino battles</div>
@@ -1392,7 +1376,6 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <div class="land-hero-ctas">
       <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now</button>
       <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
-      <button class="land-cta land-cta-guest" onclick="playAsGuest()">▶ Play as Guest</button>
     </div>
   </div>
 </div>
@@ -1448,12 +1431,6 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
         <line x1="21" y1="12" x2="9" y2="12"/>
       </svg>
     </div>
-  </div>
-
-  <!-- GUEST BANNER -->
-  <div id="guestBanner">
-    🦕 Playing as guest — progress won't be saved.
-    <a onclick="goToAuth('register')">Sign up free</a> to save your empire, earn rewards &amp; unlock skins.
   </div>
 
   <!-- MAIN AREA — HOME tab default view -->
@@ -4489,22 +4466,10 @@ function fmt(n){n=Math.floor(n);if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6
 window.fmt=fmt;
 
 // ── Socket init ───────────────────────────────────────────────────────────────
-function playAsGuest() {
-  window.SFX?.pop();
-  document.getElementById('landingScreen')?.classList.add('hidden');
-  currentUser = ''; // will be set on lobbyReady
-  showScreen('lobby');
-  initSocket(null, true); // guest=true
-}
-window.playAsGuest = playAsGuest;
-
-function initSocket(token, guest=false){
+function initSocket(token){
   const s=io(); window.gameSocket=s;
 
-  s.on('connect',()=>{
-    if (guest) s.emit('authenticateGuest');
-    else s.emit('authenticate', token);
-  });
+  s.on('connect',()=>{ s.emit('authenticate',token); });
   s.on('authError',()=>{ localStorage.removeItem('dt_token'); location.reload(); });
 
   s.on('lobbyReady',data=>{
@@ -4535,18 +4500,6 @@ function initSocket(token, guest=false){
     if (window._activeEvent) showEventBanner(window._activeEvent, window._nextEvent);
     else if (window._nextEvent) showEventBanner(window._nextEvent);
     if (!data.tutorialSeen) setTimeout(() => openTutorialModal(true), 600);
-
-    // Guest mode — set username from server and show banner
-    if (data.isGuest) {
-      window._isGuest = true;
-      currentUser = data.username;
-      document.getElementById('lobbyUsername').textContent = data.username;
-      const hu = document.getElementById('heroUsername'); if (hu) hu.textContent = data.username;
-      const gb = document.getElementById('guestBanner'); if (gb) gb.classList.add('visible');
-    } else {
-      window._isGuest = false;
-      const gb = document.getElementById('guestBanner'); if (gb) gb.classList.remove('visible');
-    }
   });
 
   s.on('dailyRewardResult', data => {
