@@ -4431,17 +4431,6 @@ function openCustomSkinModal() {
 window.openCustomSkinModal = openCustomSkinModal;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Pre-apply action screen defaults so PLAY NOW is visible immediately
-  const tok = localStorage.getItem('dt_token');
-  if (!tok) {
-    document.getElementById('actCard3d')?.classList.add('selected');
-    document.getElementById('actCardCasual')?.classList.add('selected');
-    document.getElementById('actStep2')?.classList.add('visible');
-    document.getElementById('actPlayWrap')?.classList.add('visible');
-  }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
   const tolSlider = document.getElementById('csTolerance');
   if (tolSlider) tolSlider.addEventListener('input', function() {
     document.getElementById('csToleranceVal').textContent = this.value;
@@ -4668,7 +4657,7 @@ function playAsGuest() {
 window.playAsGuest = playAsGuest;
 
 // ── Action screen (quick-play) ─────────────────────────────────────────────
-let _actRender = '3d', _actMatch = 'casual'; // sensible defaults, pre-selected on load
+let _actRender = null, _actMatch = null;
 
 function actSelectRender(mode) {
   _actRender = mode;
@@ -4730,9 +4719,8 @@ function _quickPlayCasual(renderMode, rooms) {
     joinable.sort((a, b) => b.playerCount - a.playerCount);
     window.gameSocket.emit('joinRoom', { roomId: joinable[0].id });
   } else {
-    // No room found — auto-create one with easy + medium bots, then auto-start
+    // No room found — auto-create one with easy + medium bots
     _selectedRenderMode = renderMode;
-    window._quickPlayAutoStart = true;
     window.gameSocket.emit('createRoom', {
       name: 'Quick Play',
       gameMode: 'classic',
@@ -4972,11 +4960,6 @@ function initSocket(token, guest=false){
         s.emit('addBot', 'hard');
         showToast('🤖 3 dino bots added! Hit START GAME when ready.');
       }, 300);
-    }
-    // Quick-play auto-created room — start immediately as host
-    if (window._quickPlayAutoStart && data.isHost) {
-      window._quickPlayAutoStart = false;
-      setTimeout(() => { s.emit('startGame'); }, 800);
     }
   });
   s.on('leftRoom',()=>{
