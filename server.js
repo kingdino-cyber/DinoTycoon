@@ -1953,7 +1953,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('createRoom', (settings={}) => {
-    if (!authedUser) return; // guests have authedUser set
+    if (!authedUser) return;
     if (socketRoom[socket.id]) { socket.emit('roomError','Already in a room'); return; }
     const room = createRoom(socket.id, authedUser.username, settings);
     const padIdx = 0;
@@ -1991,7 +1991,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('joinRoom', ({ roomId, inviteCode }) => {
-    if (!authedUser) return; // guests have authedUser set
+    if (!authedUser) return;
     if (socketRoom[socket.id]) { socket.emit('roomError','Already in a room'); return; }
     let room = rooms[roomId];
     if (!room && inviteCode) room = Object.values(rooms).find(r=>r.inviteCode===inviteCode.toUpperCase());

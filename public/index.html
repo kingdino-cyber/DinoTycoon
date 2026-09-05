@@ -4706,34 +4706,6 @@ function quickPlay() {
 }
 window.quickPlay = quickPlay;
 
-function _quickPlayCasual(renderMode, rooms) {
-  // Find a joinable public room matching the render mode
-  const joinable = rooms.filter(r =>
-    r.status === 'waiting' &&
-    r.isPublic &&
-    r.playerCount < r.maxPlayers &&
-    (r.renderMode || '3d') === renderMode
-  );
-  if (joinable.length > 0) {
-    // Pick the fullest room (most action)
-    joinable.sort((a, b) => b.playerCount - a.playerCount);
-    window.gameSocket.emit('joinRoom', { roomId: joinable[0].id });
-  } else {
-    // No room found — auto-create one with easy + medium bots
-    _selectedRenderMode = renderMode;
-    window.gameSocket.emit('createRoom', {
-      name: 'Quick Play',
-      gameMode: 'classic',
-      map: 'jungle',
-      renderMode,
-      maxPlayers: 8,
-      isPublic: true,
-      matchDuration: 0,
-      _initialBots: { easy: 2, medium: 2, hard: 0, hardcore: 0 },
-    });
-  }
-}
-
 function initSocket(token, guest=false){
   const s=io(); window.gameSocket=s;
 
@@ -4782,7 +4754,8 @@ function initSocket(token, guest=false){
         if (match === 'ranked') {
           chooseRanked();
         } else {
-          _quickPlayCasual(render, data.rooms || []);
+          // Pre-set render mode and open the create-room form directly
+          selectRenderMode(render);
         }
       }, 450);
     }
