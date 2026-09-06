@@ -395,133 +395,261 @@ class Game3D {
   buildVolcano() {
     const cx = sx(VOLCANO_CX_SRV), cz = sz(VOLCANO_CZ_SRV);
     const bR = VOLCANO_BASE_R, pH = VOLCANO_PEAK_H, crR = VOLCANO_CRATER_R;
-    const seg = 28; // radial segments — enough for a smooth round mountain
+    const cFloor = VOLCANO_CRATER_FLOOR;
 
-    // ── Rock material palette ────────────────────────────────────────────────
-    const basalt      = new THREE.MeshLambertMaterial({ color: 0x24180e }); // dark base
-    const midRock     = new THREE.MeshLambertMaterial({ color: 0x35220f }); // warm mid-slope
-    const upperRock   = new THREE.MeshLambertMaterial({ color: 0x1c1208 }); // dark upper
-    const summit      = new THREE.MeshLambertMaterial({ color: 0x0f0a05 }); // near-black ash summit
-    const lavaGlow    = new THREE.MeshBasicMaterial({ color: 0xff4500 });   // no-shadow glow
-    const lavaHot     = new THREE.MeshBasicMaterial({ color: 0xff8c00 });   // brighter orange
-    const lavaStreakM = new THREE.MeshBasicMaterial({ color: 0xff3300, side: THREE.DoubleSide });
+    // ── Noise helpers (value noise + fBm) ────────────────────────────────────
+    const _h = (a, b) => { const n = Math.sin(a*127.1+b*311.7)*43758.5453; return n-Math.floor(n); };
+    const vn = (x, y) => {
+      const ix = x|0, iy = y|0, fx = x-ix, fy = y-iy;
+      const u = fx*fx*(3-2*fx), v = fy*fy*(3-2*fy);
+      return _h(ix,iy)*(1-u)*(1-v)+_h(ix+1,iy)*u*(1-v)+_h(ix,iy+1)*(1-u)*v+_h(ix+1,iy+1)*u*v;
+    };
+    const fbm = (x, y, o=5) => {
+      let a=0, f=1, amp=0.5, mx=0;
+      for(let i=0;i<o;i++){a+=vn(x*f,y*f)*amp;mx+=amp;amp*=0.5;f*=2.07;}
+      return a/mx;
+    };
 
-    // ── Main frustum body ────────────────────────────────────────────────────
-    // A frustum (truncated cone) so the top is flat enough to host the crater
-    const bodyGeo = new THREE.CylinderGeometry(crR + 2.8, bR, pH, seg);
-    const bodyMesh = new THREE.Mesh(bodyGeo, basalt);
-    bodyMesh.position.set(cx, pH / 2, cz);
+    // ── Procedural rock diffuse texture ──────────────────────────────────────
+    const TSZ = 256;
+    const rcv = document.createElement('canvas'); rcv.width = rcv.height = TSZ;
+    const rct = rcv.getContext('2d');
+    const rid = rct.createImageData(TSZ, TSZ);
+    for (let y = 0; y < TSZ; y++) for (let x = 0; x < TSZ; x++) {
+      const n1 = fbm(x/TSZ*4.2, y/TSZ*4.2, 6);
+      const n2 = fbm(x/TSZ*16+5.3, y/TSZ*16+2.7, 3);
+      const wx = fbm(x/TSZ*6, y/TSZ*6+1.2, 3);
+      const n3 = fbm(x/TSZ*10+wx*0.5, y/TSZ*10+wx*0.3, 4);
+      const c  = n1*0.58 + n2*0.18 + n3*0.24;
+      const lv = Math.max(0, n1-0.62) * 2.5; // lava-heated patches near high values
+      const i4 = (y*TSZ+x)*4;
+      rid.data[i4]   = Math.min(255, 20 + (c*46|0) + (lv*50|0));
+      rid.data[i4+1] = Math.min(255, 12 + (c*24|0) + (lv*10|0));
+      rid.data[i4+2] = Math.min(255,  4 + (c* 8|0));
+      rid.data[i4+3] = 255;
+    }
+    rct.putImageData(rid, 0, 0);
+    const rockTex = new THREE.CanvasTexture(rcv);
+    rockTex.wrapS = rockTex.wrapT = THREE.RepeatWrapping;
+    rockTex.repeat.set(5, 3);
+
+    // ── Bump map ──────────────────────────────────────────────────────────────
+    const bcv = document.createElement('canvas'); bcv.width = bcv.height = TSZ;
+    const bct = bcv.getContext('2d');
+    const bid = bct.createImageData(TSZ, TSZ);
+    for (let y = 0; y < TSZ; y++) for (let x = 0; x < TSZ; x++) {
+      const n  = fbm(x/TSZ*8+0.5, y/TSZ*8, 6);
+      const n2 = fbm(x/TSZ*26+3.1, y/TSZ*26+5.7, 3);
+      const v  = ((n*0.65+n2*0.35)*255)|0;
+      const i4 = (y*TSZ+x)*4;
+      bid.data[i4]=bid.data[i4+1]=bid.data[i4+2]=v; bid.data[i4+3]=255;
+    }
+    bct.putImageData(bid, 0, 0);
+    const bumpTex = new THREE.CanvasTexture(bcv);
+    bumpTex.wrapS = bumpTex.wrapT = THREE.RepeatWrapping;
+    bumpTex.repeat.set(5, 3);
+
+    // ── Animated lava texture (domain-warped, offset-animated) ───────────────
+    const lcv = document.createElement('canvas'); lcv.width = lcv.height = 128;
+    const lct = lcv.getContext('2d');
+    const lid = lct.createImageData(128, 128);
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+      const wx = fbm(x/128*5, y/128*5+1.3, 3);
+      const wy = fbm(x/128*5+2.7, y/128*5, 3);
+      const n  = fbm(x/128*7+wx*0.7, y/128*7+wy*0.7, 4);
+      const i4 = (y*128+x)*4;
+      lid.data[i4]   = Math.min(255, (180+n*75)|0);
+      lid.data[i4+1] = Math.min(255, (n*n*130)|0);
+      lid.data[i4+2] = Math.min(255, n>0.8 ? ((n-0.8)*5*60)|0 : 0);
+      lid.data[i4+3] = 255;
+    }
+    lct.putImageData(lid, 0, 0);
+    const lavaTex = new THREE.CanvasTexture(lcv);
+    lavaTex.wrapS = lavaTex.wrapT = THREE.RepeatWrapping;
+    this._lavaTex = lavaTex; // offset animated in update loop
+
+    // ── Soft smoke sprite texture ─────────────────────────────────────────────
+    const scv = document.createElement('canvas'); scv.width = scv.height = 64;
+    const sct = scv.getContext('2d');
+    const sg = sct.createRadialGradient(32,32,0,32,32,30);
+    sg.addColorStop(0, 'rgba(100,100,100,0.95)'); sg.addColorStop(0.3, 'rgba(70,70,70,0.7)');
+    sg.addColorStop(0.65,'rgba(40,40,40,0.35)');  sg.addColorStop(1, 'rgba(10,10,10,0)');
+    sct.fillStyle = sg; sct.fillRect(0,0,64,64);
+    const smokeTex = new THREE.CanvasTexture(scv);
+
+    // ── Shared materials ──────────────────────────────────────────────────────
+    const rockMat = new THREE.MeshPhongMaterial({
+      map: rockTex, bumpMap: bumpTex, bumpScale: 1.8,
+      shininess: 5, specular: new THREE.Color(0x201008), color: 0xffffff,
+    });
+    const upperMat = new THREE.MeshPhongMaterial({
+      map: rockTex, bumpMap: bumpTex, bumpScale: 2.2,
+      shininess: 2, specular: new THREE.Color(0x100806), color: 0x888888,
+    });
+    const lavaMat = new THREE.MeshBasicMaterial({ map: lavaTex, side: THREE.DoubleSide });
+
+    // ── Main volcano body (vertex-displaced frustum) ──────────────────────────
+    const bodyGeo = new THREE.CylinderGeometry(crR+2.2, bR, pH, 48, 20);
+    const pos = bodyGeo.attributes.position;
+    for (let vi = 0; vi < pos.count; vi++) {
+      const vx = pos.getX(vi), vy = pos.getY(vi), vz = pos.getZ(vi);
+      const d = Math.sqrt(vx*vx+vz*vz); if (d < 0.01) continue;
+      const hf = (vy+pH*0.5)/pH;
+      const ang = Math.atan2(vz,vx);
+      const n1 = fbm(Math.cos(ang)*2.5+5.0, Math.sin(ang)*2.5, 4);
+      const n2 = fbm(vx*0.22+3.7, vz*0.22, 3);
+      const ridge = Math.sin(ang*5+n1*4)*0.5+0.5;
+      const disp  = (n1*0.52+n2*0.30+ridge*0.18)*bR*0.15*(1-hf*0.55);
+      const bandH = Math.sin(hf*Math.PI*6+n1*3)*0.25*(1-hf*0.5);
+      pos.setXYZ(vi, vx+(vx/d)*disp, vy+bandH, vz+(vz/d)*disp);
+    }
+    bodyGeo.computeVertexNormals();
+    const bodyMesh = new THREE.Mesh(bodyGeo, rockMat);
+    bodyMesh.position.set(cx, pH/2, cz);
     this.scene.add(bodyMesh);
 
-    // ── Rock strata rings at different heights ───────────────────────────────
-    // Radius of the frustum at height h above base: bR - (bR - (crR+2.8)) * h/pH
-    const strataH = [pH * 0.22, pH * 0.44, pH * 0.66, pH * 0.83];
-    const strataCols = [0x3a2512, 0x2e1d0d, 0x221408, 0x1a0f06];
-    strataH.forEach((h, i) => {
-      const rAtH = bR - (bR - (crR + 2.8)) * (h / pH);
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(rAtH, 0.28, 6, seg),
-        new THREE.MeshLambertMaterial({ color: strataCols[i] })
-      );
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(cx, h, cz);
-      this.scene.add(ring);
-    });
+    // ── Upper ash cone (darker, displaced) ───────────────────────────────────
+    const uppR   = crR+2.2+(bR-(crR+2.2))*0.26;
+    const uppGeo = new THREE.CylinderGeometry(crR+2.2, uppR, pH*0.3, 40, 8);
+    const upos   = uppGeo.attributes.position;
+    for (let vi = 0; vi < upos.count; vi++) {
+      const vx=upos.getX(vi),vy=upos.getY(vi),vz=upos.getZ(vi);
+      const d=Math.sqrt(vx*vx+vz*vz); if(d<0.01)continue;
+      const n1=fbm(Math.atan2(vz,vx)*3+2.1,vy*0.3,3);
+      const disp=n1*uppR*0.13; upos.setXYZ(vi,vx+(vx/d)*disp,vy+n1*0.2,vz+(vz/d)*disp);
+    }
+    uppGeo.computeVertexNormals();
+    const uppMesh = new THREE.Mesh(uppGeo, upperMat);
+    uppMesh.position.set(cx, pH-pH*0.15, cz);
+    this.scene.add(uppMesh);
 
-    // ── Lava flow streaks down the slope ────────────────────────────────────
-    const NUM_STREAKS = 9;
-    for (let i = 0; i < NUM_STREAKS; i++) {
-      const ang = (i / NUM_STREAKS) * Math.PI * 2 + Math.random() * 0.4;
-      const startH = pH * (0.45 + Math.random() * 0.45);
-      const endH   = pH * (0.05 + Math.random() * 0.20);
-      const startR  = bR - (bR - (crR + 2.8)) * (startH / pH);
-      const endR    = bR - (bR - (crR + 2.8)) * (endH / pH);
+    // ── Lava flow streaks (wobbling tubes with lava texture) ──────────────────
+    for (let i = 0; i < 8; i++) {
+      const ang = (i/8)*Math.PI*2 + (fbm(i*1.3,i*0.7,2)-0.5)*0.9;
+      const startH = pH*(0.48+fbm(i*0.5,3.2,2)*0.38);
+      const endH   = pH*(0.03+fbm(i*0.8,1.5,2)*0.16);
       const pts = [];
-      const STREAK_STEPS = 8;
-      for (let s = 0; s <= STREAK_STEPS; s++) {
-        const frac = s / STREAK_STEPS;
-        const h = startH + (endH - startH) * frac;
-        const r = startR + (endR - startR) * frac;
-        pts.push(new THREE.Vector3(cx + Math.cos(ang) * r, h, cz + Math.sin(ang) * r));
+      for (let s = 0; s <= 10; s++) {
+        const frac = s/10;
+        const h   = startH+(endH-startH)*frac;
+        const rH  = bR-(bR-(crR+2.2))*(h/pH)+(fbm(ang+frac*3,frac*5,2)*0.5-0.25);
+        const wob = (fbm(ang*4+frac*6+i,frac*8,2)-0.5)*0.4;
+        pts.push(new THREE.Vector3(cx+Math.cos(ang+wob)*rH, h, cz+Math.sin(ang+wob)*rH));
       }
-      const streakGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), STREAK_STEPS, 0.12, 4, false);
-      this.scene.add(new THREE.Mesh(streakGeo, i % 3 === 0 ? lavaHot : lavaStreakM));
+      const w   = 0.15+fbm(i*2.1,0.5,2)*0.16;
+      const sGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 12, w, 5, false);
+      this.scene.add(new THREE.Mesh(sGeo, lavaMat));
     }
 
-    // ── Summit plateau ───────────────────────────────────────────────────────
-    const rimOuter = new THREE.Mesh(
-      new THREE.CylinderGeometry(crR + 2.8, crR + 3.2, 0.9, seg),
-      new THREE.MeshLambertMaterial({ color: 0x0c0804 })
+    // ── Irregular crater rim (displaced torus) ────────────────────────────────
+    const rimGeo = new THREE.TorusGeometry(crR+1.8, 0.95, 10, 40);
+    const rpos   = rimGeo.attributes.position;
+    for (let vi = 0; vi < rpos.count; vi++) {
+      const vx=rpos.getX(vi),vy=rpos.getY(vi),vz=rpos.getZ(vi);
+      const n=fbm(vx*3+7,vz*3+2,3);
+      rpos.setXYZ(vi, vx+n*0.28-0.14, vy+n*0.45, vz+n*0.28-0.14);
+    }
+    rimGeo.computeVertexNormals();
+    const rimMesh = new THREE.Mesh(rimGeo, upperMat);
+    rimMesh.position.set(cx, pH+0.25, cz);
+    this.scene.add(rimMesh);
+
+    // ── Crater inner walls ────────────────────────────────────────────────────
+    const cwGeo = new THREE.CylinderGeometry(crR*0.72, crR+1.8, pH-cFloor, 24, 4, true);
+    const cwMat = new THREE.MeshPhongMaterial({
+      map: rockTex, bumpMap: bumpTex, bumpScale: 2.5,
+      shininess: 12, specular: new THREE.Color(0xff2200),
+      emissive: new THREE.Color(0x1a0400),
+      side: THREE.DoubleSide,
+    });
+    const crWall = new THREE.Mesh(cwGeo, cwMat);
+    crWall.position.set(cx, (pH+cFloor)/2, cz);
+    this.scene.add(crWall);
+
+    // ── Animated lava pool ────────────────────────────────────────────────────
+    const poolMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(crR*0.70, crR*0.70, 0.22, 24),
+      lavaMat
     );
-    rimOuter.position.set(cx, pH + 0.35, cz);
-    this.scene.add(rimOuter);
+    poolMesh.position.set(cx, cFloor-0.08, cz);
+    this.scene.add(poolMesh);
+    this._lavaPool = poolMesh;
 
-    // ── Crater inner walls (open cylinder) ───────────────────────────────────
-    const craterWall = new THREE.Mesh(
-      new THREE.CylinderGeometry(crR * 0.75, crR, pH - VOLCANO_CRATER_FLOOR, 16, 1, true),
-      upperRock
+    // ── Rock boulders scattered around the base ───────────────────────────────
+    const boulderMat = new THREE.MeshPhongMaterial({
+      map: rockTex, bumpMap: bumpTex, bumpScale: 2.5,
+      shininess: 3, specular: new THREE.Color(0x100806), color: 0xcccccc,
+    });
+    for (let i = 0; i < 22; i++) {
+      const bang  = Math.random()*Math.PI*2;
+      const br    = bR*(0.72+Math.random()*0.26);
+      const bx    = cx+Math.cos(bang)*br, bz2 = cz+Math.sin(bang)*br;
+      const bs    = 0.18+Math.random()*0.65;
+      const bGeo  = new THREE.DodecahedronGeometry(bs, 0);
+      const bpos  = bGeo.attributes.position;
+      for (let vi=0;vi<bpos.count;vi++){
+        const vx=bpos.getX(vi),vy=bpos.getY(vi),vz=bpos.getZ(vi);
+        const n=fbm(vx*4.5+i,vy*4.5,3)*0.38-0.19;
+        bpos.setXYZ(vi,vx+n*vx,vy+n*vy,vz+n*vz);
+      }
+      bGeo.computeVertexNormals();
+      const boulder = new THREE.Mesh(bGeo, boulderMat);
+      boulder.position.set(bx, volcanoHeightAt(bx,bz2)+bs*0.28, bz2);
+      boulder.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+      this.scene.add(boulder);
+    }
+
+    // ── Dark ash/scorch field around volcano base ────────────────────────────
+    const ashMesh = new THREE.Mesh(
+      new THREE.RingGeometry(bR*0.78, bR*1.18, 52),
+      new THREE.MeshLambertMaterial({ color: 0x12100a, transparent: true, opacity: 0.80 })
     );
-    craterWall.position.set(cx, (pH + VOLCANO_CRATER_FLOOR) / 2, cz);
-    this.scene.add(craterWall);
+    ashMesh.rotation.x = -Math.PI/2;
+    ashMesh.position.set(cx, 0.02, cz);
+    this.scene.add(ashMesh);
 
-    // ── Lava pool at crater floor ────────────────────────────────────────────
-    const lavaPool = new THREE.Mesh(
-      new THREE.CylinderGeometry(crR * 0.72, crR * 0.72, 0.18, 16),
-      lavaGlow
-    );
-    lavaPool.position.set(cx, VOLCANO_CRATER_FLOOR, cz);
-    this.scene.add(lavaPool);
-    this._lavaPool = lavaPool; // animated in update loop
+    // ── Lights ────────────────────────────────────────────────────────────────
+    // Deep crater glow
+    const crLight = new THREE.PointLight(0xff4400, 7, 18);
+    crLight.position.set(cx, cFloor+1.2, cz);
+    this.scene.add(crLight);
+    this._volcanoLight = crLight;
 
-    // Inner glow ring
-    const innerRing = new THREE.Mesh(
-      new THREE.TorusGeometry(crR * 0.78, 0.22, 6, 16),
-      lavaHot
-    );
-    innerRing.rotation.x = Math.PI / 2;
-    innerRing.position.set(cx, VOLCANO_CRATER_FLOOR + 0.14, cz);
-    this.scene.add(innerRing);
-
-    // ── Volcano interior light ───────────────────────────────────────────────
-    const craterLight = new THREE.PointLight(0xff5500, 4.5, 12);
-    craterLight.position.set(cx, VOLCANO_CRATER_FLOOR + 1, cz);
-    this.scene.add(craterLight);
-    this._volcanoLight = craterLight;
-
-    // Ambient orange glow that lights up the summit
-    const topGlow = new THREE.PointLight(0xff3300, 1.2, 22);
-    topGlow.position.set(cx, pH + 1, cz);
+    // Summit atmospheric glow
+    const topGlow = new THREE.PointLight(0xff3300, 2.5, 38);
+    topGlow.position.set(cx, pH+2, cz);
     this.scene.add(topGlow);
     this._volcanoTopGlow = topGlow;
 
-    // ── Smoke particles ──────────────────────────────────────────────────────
+    // Mid-slope underlight (illuminates the lava streaks from below)
+    const midLight = new THREE.PointLight(0xff6600, 1.4, 22);
+    midLight.position.set(cx, pH*0.55, cz);
+    this.scene.add(midLight);
+
+    // ── Volumetric smoke (billboard sprites) ─────────────────────────────────
     this._volcanoSmoke = [];
-    const smokeGeo = new THREE.SphereGeometry(0.55, 5, 4);
-    const smokeMats = [
-      new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.55, depthWrite: false }),
-      new THREE.MeshBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.45, depthWrite: false }),
-      new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.60, depthWrite: false }),
-    ];
-    for (let i = 0; i < 38; i++) {
-      const sm = new THREE.Mesh(smokeGeo, smokeMats[i % 3]);
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * crR * 0.7;
-      const lifetime = 3.5 + Math.random() * 3.5;
-      sm._smokeLife = lifetime;
-      sm._smokeDur  = lifetime;
-      sm._smokePX   = cx + Math.cos(angle) * r;
-      sm._smokePZ   = cz + Math.sin(angle) * r;
-      sm._smokeVX   = (Math.random() - 0.5) * 0.45;
-      sm._smokeVZ   = (Math.random() - 0.5) * 0.45;
-      sm._smokeSpd  = 1.4 + Math.random() * 1.0;
-      sm._smokeStartY = VOLCANO_CRATER_FLOOR + pH * 0.05;
-      // Scatter start phase so they aren't all in sync
-      const startFrac = Math.random();
-      sm._smokeLife *= startFrac;
-      sm.position.set(sm._smokePX, sm._smokeStartY + sm._smokeSpd * sm._smokeDur * (1 - startFrac) * 0.5, sm._smokePZ);
-      sm.scale.setScalar(startFrac * 1.8 + 0.3);
-      this.scene.add(sm);
-      this._volcanoSmoke.push(sm);
+    for (let i = 0; i < 40; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: smokeTex, transparent: true, depthWrite: false,
+        opacity: 0.5+Math.random()*0.35,
+        color: new THREE.Color().setHSL(0, 0, 0.20+Math.random()*0.30),
+      }));
+      const ang = Math.random()*Math.PI*2;
+      const r   = Math.random()*crR*0.65;
+      const dur = 4.5+Math.random()*5;
+      sp._smokeDur   = dur;
+      sp._smokeLife  = dur * Math.random(); // staggered phase
+      sp._smokePX    = cx+Math.cos(ang)*r;
+      sp._smokePZ    = cz+Math.sin(ang)*r;
+      sp._smokeVX    = (Math.random()-0.5)*0.5;
+      sp._smokeVZ    = (Math.random()-0.5)*0.5;
+      sp._smokeSpd   = 1.6+Math.random()*1.3;
+      sp._smokeStartY = cFloor+0.4;
+      const frac0 = sp._smokeLife/dur;
+      sp.position.set(sp._smokePX, sp._smokeStartY+sp._smokeSpd*frac0*dur, sp._smokePZ);
+      sp.scale.setScalar(0.5+frac0*3.5);
+      this.scene.add(sp);
+      this._volcanoSmoke.push(sp);
     }
   }
 
@@ -1550,13 +1678,17 @@ class Game3D {
     // ── Volcano animations ────────────────────────────────────────────────────
     const nowMs = performance.now();
 
-    // Lava pool pulse
-    if (this._lavaPool) {
-      const pulse = 0.88 + Math.sin(nowMs * 0.003) * 0.12;
-      this._lavaPool.scale.setScalar(pulse);
-      this._lavaPool.material.color.setHex(
-        Math.sin(nowMs * 0.005) > 0 ? 0xff5500 : 0xff3300
-      );
+    // Lava texture flow animation
+    if (this._lavaTex) {
+      this._lavaTex.offset.x = (nowMs * 0.000058) % 1;
+      this._lavaTex.offset.y = (nowMs * 0.000034) % 1;
+    }
+    // Crater light intensity pulse (simulates churning lava)
+    if (this._volcanoLight) {
+      this._volcanoLight.intensity = 6.5 + Math.sin(nowMs * 0.0031) * 2.0 + Math.sin(nowMs * 0.0071) * 1.0;
+    }
+    if (this._volcanoTopGlow) {
+      this._volcanoTopGlow.intensity = 2.2 + Math.sin(nowMs * 0.0019) * 0.8;
     }
 
     // Smoke particles
