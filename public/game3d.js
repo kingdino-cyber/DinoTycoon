@@ -420,18 +420,19 @@ class Game3D {
       const n2 = fbm(x/TSZ*16+5.3, y/TSZ*16+2.7, 3);
       const wx = fbm(x/TSZ*6, y/TSZ*6+1.2, 3);
       const n3 = fbm(x/TSZ*10+wx*0.5, y/TSZ*10+wx*0.3, 4);
-      const c  = n1*0.58 + n2*0.18 + n3*0.24;
-      const lv = Math.max(0, n1-0.62) * 2.5; // lava-heated patches near high values
+      const c  = n1*0.55 + n2*0.20 + n3*0.25;
+      const lv = Math.max(0, n1-0.58) * 3.5;  // lava-heated patches
+      const crack = Math.max(0, 0.35-c) * 2.8; // dark cracks in low-value areas
       const i4 = (y*TSZ+x)*4;
-      rid.data[i4]   = Math.min(255, 20 + (c*46|0) + (lv*50|0));
-      rid.data[i4+1] = Math.min(255, 12 + (c*24|0) + (lv*10|0));
-      rid.data[i4+2] = Math.min(255,  4 + (c* 8|0));
+      rid.data[i4]   = Math.min(255, 35 + (c*105|0) + (lv*110|0) - (crack*20|0));
+      rid.data[i4+1] = Math.min(255, 22 + (c* 62|0) + (lv* 28|0) - (crack*12|0));
+      rid.data[i4+2] = Math.min(255,  8 + (c* 28|0) + (lv*  4|0));
       rid.data[i4+3] = 255;
     }
     rct.putImageData(rid, 0, 0);
     const rockTex = new THREE.CanvasTexture(rcv);
     rockTex.wrapS = rockTex.wrapT = THREE.RepeatWrapping;
-    rockTex.repeat.set(5, 3);
+    rockTex.repeat.set(4, 4);
 
     // ── Bump map ──────────────────────────────────────────────────────────────
     const bcv = document.createElement('canvas'); bcv.width = bcv.height = TSZ;
@@ -447,7 +448,7 @@ class Game3D {
     bct.putImageData(bid, 0, 0);
     const bumpTex = new THREE.CanvasTexture(bcv);
     bumpTex.wrapS = bumpTex.wrapT = THREE.RepeatWrapping;
-    bumpTex.repeat.set(5, 3);
+    bumpTex.repeat.set(4, 4);
 
     // ── Animated lava texture (domain-warped, offset-animated) ───────────────
     const lcv = document.createElement('canvas'); lcv.width = lcv.height = 128;
@@ -456,11 +457,12 @@ class Game3D {
     for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
       const wx = fbm(x/128*5, y/128*5+1.3, 3);
       const wy = fbm(x/128*5+2.7, y/128*5, 3);
-      const n  = fbm(x/128*7+wx*0.7, y/128*7+wy*0.7, 4);
+      const n  = fbm(x/128*7+wx*0.8, y/128*7+wy*0.8, 5);
       const i4 = (y*128+x)*4;
-      lid.data[i4]   = Math.min(255, (180+n*75)|0);
-      lid.data[i4+1] = Math.min(255, (n*n*130)|0);
-      lid.data[i4+2] = Math.min(255, n>0.8 ? ((n-0.8)*5*60)|0 : 0);
+      // bright white-yellow core → orange → deep red
+      lid.data[i4]   = Math.min(255, (200 + n*55)|0);
+      lid.data[i4+1] = Math.min(255, (n*n*n*180)|0);
+      lid.data[i4+2] = Math.min(255, n>0.85 ? ((n-0.85)*6*120)|0 : 0);
       lid.data[i4+3] = 255;
     }
     lct.putImageData(lid, 0, 0);
@@ -499,9 +501,9 @@ class Game3D {
       const n1 = fbm(Math.cos(ang)*2.5+5.0, Math.sin(ang)*2.5, 4);
       const n2 = fbm(vx*0.22+3.7, vz*0.22, 3);
       const ridge = Math.sin(ang*5+n1*4)*0.5+0.5;
-      const disp  = (n1*0.52+n2*0.30+ridge*0.18)*bR*0.15*(1-hf*0.55);
-      const bandH = Math.sin(hf*Math.PI*6+n1*3)*0.25*(1-hf*0.5);
-      pos.setXYZ(vi, vx+(vx/d)*disp, vy+bandH, vz+(vz/d)*disp);
+      const gully = Math.sin(ang*7+n2*6)*0.5+0.5;
+      const disp  = (n1*0.48+n2*0.22+ridge*0.20+gully*0.10)*bR*0.17*(1-hf*0.60);
+      pos.setXYZ(vi, vx+(vx/d)*disp, vy, vz+(vz/d)*disp);
     }
     bodyGeo.computeVertexNormals();
     const bodyMesh = new THREE.Mesh(bodyGeo, rockMat);
@@ -542,12 +544,12 @@ class Game3D {
     }
 
     // ── Irregular crater rim (displaced torus) ────────────────────────────────
-    const rimGeo = new THREE.TorusGeometry(crR+1.8, 0.95, 10, 40);
+    const rimGeo = new THREE.TorusGeometry(crR+1.8, 1.05, 24, 64);
     const rpos   = rimGeo.attributes.position;
     for (let vi = 0; vi < rpos.count; vi++) {
       const vx=rpos.getX(vi),vy=rpos.getY(vi),vz=rpos.getZ(vi);
       const n=fbm(vx*3+7,vz*3+2,3);
-      rpos.setXYZ(vi, vx+n*0.28-0.14, vy+n*0.45, vz+n*0.28-0.14);
+      rpos.setXYZ(vi, vx+n*0.32-0.16, vy+n*0.14, vz+n*0.32-0.16);
     }
     rimGeo.computeVertexNormals();
     const rimMesh = new THREE.Mesh(rimGeo, upperMat);
@@ -558,22 +560,29 @@ class Game3D {
     const cwGeo = new THREE.CylinderGeometry(crR*0.72, crR+1.8, pH-cFloor, 24, 4, true);
     const cwMat = new THREE.MeshPhongMaterial({
       map: rockTex, bumpMap: bumpTex, bumpScale: 2.5,
-      shininess: 12, specular: new THREE.Color(0xff2200),
-      emissive: new THREE.Color(0x1a0400),
+      shininess: 18, specular: new THREE.Color(0xff3300),
+      emissive: new THREE.Color(0x4a1400),  // strong orange-red inner glow
       side: THREE.DoubleSide,
     });
     const crWall = new THREE.Mesh(cwGeo, cwMat);
     crWall.position.set(cx, (pH+cFloor)/2, cz);
     this.scene.add(crWall);
 
-    // ── Animated lava pool ────────────────────────────────────────────────────
+    // ── Animated lava pool (emissive glow) ───────────────────────────────────
+    const poolMat = new THREE.MeshStandardMaterial({
+      map: lavaTex,
+      emissiveMap: lavaTex, emissive: new THREE.Color(0xff5500),
+      emissiveIntensity: 2.5,
+      roughness: 0.9, metalness: 0.0,
+    });
     const poolMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(crR*0.70, crR*0.70, 0.22, 24),
-      lavaMat
+      new THREE.CylinderGeometry(crR*0.72, crR*0.72, 0.22, 32),
+      poolMat
     );
     poolMesh.position.set(cx, cFloor-0.08, cz);
     this.scene.add(poolMesh);
     this._lavaPool = poolMesh;
+    this._lavaPoolMat = poolMat;
 
     // ── Rock boulders scattered around the base ───────────────────────────────
     const boulderMat = new THREE.MeshPhongMaterial({
@@ -610,21 +619,26 @@ class Game3D {
 
     // ── Lights ────────────────────────────────────────────────────────────────
     // Deep crater glow
-    const crLight = new THREE.PointLight(0xff4400, 7, 18);
-    crLight.position.set(cx, cFloor+1.2, cz);
+    const crLight = new THREE.PointLight(0xff4400, 10, 22);
+    crLight.position.set(cx, cFloor+1.5, cz);
     this.scene.add(crLight);
     this._volcanoLight = crLight;
 
-    // Summit atmospheric glow
-    const topGlow = new THREE.PointLight(0xff3300, 2.5, 38);
-    topGlow.position.set(cx, pH+2, cz);
+    // Summit atmospheric glow (lights up smoke plume from below)
+    const topGlow = new THREE.PointLight(0xff3300, 4.0, 50);
+    topGlow.position.set(cx, pH+3, cz);
     this.scene.add(topGlow);
     this._volcanoTopGlow = topGlow;
 
-    // Mid-slope underlight (illuminates the lava streaks from below)
-    const midLight = new THREE.PointLight(0xff6600, 1.4, 22);
-    midLight.position.set(cx, pH*0.55, cz);
+    // Mid-slope underlight (illuminates lava streaks and sides)
+    const midLight = new THREE.PointLight(0xff6600, 2.8, 28);
+    midLight.position.set(cx, pH*0.45, cz);
     this.scene.add(midLight);
+
+    // Second mid-slope light on opposite side for fill
+    const fillLight = new THREE.PointLight(0xff5500, 1.8, 20);
+    fillLight.position.set(cx+bR*0.4, pH*0.3, cz+bR*0.4);
+    this.scene.add(fillLight);
 
     // ── Volumetric smoke (billboard sprites) ─────────────────────────────────
     this._volcanoSmoke = [];
