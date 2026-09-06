@@ -635,7 +635,7 @@ class Game3D {
         color: new THREE.Color().setHSL(0, 0, 0.20+Math.random()*0.30),
       }));
       const ang = Math.random()*Math.PI*2;
-      const r   = Math.random()*crR*0.65;
+      const r   = Math.random()*VOLCANO_CRATER_R*0.65;
       const dur = 4.5+Math.random()*5;
       sp._smokeDur   = dur;
       sp._smokeLife  = dur * Math.random(); // staggered phase
@@ -679,7 +679,7 @@ class Game3D {
       p._g  = -30;
       p._born = performance.now();
       p._life = 1.0 + Math.random() * 0.8;
-      p.position.set(cx + (Math.random() - 0.5) * crR * 0.6, originY, cz + (Math.random() - 0.5) * crR * 0.6);
+      p.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6);
       this.scene.add(p);
       this._volcanoParticles = this._volcanoParticles || [];
       this._volcanoParticles.push(p);
