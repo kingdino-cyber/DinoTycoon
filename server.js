@@ -987,6 +987,7 @@ function startRoomLoop(room) {
   // Hard mode gets periodic meteor strikes — first one a bit into the match so
   // players have time to get settled before chaos starts
   if (room.difficulty === 'hard') room._nextMeteorAt = room.matchStartTime + 8000 + Math.random() * 5000;
+  room._nextVolcanoEruptAt = room.matchStartTime + 90000; // first eruption after 90 s
   let lastTick = Date.now();
 
   // Main tick
@@ -998,6 +999,10 @@ function startRoomLoop(room) {
     const activeEvent = room.isRanked ? null : getActiveEvent();
     const incomeMult = activeEvent?.mpsMultiplier || 1;
 
+    const VOLCANO_CENTER = { x: 2000, y: 2000 };
+    const CRATER_R = 110; // server units — within this = inside the crater
+    const HEAT_DPS  = 90; // damage per second inside crater
+
     for (const p of allEntities) {
       if (p.isDead) continue;
       // Each prestige level passively boosts income by 10%
@@ -1005,6 +1010,20 @@ function startRoomLoop(room) {
       const earned = p.mps * incomeMult * prestigeBonus * dt;
       p.money += earned; p.totalEarned += earned;
       if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
+      // Volcano crater heat damage
+      if (dist(p, VOLCANO_CENTER) < CRATER_R) {
+        const dmg = HEAT_DPS * dt;
+        p.hp -= dmg;
+        p.damageTaken = (p.damageTaken || 0) + dmg;
+        if (p.hp <= 0) {
+          p.hp = 0; p.isDead = true; p.deaths++;
+          emitToRoom(room, 'playerDied', { victimId: p.id || p.socketId, killerId: null, cause: 'heat', loot: 0, killerMoney: 0 });
+          if (!p.isBot) persistPlayer(p);
+          scheduleRespawn(p, room);
+        } else {
+          emitToRoom(room, 'heatDamage', { id: p.id || p.socketId, hp: p.hp, maxHp: p.maxHp, damage: Math.round(dmg) });
+        }
+      }
     }
     // Tick bots — precompute shared arrays once per tick instead of per-bot to avoid O(bots*buildings) reallocation
     const buildingsArr = Object.values(room.buildings);
@@ -1140,6 +1159,65 @@ function startRoomLoop(room) {
         emitToRoom(room, 'buildingDamaged', { id: b.id, hp: b.hp, maxHp: b.maxHp, damage: METEOR_DMG });
         if (b.hp <= 0) destroyBuilding(room, b.id, { username: 'A meteor' });
       }
+    }
+
+    // ── Volcano eruption every 90 s ──────────────────────────────────────────
+    if (room._nextVolcanoEruptAt && now >= room._nextVolcanoEruptAt) {
+      room._nextVolcanoEruptAt = now + 90000;
+      const BOMB_COUNT = 8;
+      const bombs = [];
+      const alive = allEntities.filter(e => !e.isDead);
+      for (let i = 0; i < BOMB_COUNT; i++) {
+        let bx, by;
+        if (alive.length && Math.random() < 0.65) {
+          const t = alive[Math.floor(Math.random() * alive.length)];
+          bx = Math.max(80, Math.min(WORLD_SIZE - 80, t.x + (Math.random() - 0.5) * 350));
+          by = Math.max(80, Math.min(WORLD_SIZE - 80, t.y + (Math.random() - 0.5) * 350));
+        } else {
+          bx = 200 + Math.random() * (WORLD_SIZE - 400);
+          by = 200 + Math.random() * (WORLD_SIZE - 400);
+        }
+        // Keep bombs away from the crater mouth itself
+        if (dist({ x: bx, y: by }, VOLCANO_CENTER) < 250) {
+          const ang = Math.random() * Math.PI * 2;
+          bx = VOLCANO_CENTER.x + Math.cos(ang) * (350 + Math.random() * 300);
+          by = VOLCANO_CENTER.y + Math.sin(ang) * (350 + Math.random() * 300);
+          bx = Math.max(80, Math.min(WORLD_SIZE - 80, bx));
+          by = Math.max(80, Math.min(WORLD_SIZE - 80, by));
+        }
+        bombs.push({ x: bx, y: by });
+      }
+      emitToRoom(room, 'volcanoErupt', { bombs });
+      // Damage lands after the visual travel time
+      setTimeout(() => {
+        if (room._matchEnded) return;
+        const BOMB_R = 200, BOMB_DMG = 85;
+        const buildingsNow = Object.values(room.buildings);
+        for (const bomb of bombs) {
+          for (const e of allEntities) {
+            if (e.isDead) continue;
+            if (dist(e, bomb) >= BOMB_R) continue;
+            e.hp -= BOMB_DMG;
+            e.damageTaken = (e.damageTaken || 0) + BOMB_DMG;
+            if (e.hp <= 0) {
+              e.hp = 0; e.isDead = true; e.deaths++;
+              emitToRoom(room, 'playerDied', { victimId: e.id || e.socketId, killerId: null, cause: 'lava', loot: 0, killerMoney: 0 });
+              if (!e.isBot) persistPlayer(e);
+              scheduleRespawn(e, room);
+            } else {
+              emitToRoom(room, 'lavaDamage', { id: e.id || e.socketId, hp: e.hp, maxHp: e.maxHp, damage: BOMB_DMG });
+            }
+          }
+          for (const b of buildingsNow) {
+            if (b.hp <= 0) continue;
+            if (dist(b, bomb) >= BOMB_R) continue;
+            b.hp -= BOMB_DMG;
+            emitToRoom(room, 'buildingDamaged', { id: b.id, hp: b.hp, maxHp: b.maxHp, damage: BOMB_DMG });
+            if (b.hp <= 0) destroyBuilding(room, b.id, { username: 'The volcano' });
+          }
+        }
+        emitToRoom(room, 'lavaBombsLand', { bombs });
+      }, 3500);
     }
 
     // Match timer

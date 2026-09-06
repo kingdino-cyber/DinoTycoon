@@ -31,12 +31,30 @@ const PADS_DATA = [
   { x:3280, y:1690, hex:0xfdcb6e },
 ];
 
+// ── Volcano ───────────────────────────────────────────────────────────────────
+const VOLCANO_CX_SRV = 2000, VOLCANO_CZ_SRV = 2000;
+const VOLCANO_BASE_R   = 420 * WU;   // base radius in Three.js units (~17.5)
+const VOLCANO_PEAK_H   = 17;          // summit height in Three.js units
+const VOLCANO_CRATER_R = 3.8;         // crater mouth radius (Three.js)
+const VOLCANO_CRATER_FLOOR = 13.5;    // crater floor height (Three.js)
+// Server-unit equivalents used for terrain height query
+const VOLCANO_BASE_R_SRV = 420;
+// ─────────────────────────────────────────────────────────────────────────────
+
 const WALL_TYPES = ['stoneWall', 'fossilFortress'];
 const INCOME_UPGRADE_IDS = ['bonePile1', 'bonePile2', 'bonePile3', 'bonePile4', 'bonePile5'];
 
 function sx(serverX) { return serverX * WU; }
 function sz(serverY) { return serverY * WU; }
 function dirToRotY(theta) { return Math.PI / 2 - theta; }
+
+// Returns the terrain elevation at a Three.js (worldX, worldZ) position due to the volcano.
+function volcanoHeightAt(worldX, worldZ) {
+  const d = Math.hypot(worldX - sx(VOLCANO_CX_SRV), worldZ - sz(VOLCANO_CZ_SRV));
+  if (d >= VOLCANO_BASE_R) return 0;
+  const t = 1 - d / VOLCANO_BASE_R; // 0 at edge, 1 at center
+  return VOLCANO_PEAK_H * Math.pow(t, 0.75);
+}
 function hexStr2num(s) { return parseInt(s.replace('#', ''), 16); }
 
 function makeTextSprite(text) {
@@ -260,6 +278,7 @@ class Game3D {
 
     this.buildSky();
     this.buildDecorations();
+    this.buildVolcano();
   }
 
   applyMapTheme(map) {
@@ -371,6 +390,241 @@ class Game3D {
     }
     fossilMesh.instanceMatrix.needsUpdate = true;
     this.scene.add(fossilMesh);
+  }
+
+  buildVolcano() {
+    const cx = sx(VOLCANO_CX_SRV), cz = sz(VOLCANO_CZ_SRV);
+    const bR = VOLCANO_BASE_R, pH = VOLCANO_PEAK_H, crR = VOLCANO_CRATER_R;
+    const seg = 28; // radial segments — enough for a smooth round mountain
+
+    // ── Rock material palette ────────────────────────────────────────────────
+    const basalt      = new THREE.MeshLambertMaterial({ color: 0x24180e }); // dark base
+    const midRock     = new THREE.MeshLambertMaterial({ color: 0x35220f }); // warm mid-slope
+    const upperRock   = new THREE.MeshLambertMaterial({ color: 0x1c1208 }); // dark upper
+    const summit      = new THREE.MeshLambertMaterial({ color: 0x0f0a05 }); // near-black ash summit
+    const lavaGlow    = new THREE.MeshBasicMaterial({ color: 0xff4500 });   // no-shadow glow
+    const lavaHot     = new THREE.MeshBasicMaterial({ color: 0xff8c00 });   // brighter orange
+    const lavaStreakM = new THREE.MeshBasicMaterial({ color: 0xff3300, side: THREE.DoubleSide });
+
+    // ── Main frustum body ────────────────────────────────────────────────────
+    // A frustum (truncated cone) so the top is flat enough to host the crater
+    const bodyGeo = new THREE.CylinderGeometry(crR + 2.8, bR, pH, seg);
+    const bodyMesh = new THREE.Mesh(bodyGeo, basalt);
+    bodyMesh.position.set(cx, pH / 2, cz);
+    this.scene.add(bodyMesh);
+
+    // ── Rock strata rings at different heights ───────────────────────────────
+    // Radius of the frustum at height h above base: bR - (bR - (crR+2.8)) * h/pH
+    const strataH = [pH * 0.22, pH * 0.44, pH * 0.66, pH * 0.83];
+    const strataCols = [0x3a2512, 0x2e1d0d, 0x221408, 0x1a0f06];
+    strataH.forEach((h, i) => {
+      const rAtH = bR - (bR - (crR + 2.8)) * (h / pH);
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(rAtH, 0.28, 6, seg),
+        new THREE.MeshLambertMaterial({ color: strataCols[i] })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(cx, h, cz);
+      this.scene.add(ring);
+    });
+
+    // ── Lava flow streaks down the slope ────────────────────────────────────
+    const NUM_STREAKS = 9;
+    for (let i = 0; i < NUM_STREAKS; i++) {
+      const ang = (i / NUM_STREAKS) * Math.PI * 2 + Math.random() * 0.4;
+      const startH = pH * (0.45 + Math.random() * 0.45);
+      const endH   = pH * (0.05 + Math.random() * 0.20);
+      const startR  = bR - (bR - (crR + 2.8)) * (startH / pH);
+      const endR    = bR - (bR - (crR + 2.8)) * (endH / pH);
+      const pts = [];
+      const STREAK_STEPS = 8;
+      for (let s = 0; s <= STREAK_STEPS; s++) {
+        const frac = s / STREAK_STEPS;
+        const h = startH + (endH - startH) * frac;
+        const r = startR + (endR - startR) * frac;
+        pts.push(new THREE.Vector3(cx + Math.cos(ang) * r, h, cz + Math.sin(ang) * r));
+      }
+      const streakGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), STREAK_STEPS, 0.12, 4, false);
+      this.scene.add(new THREE.Mesh(streakGeo, i % 3 === 0 ? lavaHot : lavaStreakM));
+    }
+
+    // ── Summit plateau ───────────────────────────────────────────────────────
+    const rimOuter = new THREE.Mesh(
+      new THREE.CylinderGeometry(crR + 2.8, crR + 3.2, 0.9, seg),
+      new THREE.MeshLambertMaterial({ color: 0x0c0804 })
+    );
+    rimOuter.position.set(cx, pH + 0.35, cz);
+    this.scene.add(rimOuter);
+
+    // ── Crater inner walls (open cylinder) ───────────────────────────────────
+    const craterWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(crR * 0.75, crR, pH - VOLCANO_CRATER_FLOOR, 16, 1, true),
+      upperRock
+    );
+    craterWall.position.set(cx, (pH + VOLCANO_CRATER_FLOOR) / 2, cz);
+    this.scene.add(craterWall);
+
+    // ── Lava pool at crater floor ────────────────────────────────────────────
+    const lavaPool = new THREE.Mesh(
+      new THREE.CylinderGeometry(crR * 0.72, crR * 0.72, 0.18, 16),
+      lavaGlow
+    );
+    lavaPool.position.set(cx, VOLCANO_CRATER_FLOOR, cz);
+    this.scene.add(lavaPool);
+    this._lavaPool = lavaPool; // animated in update loop
+
+    // Inner glow ring
+    const innerRing = new THREE.Mesh(
+      new THREE.TorusGeometry(crR * 0.78, 0.22, 6, 16),
+      lavaHot
+    );
+    innerRing.rotation.x = Math.PI / 2;
+    innerRing.position.set(cx, VOLCANO_CRATER_FLOOR + 0.14, cz);
+    this.scene.add(innerRing);
+
+    // ── Volcano interior light ───────────────────────────────────────────────
+    const craterLight = new THREE.PointLight(0xff5500, 4.5, 12);
+    craterLight.position.set(cx, VOLCANO_CRATER_FLOOR + 1, cz);
+    this.scene.add(craterLight);
+    this._volcanoLight = craterLight;
+
+    // Ambient orange glow that lights up the summit
+    const topGlow = new THREE.PointLight(0xff3300, 1.2, 22);
+    topGlow.position.set(cx, pH + 1, cz);
+    this.scene.add(topGlow);
+    this._volcanoTopGlow = topGlow;
+
+    // ── Smoke particles ──────────────────────────────────────────────────────
+    this._volcanoSmoke = [];
+    const smokeGeo = new THREE.SphereGeometry(0.55, 5, 4);
+    const smokeMats = [
+      new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.55, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.45, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.60, depthWrite: false }),
+    ];
+    for (let i = 0; i < 38; i++) {
+      const sm = new THREE.Mesh(smokeGeo, smokeMats[i % 3]);
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * crR * 0.7;
+      const lifetime = 3.5 + Math.random() * 3.5;
+      sm._smokeLife = lifetime;
+      sm._smokeDur  = lifetime;
+      sm._smokePX   = cx + Math.cos(angle) * r;
+      sm._smokePZ   = cz + Math.sin(angle) * r;
+      sm._smokeVX   = (Math.random() - 0.5) * 0.45;
+      sm._smokeVZ   = (Math.random() - 0.5) * 0.45;
+      sm._smokeSpd  = 1.4 + Math.random() * 1.0;
+      sm._smokeStartY = VOLCANO_CRATER_FLOOR + pH * 0.05;
+      // Scatter start phase so they aren't all in sync
+      const startFrac = Math.random();
+      sm._smokeLife *= startFrac;
+      sm.position.set(sm._smokePX, sm._smokeStartY + sm._smokeSpd * sm._smokeDur * (1 - startFrac) * 0.5, sm._smokePZ);
+      sm.scale.setScalar(startFrac * 1.8 + 0.3);
+      this.scene.add(sm);
+      this._volcanoSmoke.push(sm);
+    }
+  }
+
+  showVolcanoErupt(bombs) {
+    const cx = sx(VOLCANO_CX_SRV), cz = sz(VOLCANO_CZ_SRV);
+    const originY = VOLCANO_PEAK_H + 1;
+
+    // ── Crater flash ─────────────────────────────────────────────────────────
+    if (this._volcanoLight)  { this._volcanoLight.intensity  = 18; }
+    if (this._volcanoTopGlow){ this._volcanoTopGlow.intensity = 10; }
+    setTimeout(() => {
+      if (this._volcanoLight)   this._volcanoLight.intensity  = 4.5;
+      if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 1.2;
+    }, 600);
+
+    // ── Upward burst particles ────────────────────────────────────────────────
+    const burstGeo = new THREE.SphereGeometry(0.28, 5, 4);
+    const BURST = 40;
+    for (let i = 0; i < BURST; i++) {
+      const mat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xff5500 : 0xff9900 });
+      const p = new THREE.Mesh(burstGeo, mat);
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 8 + Math.random() * 14;
+      p._vx = Math.cos(ang) * spd * 0.25;
+      p._vy = spd;
+      p._vz = Math.sin(ang) * spd * 0.25;
+      p._g  = -30;
+      p._born = performance.now();
+      p._life = 1.0 + Math.random() * 0.8;
+      p.position.set(cx + (Math.random() - 0.5) * crR * 0.6, originY, cz + (Math.random() - 0.5) * crR * 0.6);
+      this.scene.add(p);
+      this._volcanoParticles = this._volcanoParticles || [];
+      this._volcanoParticles.push(p);
+    }
+
+    // ── Lava bombs arcing to target positions ─────────────────────────────────
+    this._lavaBombsInFlight = this._lavaBombsInFlight || [];
+    const TRAVEL = 3.5; // seconds — must match server setTimeout delay
+    for (const bomb of bombs) {
+      const tx = sx(bomb.x), tz = sz(bomb.y);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xff4400 });
+      const geo = new THREE.SphereGeometry(0.55, 8, 6);
+      const ball = new THREE.Mesh(geo, mat);
+      ball.position.set(cx, originY, cz);
+      const light = new THREE.PointLight(0xff5500, 3, 8);
+      ball.add(light);
+      this.scene.add(ball);
+      ball._lbStart  = performance.now();
+      ball._lbTravel = TRAVEL * 1000;
+      ball._lbSX = cx; ball._lbSY = originY; ball._lbSZ = cz;
+      ball._lbTX = tx; ball._lbTZ = tz;
+      ball._lbPeakY = originY + 14 + Math.random() * 8;
+      this._lavaBombsInFlight.push(ball);
+    }
+
+    // ── Shockwave ring at crater ──────────────────────────────────────────────
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 2.5, 24), ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(cx, VOLCANO_PEAK_H + 0.5, cz);
+    this.scene.add(ring);
+    const rStart = performance.now();
+    const expandRing = () => {
+      const t = Math.min((performance.now() - rStart) / 1200, 1);
+      ring.scale.setScalar(1 + t * 9);
+      ringMat.opacity = 0.7 * (1 - t);
+      if (t < 1) requestAnimationFrame(expandRing);
+      else this.scene.remove(ring);
+    };
+    requestAnimationFrame(expandRing);
+
+    // Camera shake if player is on/near the volcano
+    if (this.myPlayer) {
+      const dSrv = Math.hypot(this.myPlayer.x - VOLCANO_CX_SRV, this.myPlayer.y - VOLCANO_CZ_SRV);
+      if (dSrv < 800) this._shakeUntil = performance.now() + 550;
+    }
+    window.addChatMessage?.('🌋 Volcano', 'The volcano erupts! Take cover!', '#ff4400');
+    window.SFX?.crunch?.();
+  }
+
+  showLavaBombsLand(bombs) {
+    for (const bomb of bombs) {
+      this.showHitEffect(bomb.x, bomb.y, 0xff4400);
+      const cx2 = sx(bomb.x), cz2 = sz(bomb.y);
+      const scorchMat = new THREE.MeshBasicMaterial({ color: 0x330800, transparent: true, opacity: 0.8 });
+      const scorch = new THREE.Mesh(new THREE.CircleGeometry(VOLCANO_BASE_R * 0.45, 18), scorchMat);
+      scorch.rotation.x = -Math.PI / 2;
+      scorch.position.set(cx2, 0.03, cz2);
+      this.scene.add(scorch);
+      const sStart = performance.now();
+      const fadeScorch = () => {
+        const t = Math.min((performance.now() - sStart) / 4000, 1);
+        scorchMat.opacity = 0.8 * (1 - t);
+        if (t < 1) requestAnimationFrame(fadeScorch);
+        else this.scene.remove(scorch);
+      };
+      requestAnimationFrame(fadeScorch);
+      if (this.myPlayer) {
+        const d = Math.hypot(this.myPlayer.x - bomb.x, this.myPlayer.y - bomb.y);
+        if (d < 250) this._shakeUntil = performance.now() + 300;
+      }
+    }
+    window.SFX?.crunch?.();
   }
 
   setupInput() {
@@ -1206,8 +1460,9 @@ class Game3D {
 
       const myObj = this.playerObjs[this.myId];
       const px = sx(this.myPlayer.x), pz = sz(this.myPlayer.y);
+      const terrainH = volcanoHeightAt(px, pz);
       if (myObj) {
-        myObj.group.position.set(px, jY, pz);
+        myObj.group.position.set(px, jY + terrainH, pz);
         if (myObj._dinoRotY === undefined) myObj._dinoRotY = phi;
         const _rd = phi - myObj._dinoRotY;
         const _rn = _rd - Math.round(_rd / (Math.PI * 2)) * (Math.PI * 2);
@@ -1265,7 +1520,7 @@ class Game3D {
         // Suppress head-bob while airborne — combining the walk-bob sine wave with
         // the jump arc made jumping look jittery instead of a clean smooth curve
         const headBob = (viewBobOn && this._isWalking && jY === 0) ? Math.sin(this._walkPhase) * 0.038 : 0;
-        const eyeH = 1.85 + jY + headBob;
+        const eyeH = 1.85 + jY + terrainH + headBob;
         this.camera.position.set(px + forwardCam.x * 0.25 + shakeX, eyeH + shakeY, pz + forwardCam.z * 0.25);
         const lx = px + forwardCam.x * Math.cos(pitch) * 10;
         const ly = eyeH - Math.sin(pitch) * 10;
@@ -1276,21 +1531,94 @@ class Game3D {
         const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
         this.camera.position.set(
           px + forwardCam.x * _cd * pitchPull + shakeX,
-          CAM_BASE_HEIGHT + pitchLift + shakeY + jY,
+          CAM_BASE_HEIGHT + terrainH + pitchLift + shakeY + jY,
           pz + forwardCam.z * _cd * pitchPull
         );
-        this.camera.lookAt(px, 1.3 + jY, pz);
+        this.camera.lookAt(px, 1.3 + jY + terrainH, pz);
       } else {
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
         const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
         this.camera.position.set(
           px - forwardCam.x * _cd * pitchPull + shakeX,
-          CAM_BASE_HEIGHT + pitchLift + shakeY + jY,
+          CAM_BASE_HEIGHT + terrainH + pitchLift + shakeY + jY,
           pz - forwardCam.z * _cd * pitchPull
         );
-        this.camera.lookAt(px, 1.3 + jY, pz);
+        this.camera.lookAt(px, 1.3 + jY + terrainH, pz);
       }
     }
+
+    // ── Volcano animations ────────────────────────────────────────────────────
+    const nowMs = performance.now();
+
+    // Lava pool pulse
+    if (this._lavaPool) {
+      const pulse = 0.88 + Math.sin(nowMs * 0.003) * 0.12;
+      this._lavaPool.scale.setScalar(pulse);
+      this._lavaPool.material.color.setHex(
+        Math.sin(nowMs * 0.005) > 0 ? 0xff5500 : 0xff3300
+      );
+    }
+
+    // Smoke particles
+    if (this._volcanoSmoke) {
+      for (const sm of this._volcanoSmoke) {
+        sm._smokeLife -= dt;
+        if (sm._smokeLife <= 0) {
+          // Reset particle
+          const angle = Math.random() * Math.PI * 2;
+          const r = Math.random() * VOLCANO_CRATER_R * 0.7;
+          sm._smokePX = sx(VOLCANO_CX_SRV) + Math.cos(angle) * r;
+          sm._smokePZ = sz(VOLCANO_CZ_SRV) + Math.sin(angle) * r;
+          sm._smokeVX = (Math.random() - 0.5) * 0.45;
+          sm._smokeVZ = (Math.random() - 0.5) * 0.45;
+          sm._smokeSpd  = 1.4 + Math.random() * 1.0;
+          sm._smokeDur  = 3.5 + Math.random() * 3.5;
+          sm._smokeLife = sm._smokeDur;
+          sm.position.set(sm._smokePX, sm._smokeStartY, sm._smokePZ);
+          sm.scale.setScalar(0.3);
+        } else {
+          const frac = 1 - sm._smokeLife / sm._smokeDur;
+          sm.position.x = sm._smokePX + sm._smokeVX * frac * sm._smokeDur;
+          sm.position.z = sm._smokePZ + sm._smokeVZ * frac * sm._smokeDur;
+          sm.position.y = sm._smokeStartY + sm._smokeSpd * frac * sm._smokeDur;
+          sm.scale.setScalar(0.3 + frac * 2.2);
+          sm.material.opacity = frac < 0.2 ? frac / 0.2 * 0.6 : (frac > 0.75 ? (1 - frac) / 0.25 * 0.6 : 0.6);
+        }
+      }
+    }
+
+    // Burst particles (eruption plume)
+    if (this._volcanoParticles) {
+      const still = [];
+      for (const p of this._volcanoParticles) {
+        const age = (nowMs - p._born) / 1000;
+        if (age >= p._life) { this.scene.remove(p); continue; }
+        p.position.x += p._vx * dt;
+        p.position.y += (p._vy + p._g * age) * dt;
+        p.position.z += p._vz * dt;
+        still.push(p);
+      }
+      this._volcanoParticles = still;
+    }
+
+    // Lava bombs in flight
+    if (this._lavaBombsInFlight) {
+      const flying = [];
+      for (const ball of this._lavaBombsInFlight) {
+        const t = Math.min((nowMs - ball._lbStart) / ball._lbTravel, 1);
+        // Parabolic arc: quadratic in XZ, sine-bell in Y
+        ball.position.x = ball._lbSX + (ball._lbTX - ball._lbSX) * t;
+        ball.position.z = ball._lbSZ + (ball._lbTZ - ball._lbSZ) * t;
+        const arcY = ball._lbSY + (ball._lbPeakY - ball._lbSY) * Math.sin(t * Math.PI);
+        const landH = volcanoHeightAt(ball._lbTX, ball._lbTZ);
+        ball.position.y = arcY + (landH - ball._lbSY) * t;
+        ball.rotation.x += dt * 3; ball.rotation.z += dt * 2;
+        if (t < 1) { flying.push(ball); }
+        else { this.scene.remove(ball); }
+      }
+      this._lavaBombsInFlight = flying;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Auto-collect nearby drops
     if (this.myPlayer && !this.myPlayer.isDead) {
@@ -1600,7 +1928,7 @@ function setupGameSocketEvents() {
     window.SFX?.hit();
   });
 
-  s.on('playerDied', ({ victimId, killerId, loot, killerMoney }) => {
+  s.on('playerDied', ({ victimId, killerId, cause, loot, killerMoney }) => {
     const scene = gs(); if (!scene) return;
     const victim = scene.playerObjs[victimId];
     const killer = scene.playerObjs[killerId];
@@ -1639,8 +1967,16 @@ function setupGameSocketEvents() {
     const kc = killer?.data?.color || '#fff';
     const kIsBot = killer?.data?.isBot, vIsBot = victim?.data?.isBot;
     if (killerId === null) {
-      window.addKillFeed?.(`☄️ <span style="color:${vc}">${vName}</span> was struck by a meteor!`);
-      window.addChatMessage?.('☄️ Meteor', `${vName} was struck by a meteor!`, '#ff6600');
+      if (cause === 'heat') {
+        window.addKillFeed?.(`🌋 <span style="color:${vc}">${vName}</span> was incinerated by the volcano!`);
+        window.addChatMessage?.('🌋 Volcano', `${vName} jumped into the volcano!`, '#ff4400');
+      } else if (cause === 'lava') {
+        window.addKillFeed?.(`🌋 <span style="color:${vc}">${vName}</span> was obliterated by a lava bomb!`);
+        window.addChatMessage?.('🌋 Volcano', `${vName} was hit by a lava bomb!`, '#ff5500');
+      } else {
+        window.addKillFeed?.(`☄️ <span style="color:${vc}">${vName}</span> was struck by a meteor!`);
+        window.addChatMessage?.('☄️ Meteor', `${vName} was struck by a meteor!`, '#ff6600');
+      }
     } else if (victimId === killerId) {
       window.addKillFeed?.(`☠️ <span style="color:${vc}">${vName}</span> perished`);
       window.addChatMessage?.('⚔️ Arena', `☠️ ${vName} perished`, '#a29bfe');
@@ -1761,6 +2097,47 @@ function setupGameSocketEvents() {
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
     scene.showHitAnim(id);
     if (id === scene.myId) { scene.myPlayer.hp = hp; window.updateHUD(scene.myPlayer); }
+  });
+
+  s.on('volcanoErupt', ({ bombs }) => {
+    const scene = gs(); if (!scene) return;
+    scene.showVolcanoErupt(bombs);
+  });
+
+  s.on('lavaBombsLand', ({ bombs }) => {
+    const scene = gs(); if (!scene) return;
+    scene.showLavaBombsLand(bombs);
+  });
+
+  s.on('lavaDamage', ({ id, hp, maxHp, damage }) => {
+    const scene = gs(); if (!scene) return;
+    const tgt = scene.playerObjs[id]; if (!tgt) return;
+    tgt.data.hp = hp; tgt.data.maxHp = maxHp;
+    redrawHPSprite(tgt.hpSprite, hp, maxHp);
+    scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
+    scene.showHitAnim(id);
+    if (id === scene.myId) { scene.myPlayer.hp = hp; window.updateHUD(scene.myPlayer); }
+  });
+
+  s.on('heatDamage', ({ id, hp, maxHp, damage }) => {
+    const scene = gs(); if (!scene) return;
+    const tgt = scene.playerObjs[id]; if (!tgt) return;
+    tgt.data.hp = hp; tgt.data.maxHp = maxHp;
+    redrawHPSprite(tgt.hpSprite, hp, maxHp);
+    if (damage > 0) scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
+    if (id === scene.myId) {
+      scene.myPlayer.hp = hp; window.updateHUD(scene.myPlayer);
+      // Red heat vignette flash
+      const vig = document.getElementById('hitFlash') || (() => {
+        const d = document.createElement('div');
+        d.id = 'hitFlash';
+        d.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(255,60,0,0.55) 100%);z-index:9000;opacity:0;transition:opacity 0.08s';
+        document.body.appendChild(d); return d;
+      })();
+      vig.style.opacity = '1';
+      clearTimeout(vig._t);
+      vig._t = setTimeout(() => { vig.style.opacity = '0'; }, 180);
+    }
   });
 
   s.on('buildingDestroyed', ({ id, destroyerName, ownerName, buildingName, selfDemolish }) => {
