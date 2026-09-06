@@ -2,7 +2,7 @@
 (function() {
 'use strict';
 
-const WORLD_SIZE = 3200;
+const WORLD_SIZE = 4000;
 const PAD_SIZE = 620;
 const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
 const DINO_SCALE = 1.4;     // base scale for all dino models
@@ -22,13 +22,13 @@ const MAP_THEMES = {
 
 const PADS_DATA = [
   { x:100,  y:100,  hex:0xe84393 },
-  { x:2480, y:100,  hex:0x1e90ff },
-  { x:100,  y:2480, hex:0x2ed573 },
-  { x:2480, y:2480, hex:0xffa502 },
-  { x:1290, y:100,  hex:0xa29bfe },
-  { x:1290, y:2480, hex:0xfd79a8 },
-  { x:100,  y:1290, hex:0x00cec9 },
-  { x:2480, y:1290, hex:0xfdcb6e },
+  { x:3280, y:100,  hex:0x1e90ff },
+  { x:100,  y:3280, hex:0x2ed573 },
+  { x:3280, y:3280, hex:0xffa502 },
+  { x:1690, y:100,  hex:0xa29bfe },
+  { x:1690, y:3280, hex:0xfd79a8 },
+  { x:100,  y:1690, hex:0x00cec9 },
+  { x:3280, y:1690, hex:0xfdcb6e },
 ];
 
 const WALL_TYPES = ['stoneWall', 'fossilFortress'];
@@ -252,10 +252,10 @@ class Game3D {
 
     // Central battle arena marker
     const arena = new THREE.Mesh(
-      new THREE.CylinderGeometry(13, 13, 0.12, 32),
+      new THREE.CylinderGeometry(22, 22, 0.12, 48),
       new THREE.MeshLambertMaterial({ color: 0xff4400, transparent: true, opacity: 0.25 })
     );
-    arena.position.set(sx(1600), 0.06, sz(1600));
+    arena.position.set(sx(2000), 0.06, sz(2000));
     this.scene.add(arena);
 
     this.buildSky();
