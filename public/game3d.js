@@ -48,21 +48,30 @@ function sz(serverY) { return serverY * WU; }
 function dirToRotY(theta) { return Math.PI / 2 - theta; }
 
 // Returns the terrain elevation at a Three.js (worldX, worldZ) position due to the volcano.
+// This must be the exact inverse of the body mesh's radius profile
+// (profileR = crRtop + (bR-crRtop)*(1-t)^1.40, where t is height/pH) — an
+// approximate inverse (e.g. a plain pow(1-d/bR, 0.75)) is off by several units
+// partway up the slope, which is what read as players floating above / clipping
+// through the mountain.
 function volcanoHeightAt(worldX, worldZ) {
   const d = Math.hypot(worldX - sx(VOLCANO_CX_SRV), worldZ - sz(VOLCANO_CZ_SRV));
   if (d >= VOLCANO_BASE_R) return 0;
-  // The body mesh is open-ended at the summit — the crater is a real hole, not a
-  // solid cap. Model that dip here too, or a player's rendered elevation keeps
-  // climbing to the (nonexistent) solid peak and clips straight through the
-  // crater wall mesh instead of standing on the rim / descending into the bowl.
-  const ventR = VOLCANO_CRATER_R * 0.90; // matches the crater wall's rim radius
-  const rimH = VOLCANO_PEAK_H * Math.pow(1 - ventR / VOLCANO_BASE_R, 0.75);
-  if (d <= ventR) {
-    const ct = d / ventR; // 0 at the very center (lava floor), 1 at the rim
+  const crRtop   = VOLCANO_CRATER_R * 0.88; // body mesh's summit radius (t=1)
+  const ventTopR = VOLCANO_CRATER_R * 0.90; // crater wall's rim radius (matches buildVolcano)
+  const ventBotR = VOLCANO_CRATER_R * 0.36; // crater wall's floor radius
+  const outerH = (dist) => {
+    const frac = Math.max(0, (dist - crRtop) / (VOLCANO_BASE_R - crRtop));
+    const t = 1 - Math.pow(frac, 1 / 1.40); // exact inverse of the body's (1-t)^1.40 profile
+    return t * VOLCANO_PEAK_H;
+  };
+  if (d <= ventBotR) return VOLCANO_CRATER_FLOOR; // flat lava pool floor
+  if (d <= ventTopR) {
+    // Crater wall is a true linear frustum — interpolate the same way
+    const rimH = outerH(ventTopR);
+    const ct = (d - ventBotR) / (ventTopR - ventBotR);
     return VOLCANO_CRATER_FLOOR + (rimH - VOLCANO_CRATER_FLOOR) * ct;
   }
-  const t = 1 - d / VOLCANO_BASE_R; // 0 at edge, 1 at rim
-  return VOLCANO_PEAK_H * Math.pow(t, 0.75);
+  return outerH(d);
 }
 function hexStr2num(s) { return parseInt(s.replace('#', ''), 16); }
 
