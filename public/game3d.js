@@ -190,6 +190,8 @@ class Game3D {
     this.locked = false;
     this.lastMoveEmit = 0;
     this._raycaster = new THREE.Raycaster();
+    this._camRaycaster = new THREE.Raycaster();
+    this._volcanoCollidables = []; // solid volcano meshes the third-person camera can't see through
     this._jumpY = 0;
     this._jumpVel = 0;
     this._walkPhase = 0;
@@ -549,6 +551,7 @@ class Game3D {
     const bodyMesh=new THREE.Mesh(bodyGeo,rockMat);
     bodyMesh.position.set(cx,pH/2,cz);
     this.scene.add(bodyMesh);
+    this._volcanoCollidables.push(bodyMesh);
 
     // ── Floor cap — the body is open-ended (real crater hole at the summit) so
     // CylinderGeometry also strips its BOTTOM cap; without this the mountain is a
@@ -561,6 +564,7 @@ class Game3D {
     bodyFloor.rotation.x=-Math.PI/2;
     bodyFloor.position.set(cx,0.01,cz);
     this.scene.add(bodyFloor);
+    this._volcanoCollidables.push(bodyFloor);
 
     // ── Crater inner walls — funnel from the body's real open summit down to the vent
     const ventTopR=crR*0.90, ventBotR=crR*0.36;
@@ -574,6 +578,7 @@ class Game3D {
     const crWall=new THREE.Mesh(cwGeo,cwMat);
     crWall.position.set(cx,(pH+cFloor)/2,cz);
     this.scene.add(crWall);
+    this._volcanoCollidables.push(crWall);
 
     // ── Animated lava pool — sits flush at the bottom of the vent funnel ───────
     const poolMat=new THREE.MeshStandardMaterial({
@@ -1597,6 +1602,19 @@ class Game3D {
     this.renderer.autoClear = true;
   }
 
+  // Third-person camera collision: cast from the orbit pivot toward the desired
+  // camera spot and pull the camera in if solid volcano geometry is in the way —
+  // never let the view clip through into the mountain, the way a first-person
+  // block game stops your camera at a wall instead of letting you peek past it.
+  _camDistWithCollision(originX, originY, originZ, dirX, dirY, dirZ, desiredDist) {
+    if (!this._volcanoCollidables.length) return desiredDist;
+    this._camRaycaster.set({ x: originX, y: originY, z: originZ }, { x: dirX, y: dirY, z: dirZ });
+    this._camRaycaster.far = desiredDist;
+    const hits = this._camRaycaster.intersectObjects(this._volcanoCollidables, false);
+    if (!hits.length) return desiredDist;
+    return Math.max(0.6, hits[0].distance - 0.35);
+  }
+
   update(dt) {
     if (typeof _paused !== 'undefined' && _paused) return;
     const phi = this.yawObject.rotation.y;     // mouse-controlled facing yaw (also the dino model's rotation.y)
@@ -1766,18 +1784,24 @@ class Game3D {
         this.camera.lookAt(lx, ly, lz);
       } else if (this._camMode === 2) {
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
+        const pivotY = CAM_BASE_HEIGHT + terrainH;
+        const dirX = forwardCam.x * pitchPull, dirY = Math.sin(pitch), dirZ = forwardCam.z * pitchPull;
+        const dist = this._camDistWithCollision(px, pivotY, pz, dirX, dirY, dirZ, _cd);
         this.camera.position.set(
-          px + forwardCam.x * _cd * pitchPull + shakeX,
-          CAM_BASE_HEIGHT + terrainH + pitchLift + shakeY + jY,
-          pz + forwardCam.z * _cd * pitchPull
+          px + dirX * dist + shakeX,
+          pivotY + dirY * dist + shakeY + jY,
+          pz + dirZ * dist
         );
         this.camera.lookAt(px, 1.3 + jY + terrainH, pz);
       } else {
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
+        const pivotY = CAM_BASE_HEIGHT + terrainH;
+        const dirX = -forwardCam.x * pitchPull, dirY = Math.sin(pitch), dirZ = -forwardCam.z * pitchPull;
+        const dist = this._camDistWithCollision(px, pivotY, pz, dirX, dirY, dirZ, _cd);
         this.camera.position.set(
-          px - forwardCam.x * _cd * pitchPull + shakeX,
-          CAM_BASE_HEIGHT + terrainH + pitchLift + shakeY + jY,
-          pz - forwardCam.z * _cd * pitchPull
+          px + dirX * dist + shakeX,
+          pivotY + dirY * dist + shakeY + jY,
+          pz + dirZ * dist
         );
         this.camera.lookAt(px, 1.3 + jY + terrainH, pz);
       }
