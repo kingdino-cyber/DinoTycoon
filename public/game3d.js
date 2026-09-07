@@ -176,6 +176,7 @@ class Game3D {
     this._sunLight.position.set(50, 80, 30);
     this.scene.add(this._sunLight);
 
+    this._volcanoCollidables = []; // solid volcano meshes the third-person camera can't see through — must exist before buildWorld() -> buildVolcano() populates it
     this.buildWorld();
 
     this.playerObjs = {};     // id -> { group, nameSprite, hpSprite, data, targetPos, walkPhase }
@@ -191,7 +192,6 @@ class Game3D {
     this.lastMoveEmit = 0;
     this._raycaster = new THREE.Raycaster();
     this._camRaycaster = new THREE.Raycaster();
-    this._volcanoCollidables = []; // solid volcano meshes the third-person camera can't see through
     this._jumpY = 0;
     this._jumpVel = 0;
     this._walkPhase = 0;
