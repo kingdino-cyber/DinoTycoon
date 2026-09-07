@@ -873,15 +873,26 @@ class Game3D {
     });
     this._onPointerLockChange = () => {
       this.locked = document.pointerLockElement === canvas;
+      // Right after the lock engages, some browsers report one bogus movementX/Y
+      // spike (e.g. the OS cursor's jump to the lock point leaking through) —
+      // skip that first event instead of turning it into a camera snap.
+      if (this.locked) this._skipNextMouseMove = true;
       const ch = document.getElementById('crosshair3d');
       if (ch) ch.style.display = this.locked ? 'block' : 'none';
     };
     document.addEventListener('pointerlockchange', this._onPointerLockChange);
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
+      if (this._skipNextMouseMove) { this._skipNextMouseMove = false; return; }
+      // Clamp each event's delta — a stutter (slow GPU, dropped frames) can let the
+      // browser coalesce several frames' worth of mouse movement into one oversized
+      // event, which otherwise reads as the camera instantly snapping to a new angle.
+      const MAX_DELTA = 80;
+      const mx = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, e.movementX));
+      const my = Math.max(-MAX_DELTA, Math.min(MAX_DELTA, e.movementY));
       const sens = 0.0008 + ((window.GAME_SETTINGS?.mouseSensitivity ?? 50) / 100) * 0.004;
-      this.yawObject.rotation.y -= e.movementX * sens;
-      this.pitchObject.rotation.x += e.movementY * sens;
+      this.yawObject.rotation.y -= mx * sens;
+      this.pitchObject.rotation.x += my * sens;
       this.pitchObject.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitchObject.rotation.x));
     });
     window.addEventListener('keydown', (e) => {
