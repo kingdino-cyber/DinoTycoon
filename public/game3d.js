@@ -33,11 +33,11 @@ const PADS_DATA = [
 
 // ── Volcano ───────────────────────────────────────────────────────────────────
 const VOLCANO_CX_SRV = 2000, VOLCANO_CZ_SRV = 2000;
-const VOLCANO_BASE_R   = 820 * WU;   // base radius in Three.js units — massive footprint
-const VOLCANO_PEAK_H   = 52;          // summit height — very tall
-const VOLCANO_CRATER_R = 2.0;         // small summit vent radius
-const VOLCANO_CRATER_FLOOR = 47.0;    // just below summit
-const VOLCANO_BASE_R_SRV = 820;
+const VOLCANO_BASE_R   = 1107 * WU;   // base radius in Three.js units — 35% bigger footprint
+const VOLCANO_PEAK_H   = 52;          // summit height — unchanged, not taller
+const VOLCANO_CRATER_R = 8.0;         // giant summit vent — a real hole, not a pinhole
+const VOLCANO_CRATER_FLOOR = 38.0;    // deep open crater
+const VOLCANO_BASE_R_SRV = 1107;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const WALL_TYPES = ['stoneWall', 'fossilFortress'];
@@ -638,9 +638,14 @@ class Game3D {
 
   }
 
-  showVolcanoErupt(bombs) {
+  showVolcanoErupt(bombs, erupAt) {
     const cx = sx(VOLCANO_CX_SRV), cz = sz(VOLCANO_CZ_SRV);
     const originY = VOLCANO_PEAK_H + 1;
+    // Compensate for network delay between the server starting the eruption and
+    // this client receiving it, so lava bombs still land on the impact area
+    // exactly when the server's damage/landing event fires.
+    const latencyMs = erupAt ? Math.max(0, Date.now() - erupAt) : 0;
+    const nowAdj = () => performance.now() - latencyMs;
 
     // ── Crater flash ─────────────────────────────────────────────────────────
     if (this._volcanoLight)  { this._volcanoLight.intensity  = 30; }
@@ -648,7 +653,7 @@ class Game3D {
     setTimeout(() => {
       if (this._volcanoLight)   this._volcanoLight.intensity  = 6.0;
       if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 1.6;
-    }, 900);
+    }, Math.max(0, 900 - latencyMs));
 
     // ── Upward burst particles ────────────────────────────────────────────────
     const burstGeo = new THREE.SphereGeometry(0.36, 5, 4);
@@ -662,7 +667,7 @@ class Game3D {
       p._vy = spd;
       p._vz = Math.sin(ang) * spd * 0.3;
       p._g  = -30;
-      p._born = performance.now();
+      p._born = nowAdj();
       p._life = 1.3 + Math.random() * 1.1;
       p.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6);
       this.scene.add(p);
@@ -692,7 +697,7 @@ class Game3D {
       this.scene.add(sp);
       ashPuffs.push(sp);
     }
-    let ashLastT = performance.now();
+    let ashLastT = nowAdj();
     const stepAsh = () => {
       const now = performance.now();
       const dt = Math.min((now - ashLastT) / 1000, 0.1);
@@ -726,7 +731,7 @@ class Game3D {
       const light = new THREE.PointLight(0xff5500, 4.5, 10);
       ball.add(light);
       this.scene.add(ball);
-      ball._lbStart  = performance.now();
+      ball._lbStart  = nowAdj();
       ball._lbTravel = TRAVEL * 1000;
       ball._lbSX = cx; ball._lbSY = originY; ball._lbSZ = cz;
       ball._lbTX = tx; ball._lbTZ = tz;
@@ -2301,9 +2306,9 @@ function setupGameSocketEvents() {
     if (id === scene.myId) { scene.myPlayer.hp = hp; window.updateHUD(scene.myPlayer); }
   });
 
-  s.on('volcanoErupt', ({ bombs }) => {
+  s.on('volcanoErupt', ({ bombs, erupAt }) => {
     const scene = gs(); if (!scene) return;
-    scene.showVolcanoErupt(bombs);
+    scene.showVolcanoErupt(bombs, erupAt);
   });
 
   s.on('lavaBombsLand', ({ bombs }) => {

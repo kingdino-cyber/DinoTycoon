@@ -67,6 +67,8 @@ async function putSave(id, data) {
 // ── Game Constants ────────────────────────────────────────────────────────────
 const WORLD_SIZE = 4000;
 const PAD_SIZE = 620;
+const VOLCANO_CENTER = { x: 2000, y: 2000 };
+const VOLCANO_BASE_R_SRV = 1107; // solid footprint radius — matches client visual base
 const PADS = [
   { x:100,  y:100,  color:'#e84393', name:'Lava Zone' },
   { x:3280, y:100,  color:'#1e90ff', name:'Ice Tundra' },
@@ -874,8 +876,15 @@ function tickBot(bot, room, dt, allEntitiesArr, buildingsArr, wallBuildingsArr) 
   // ── Move (with wall collision for ENEMY walls only — own walls passable) ──
   const mdx = tx - bot.x, mdy = ty - bot.y, mdist = Math.hypot(mdx, mdy);
   if (mdist > 10) {
-    const nx = bot.x + (mdx/mdist) * bot.speed * dt;
-    const ny = bot.y + (mdy/mdist) * bot.speed * dt;
+    let nx = bot.x + (mdx/mdist) * bot.speed * dt;
+    let ny = bot.y + (mdy/mdist) * bot.speed * dt;
+    // Volcano is solid — slide bots around its base instead of letting them walk through
+    const dVolc = dist({ x: nx, y: ny }, VOLCANO_CENTER);
+    if (dVolc < VOLCANO_BASE_R_SRV) {
+      const ang = Math.atan2(ny - VOLCANO_CENTER.y, nx - VOLCANO_CENTER.x);
+      nx = VOLCANO_CENTER.x + Math.cos(ang) * VOLCANO_BASE_R_SRV;
+      ny = VOLCANO_CENTER.y + Math.sin(ang) * VOLCANO_BASE_R_SRV;
+    }
     const blockedByWall = wallBuildingsArr.find(b => {
       if (!b.hp || b.ownerId === bot.id) return false;
       const isH = (b.orientation||'h') === 'h';
@@ -999,8 +1008,7 @@ function startRoomLoop(room) {
     const activeEvent = room.isRanked ? null : getActiveEvent();
     const incomeMult = activeEvent?.mpsMultiplier || 1;
 
-    const VOLCANO_CENTER = { x: 2000, y: 2000 };
-    const CRATER_R = 110; // server units — within this = inside the crater
+    const CRATER_R = 260; // server units — within this = inside the crater
     const HEAT_DPS  = 90; // damage per second inside crater
 
     for (const p of allEntities) {
@@ -1178,16 +1186,16 @@ function startRoomLoop(room) {
           by = 200 + Math.random() * (WORLD_SIZE - 400);
         }
         // Keep bombs away from the crater mouth itself
-        if (dist({ x: bx, y: by }, VOLCANO_CENTER) < 250) {
+        if (dist({ x: bx, y: by }, VOLCANO_CENTER) < 320) {
           const ang = Math.random() * Math.PI * 2;
-          bx = VOLCANO_CENTER.x + Math.cos(ang) * (350 + Math.random() * 300);
-          by = VOLCANO_CENTER.y + Math.sin(ang) * (350 + Math.random() * 300);
+          bx = VOLCANO_CENTER.x + Math.cos(ang) * (420 + Math.random() * 300);
+          by = VOLCANO_CENTER.y + Math.sin(ang) * (420 + Math.random() * 300);
           bx = Math.max(80, Math.min(WORLD_SIZE - 80, bx));
           by = Math.max(80, Math.min(WORLD_SIZE - 80, by));
         }
         bombs.push({ x: bx, y: by });
       }
-      emitToRoom(room, 'volcanoErupt', { bombs });
+      emitToRoom(room, 'volcanoErupt', { bombs, erupAt: now });
       // Damage lands after the visual travel time
       setTimeout(() => {
         if (room._matchEnded) return;
