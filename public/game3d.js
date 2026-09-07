@@ -33,11 +33,11 @@ const PADS_DATA = [
 
 // ── Volcano ───────────────────────────────────────────────────────────────────
 const VOLCANO_CX_SRV = 2000, VOLCANO_CZ_SRV = 2000;
-const VOLCANO_BASE_R   = 520 * WU;   // base radius in Three.js units
-const VOLCANO_PEAK_H   = 46;          // summit height — very tall
+const VOLCANO_BASE_R   = 820 * WU;   // base radius in Three.js units — massive footprint
+const VOLCANO_PEAK_H   = 52;          // summit height — very tall
 const VOLCANO_CRATER_R = 2.0;         // small summit vent radius
-const VOLCANO_CRATER_FLOOR = 41.0;    // just below summit
-const VOLCANO_BASE_R_SRV = 520;
+const VOLCANO_CRATER_FLOOR = 47.0;    // just below summit
+const VOLCANO_BASE_R_SRV = 820;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const WALL_TYPES = ['stoneWall', 'fossilFortress'];
@@ -494,17 +494,7 @@ class Game3D {
     sg.addColorStop(1,   'rgba(120,115,108,0)');
     sct.fillStyle=sg; sct.fillRect(0,0,128,128);
     const smokeTex=new THREE.CanvasTexture(scv);
-
-    // ── Cloud sprite texture ──────────────────────────────────────────────────
-    const ccv=document.createElement('canvas'); ccv.width=ccv.height=128;
-    const cct=ccv.getContext('2d');
-    const cg=cct.createRadialGradient(64,64,3,64,64,60);
-    cg.addColorStop(0,  'rgba(255,255,255,0.93)');
-    cg.addColorStop(0.3,'rgba(248,252,255,0.74)');
-    cg.addColorStop(0.62,'rgba(232,240,252,0.32)');
-    cg.addColorStop(1,  'rgba(210,222,240,0)');
-    cct.fillStyle=cg; cct.fillRect(0,0,128,128);
-    const cloudTex=new THREE.CanvasTexture(ccv);
+    this._smokeTex=smokeTex;
 
     // ── Materials ─────────────────────────────────────────────────────────────
     const rockMat=new THREE.MeshStandardMaterial({
@@ -516,7 +506,7 @@ class Game3D {
     // ── Volcano body — concave stratovolcano profile ───────────────────────────
     // Reshape each vertex from a plain cylinder to an exponential concave profile:
     // steep near summit (like Arenal, Fuji), gently flaring at the base.
-    const bodyGeo=new THREE.CylinderGeometry(crR*0.88, bR, pH, 80, 40);
+    const bodyGeo=new THREE.CylinderGeometry(crR*0.88, bR, pH, 80, 40, true);
     const pos=bodyGeo.attributes.position;
     for(let vi=0;vi<pos.count;vi++){
       const vx=pos.getX(vi),vy=pos.getY(vi),vz=pos.getZ(vi);
@@ -544,16 +534,9 @@ class Game3D {
     bodyMesh.position.set(cx,pH/2,cz);
     this.scene.add(bodyMesh);
 
-    // ── Summit vent collar — dark ring around vent opening ────────────────────
-    const ventCapGeo=new THREE.RingGeometry(crR*0.85,crR*1.6,36);
-    const ventCapMat=new THREE.MeshStandardMaterial({color:0x1a1410,roughness:0.98,metalness:0.01});
-    const ventCap=new THREE.Mesh(ventCapGeo,ventCapMat);
-    ventCap.rotation.x=-Math.PI/2;
-    ventCap.position.set(cx,pH-0.05,cz);
-    this.scene.add(ventCap);
-
-    // ── Crater inner walls ────────────────────────────────────────────────────
-    const cwGeo=new THREE.CylinderGeometry(crR*0.72,crR+1.8,pH-cFloor,32,4,true);
+    // ── Crater inner walls — funnel from the body's real open summit down to the vent
+    const ventTopR=crR*0.90, ventBotR=crR*0.36;
+    const cwGeo=new THREE.CylinderGeometry(ventTopR,ventBotR,pH-cFloor,32,4,true);
     const cwMat=new THREE.MeshPhongMaterial({
       map:rockTex,bumpMap:bumpTex,bumpScale:2.5,
       shininess:18,specular:new THREE.Color(0xff3300),
@@ -564,13 +547,13 @@ class Game3D {
     crWall.position.set(cx,(pH+cFloor)/2,cz);
     this.scene.add(crWall);
 
-    // ── Animated lava pool ────────────────────────────────────────────────────
+    // ── Animated lava pool — sits flush at the bottom of the vent funnel ───────
     const poolMat=new THREE.MeshStandardMaterial({
       map:lavaTex,emissiveMap:lavaTex,
       emissive:new THREE.Color(0xff5500),emissiveIntensity:2.5,
       roughness:0.9,metalness:0.0,
     });
-    const poolMesh=new THREE.Mesh(new THREE.CylinderGeometry(crR*0.72,crR*0.72,0.22,32),poolMat);
+    const poolMesh=new THREE.Mesh(new THREE.CylinderGeometry(ventBotR,ventBotR,0.22,32),poolMat);
     poolMesh.position.set(cx,cFloor-0.08,cz);
     this.scene.add(poolMesh);
     this._lavaPool=poolMesh;
@@ -609,21 +592,21 @@ class Game3D {
     this.scene.add(ashMesh);
 
     // ── Lights ────────────────────────────────────────────────────────────────
-    const crLight=new THREE.PointLight(0xff4400,10,55);
+    const crLight=new THREE.PointLight(0xff4400,10,60);
     crLight.position.set(cx,cFloor+1.5,cz);
     this.scene.add(crLight);
     this._volcanoLight=crLight;
 
-    const topGlow=new THREE.PointLight(0xff3300,4.0,120);
+    const topGlow=new THREE.PointLight(0xff3300,4.0,140);
     topGlow.position.set(cx,pH+3,cz);
     this.scene.add(topGlow);
     this._volcanoTopGlow=topGlow;
 
-    const midLight=new THREE.PointLight(0xff6600,2.8,70);
+    const midLight=new THREE.PointLight(0xff6600,2.8,95);
     midLight.position.set(cx,pH*0.45,cz);
     this.scene.add(midLight);
 
-    const fillLight=new THREE.PointLight(0xff5500,1.8,50);
+    const fillLight=new THREE.PointLight(0xff5500,1.8,75);
     fillLight.position.set(cx+bR*0.4,pH*0.3,cz+bR*0.4);
     this.scene.add(fillLight);
 
@@ -653,26 +636,6 @@ class Game3D {
       this._volcanoSmoke.push(sp);
     }
 
-    // ── Orographic clouds clinging to mid-slope ───────────────────────────────
-    this._volcanoClouds=[];
-    for(let i=0;i<12;i++){
-      const sp=new THREE.Sprite(new THREE.SpriteMaterial({
-        map:cloudTex, transparent:true, depthWrite:false,
-        opacity:0.55+Math.random()*0.30,
-        color:new THREE.Color(1,1,1),
-      }));
-      const ang=Math.random()*Math.PI*2;
-      const dist=bR*(0.28+Math.random()*0.52);
-      const h=pH*(0.38+Math.random()*0.32);
-      sp.position.set(cx+Math.cos(ang)*dist,h,cz+Math.sin(ang)*dist);
-      const sc=bR*(0.55+Math.random()*0.52);
-      sp.scale.set(sc,sc*0.48,1);
-      sp._cloudCX=cx; sp._cloudCZ=cz;
-      sp._cloudAng=ang; sp._cloudDist=dist; sp._cloudH=h;
-      sp._cloudDriftSpd=(Math.random()-0.5)*0.005;
-      this.scene.add(sp);
-      this._volcanoClouds.push(sp);
-    }
   }
 
   showVolcanoErupt(bombs) {
@@ -680,32 +643,76 @@ class Game3D {
     const originY = VOLCANO_PEAK_H + 1;
 
     // ── Crater flash ─────────────────────────────────────────────────────────
-    if (this._volcanoLight)  { this._volcanoLight.intensity  = 18; }
-    if (this._volcanoTopGlow){ this._volcanoTopGlow.intensity = 10; }
+    if (this._volcanoLight)  { this._volcanoLight.intensity  = 30; }
+    if (this._volcanoTopGlow){ this._volcanoTopGlow.intensity = 16; }
     setTimeout(() => {
-      if (this._volcanoLight)   this._volcanoLight.intensity  = 4.5;
-      if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 1.2;
-    }, 600);
+      if (this._volcanoLight)   this._volcanoLight.intensity  = 6.0;
+      if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 1.6;
+    }, 900);
 
     // ── Upward burst particles ────────────────────────────────────────────────
-    const burstGeo = new THREE.SphereGeometry(0.28, 5, 4);
-    const BURST = 40;
+    const burstGeo = new THREE.SphereGeometry(0.36, 5, 4);
+    const BURST = 90;
     for (let i = 0; i < BURST; i++) {
-      const mat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xff5500 : 0xff9900 });
+      const mat = new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0x552200 : (i % 3 === 1 ? 0xff5500 : 0xff9900) });
       const p = new THREE.Mesh(burstGeo, mat);
       const ang = Math.random() * Math.PI * 2;
-      const spd = 8 + Math.random() * 14;
-      p._vx = Math.cos(ang) * spd * 0.25;
+      const spd = 10 + Math.random() * 22;
+      p._vx = Math.cos(ang) * spd * 0.3;
       p._vy = spd;
-      p._vz = Math.sin(ang) * spd * 0.25;
+      p._vz = Math.sin(ang) * spd * 0.3;
       p._g  = -30;
       p._born = performance.now();
-      p._life = 1.0 + Math.random() * 0.8;
+      p._life = 1.3 + Math.random() * 1.1;
       p.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6);
       this.scene.add(p);
       this._volcanoParticles = this._volcanoParticles || [];
       this._volcanoParticles.push(p);
     }
+
+    // ── Billowing ash cloud filling the sky above the crater ───────────────────
+    const ashPuffs = [];
+    const ASH_N = 60;
+    for (let i = 0; i < ASH_N; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: this._smokeTex, transparent: true, depthWrite: false,
+        opacity: 0,
+        color: new THREE.Color().setHSL(0.05, 0.08, 0.28 + Math.random() * 0.30),
+      }));
+      const ang = Math.random() * Math.PI * 2;
+      const r = Math.random() * VOLCANO_CRATER_R * 3.0;
+      sp.position.set(cx + Math.cos(ang) * r, originY, cz + Math.sin(ang) * r);
+      sp._apVX = (Math.random() - 0.5) * 5.5;
+      sp._apVZ = (Math.random() - 0.5) * 5.5;
+      sp._apVY = 3.5 + Math.random() * 5.0;
+      sp._apAge = -Math.random() * 1.2;
+      sp._apLife = 11 + Math.random() * 9;
+      sp._apScaleEnd = 12 + Math.random() * 16;
+      sp.scale.setScalar(1);
+      this.scene.add(sp);
+      ashPuffs.push(sp);
+    }
+    let ashLastT = performance.now();
+    const stepAsh = () => {
+      const now = performance.now();
+      const dt = Math.min((now - ashLastT) / 1000, 0.1);
+      ashLastT = now;
+      let alive = false;
+      for (const sp of ashPuffs) {
+        sp._apAge += dt;
+        if (sp._apAge < 0) { alive = true; continue; }
+        if (sp._apAge >= sp._apLife) { this.scene.remove(sp); continue; }
+        alive = true;
+        const frac = sp._apAge / sp._apLife;
+        sp.position.x += sp._apVX * dt * (1 - frac * 0.5);
+        sp.position.z += sp._apVZ * dt * (1 - frac * 0.5);
+        sp.position.y += sp._apVY * dt * (1 - frac * 0.6);
+        sp.scale.setScalar(1 + frac * sp._apScaleEnd);
+        sp.material.opacity = frac < 0.12 ? frac / 0.12 * 0.78 : (frac > 0.6 ? (1 - frac) / 0.4 * 0.78 : 0.78);
+      }
+      if (alive) requestAnimationFrame(stepAsh);
+    };
+    requestAnimationFrame(stepAsh);
 
     // ── Lava bombs arcing to target positions ─────────────────────────────────
     this._lavaBombsInFlight = this._lavaBombsInFlight || [];
@@ -713,40 +720,44 @@ class Game3D {
     for (const bomb of bombs) {
       const tx = sx(bomb.x), tz = sz(bomb.y);
       const mat = new THREE.MeshBasicMaterial({ color: 0xff4400 });
-      const geo = new THREE.SphereGeometry(0.55, 8, 6);
+      const geo = new THREE.SphereGeometry(0.75, 8, 6);
       const ball = new THREE.Mesh(geo, mat);
       ball.position.set(cx, originY, cz);
-      const light = new THREE.PointLight(0xff5500, 3, 8);
+      const light = new THREE.PointLight(0xff5500, 4.5, 10);
       ball.add(light);
       this.scene.add(ball);
       ball._lbStart  = performance.now();
       ball._lbTravel = TRAVEL * 1000;
       ball._lbSX = cx; ball._lbSY = originY; ball._lbSZ = cz;
       ball._lbTX = tx; ball._lbTZ = tz;
-      ball._lbPeakY = originY + 14 + Math.random() * 8;
+      ball._lbPeakY = originY + 16 + Math.random() * 10;
       this._lavaBombsInFlight.push(ball);
     }
 
-    // ── Shockwave ring at crater ──────────────────────────────────────────────
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 2.5, 24), ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(cx, VOLCANO_PEAK_H + 0.5, cz);
-    this.scene.add(ring);
-    const rStart = performance.now();
-    const expandRing = () => {
-      const t = Math.min((performance.now() - rStart) / 1200, 1);
-      ring.scale.setScalar(1 + t * 9);
-      ringMat.opacity = 0.7 * (1 - t);
-      if (t < 1) requestAnimationFrame(expandRing);
-      else this.scene.remove(ring);
-    };
-    requestAnimationFrame(expandRing);
+    // ── Shockwave rings at crater (double pulse) ────────────────────────────────
+    const spawnShockwave = (delay) => setTimeout(() => {
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1, 4.5, 32), ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(cx, VOLCANO_PEAK_H + 0.5, cz);
+      this.scene.add(ring);
+      const rStart = performance.now();
+      const expandRing = () => {
+        const t = Math.min((performance.now() - rStart) / 1400, 1);
+        ring.scale.setScalar(1 + t * 16);
+        ringMat.opacity = 0.75 * (1 - t);
+        if (t < 1) requestAnimationFrame(expandRing);
+        else this.scene.remove(ring);
+      };
+      requestAnimationFrame(expandRing);
+    }, delay);
+    spawnShockwave(0);
+    spawnShockwave(220);
 
     // Camera shake if player is on/near the volcano
     if (this.myPlayer) {
       const dSrv = Math.hypot(this.myPlayer.x - VOLCANO_CX_SRV, this.myPlayer.y - VOLCANO_CZ_SRV);
-      if (dSrv < 800) this._shakeUntil = performance.now() + 550;
+      if (dSrv < 1400) this._shakeUntil = performance.now() + 900;
     }
     window.addChatMessage?.('🌋 Volcano', 'The volcano erupts! Take cover!', '#ff4400');
     window.SFX?.crunch?.();
@@ -769,6 +780,43 @@ class Game3D {
         else this.scene.remove(scorch);
       };
       requestAnimationFrame(fadeScorch);
+
+      // Smoke puffs rising from the impact site
+      const puffs = [];
+      for (let i = 0; i < 7; i++) {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: this._smokeTex, transparent: true, depthWrite: false,
+          opacity: 0, color: new THREE.Color().setHSL(0.06, 0.06, 0.32 + Math.random() * 0.26),
+        }));
+        sp.position.set(cx2 + (Math.random() - 0.5) * 3, 0.3, cz2 + (Math.random() - 0.5) * 3);
+        sp._pVY = 1.4 + Math.random() * 1.8;
+        sp._pLife = 4.5 + Math.random() * 4.5;
+        sp._pAge = -Math.random() * 1.5;
+        sp._pScaleEnd = 3.5 + Math.random() * 4;
+        sp.scale.setScalar(0.6);
+        this.scene.add(sp);
+        puffs.push(sp);
+      }
+      let pLastT = performance.now();
+      const stepPuffs = () => {
+        const now = performance.now();
+        const dt = Math.min((now - pLastT) / 1000, 0.1);
+        pLastT = now;
+        let alive = false;
+        for (const sp of puffs) {
+          sp._pAge += dt;
+          if (sp._pAge < 0) { alive = true; continue; }
+          if (sp._pAge >= sp._pLife) { this.scene.remove(sp); continue; }
+          alive = true;
+          const frac = sp._pAge / sp._pLife;
+          sp.position.y += sp._pVY * dt;
+          sp.scale.setScalar(0.6 + frac * sp._pScaleEnd);
+          sp.material.opacity = frac < 0.15 ? frac / 0.15 * 0.62 : (frac > 0.65 ? (1 - frac) / 0.35 * 0.62 : 0.62);
+        }
+        if (alive) requestAnimationFrame(stepPuffs);
+      };
+      requestAnimationFrame(stepPuffs);
+
       if (this.myPlayer) {
         const d = Math.hypot(this.myPlayer.x - bomb.x, this.myPlayer.y - bomb.y);
         if (d < 250) this._shakeUntil = performance.now() + 300;
@@ -1738,16 +1786,6 @@ class Game3D {
           sm.scale.setScalar(0.5 + frac * 6.5);
           sm.material.opacity = frac < 0.15 ? frac / 0.15 * 0.65 : (frac > 0.72 ? (1 - frac) / 0.28 * 0.65 : 0.65);
         }
-      }
-    }
-
-    // Cloud drift around mid-slope
-    if (this._volcanoClouds) {
-      for (const cl of this._volcanoClouds) {
-        cl._cloudAng += cl._cloudDriftSpd * dt;
-        cl.position.x = cl._cloudCX + Math.cos(cl._cloudAng) * cl._cloudDist;
-        cl.position.z = cl._cloudCZ + Math.sin(cl._cloudAng) * cl._cloudDist;
-        cl.position.y = cl._cloudH + Math.sin(cl._cloudAng * 3.7) * 0.15;
       }
     }
 
