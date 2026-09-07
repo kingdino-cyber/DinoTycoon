@@ -33,12 +33,11 @@ const PADS_DATA = [
 
 // ── Volcano ───────────────────────────────────────────────────────────────────
 const VOLCANO_CX_SRV = 2000, VOLCANO_CZ_SRV = 2000;
-const VOLCANO_BASE_R   = 420 * WU;   // base radius in Three.js units (~17.5)
-const VOLCANO_PEAK_H   = 17;          // summit height in Three.js units
-const VOLCANO_CRATER_R = 3.8;         // crater mouth radius (Three.js)
-const VOLCANO_CRATER_FLOOR = 13.5;    // crater floor height (Three.js)
-// Server-unit equivalents used for terrain height query
-const VOLCANO_BASE_R_SRV = 420;
+const VOLCANO_BASE_R   = 520 * WU;   // base radius in Three.js units
+const VOLCANO_PEAK_H   = 46;          // summit height — very tall
+const VOLCANO_CRATER_R = 2.0;         // small summit vent radius
+const VOLCANO_CRATER_FLOOR = 41.0;    // just below summit
+const VOLCANO_BASE_R_SRV = 520;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const WALL_TYPES = ['stoneWall', 'fossilFortress'];
@@ -409,38 +408,38 @@ class Game3D {
       return a/mx;
     };
 
-    // ── Procedural rock diffuse texture ──────────────────────────────────────
     // ── Height-stratified diffuse texture ─────────────────────────────────────
-    // Three.js CylinderGeometry UV: v=0 at base, v=1 at summit.
-    // CanvasTexture flipY=true: canvas ty=0 → GPU v=0 (base), ty=TH → v=1 (summit).
-    // So ty/TH=0 → jungle base, ty/TH=1 → dark ash summit.
+    // UV.v=0 at base, UV.v=1 at summit. ty/TH=0=jungle base, 1=dark rock summit.
     const TW=256, TH=512;
     const rcv=document.createElement('canvas'); rcv.width=TW; rcv.height=TH;
     const rct=rcv.getContext('2d'), rid=rct.createImageData(TW,TH);
     for(let ty=0;ty<TH;ty++) for(let tx=0;tx<TW;tx++){
-      const t=ty/TH; // 0=base(jungle), 1=summit(ash)
-      const n1=fbm(tx/TW*6.5+0.3, ty/TH*9.2, 6);
-      const n2=fbm(tx/TW*24+4.1, ty/TH*32+1.3, 3);
-      // Vertical erosion channels — angular gullies strongest at mid-height
+      const t=ty/TH; // 0=base, 1=summit
+      const n1=fbm(tx/TW*6.0+0.3, ty/TH*8.5, 6);
+      const n2=fbm(tx/TW*22+4.1, ty/TH*30+1.3, 3);
+      // Subtle vertical channels (lighter than before)
       const ang=tx/TW*Math.PI*2;
-      const gullyRaw=Math.pow(Math.max(0,-Math.sin(ang*8+n1*2.5)),3)*(1-t*0.55)*Math.min(1,t*5+0.1);
-      const gully=Math.min(1,gullyRaw*1.9);
-      // Altitude zones (smooth cross-fades)
-      const vegStr  =Math.max(0,Math.min(1,(0.27-t)/0.17));
-      const scrubStr=Math.max(0,Math.min(1,(t-0.14)/0.12))*Math.max(0,Math.min(1,(0.42-t)/0.13));
-      const rockStr =Math.max(0,Math.min(1,(t-0.28)/0.15))*Math.max(0,Math.min(1,(0.85-t)/0.18));
-      const ashStr  =Math.max(0,Math.min(1,(t-0.72)/0.13));
+      const gullyRaw=Math.pow(Math.max(0,-Math.sin(ang*6+n1*2.0)),4)*(1-t*0.6)*Math.min(1,t*4+0.1);
+      const gully=Math.min(0.7,gullyRaw*1.5);
+      // Five altitude zones
+      const vegStr  =Math.max(0,Math.min(1,(0.22-t)/0.14));              // jungle 0–0.22
+      const scrubStr=Math.max(0,Math.min(1,(t-0.12)/0.12))*Math.max(0,Math.min(1,(0.38-t)/0.13)); // scrub 0.12–0.38
+      const rockStr =Math.max(0,Math.min(1,(t-0.26)/0.14))*Math.max(0,Math.min(1,(0.78-t)/0.16)); // rock 0.26–0.78
+      const ashStr  =Math.max(0,Math.min(1,(t-0.68)/0.12))*Math.max(0,Math.min(1,(0.92-t)/0.08)); // ash 0.68–0.92
+      const summStr =Math.max(0,Math.min(1,(t-0.88)/0.08));              // near-black summit 0.88–1
       // Colors
-      const vegR=30+n1*16, vegG=52+n1*20, vegB=16+n1*8;
-      const scrR=66+n1*32, scrG=60+n1*24, scrB=32+n1*14;
-      const rkR =90+n1*58, rkG =72+n1*40, rkB =54+n1*28;
-      const ashR=44+n1*32, ashG=36+n1*22, ashB=32+n1*16;
+      const vegR=28+n1*14, vegG=48+n1*18, vegB=14+n1*7;
+      const scrR=62+n1*28, scrG=54+n1*22, scrB=28+n1*12;
+      const rkR =82+n1*54, rkG =66+n1*38, rkB =50+n1*26;
+      const ashR=52+n1*30, ashG=44+n1*22, ashB=38+n1*16;
+      const summR=22+n1*14, summG=18+n1*10, summB=16+n1*8;
       let r=vegR,g=vegG,b=vegB;
       r=r*(1-scrubStr)+scrR*scrubStr; g=g*(1-scrubStr)+scrG*scrubStr; b=b*(1-scrubStr)+scrB*scrubStr;
       r=r*(1-rockStr)+rkR*rockStr;    g=g*(1-rockStr)+rkG*rockStr;    b=b*(1-rockStr)+rkB*rockStr;
       r=r*(1-ashStr)+ashR*ashStr;     g=g*(1-ashStr)+ashG*ashStr;     b=b*(1-ashStr)+ashB*ashStr;
-      r*=(1-gully*0.62); g*=(1-gully*0.58); b*=(1-gully*0.48);
-      r=Math.min(255,Math.max(0,r+(n2-0.5)*24)); g=Math.min(255,Math.max(0,g+(n2-0.5)*17)); b=Math.min(255,Math.max(0,b+(n2-0.5)*11));
+      r=r*(1-summStr)+summR*summStr;  g=g*(1-summStr)+summG*summStr;  b=b*(1-summStr)+summB*summStr;
+      r*=(1-gully*0.50); g*=(1-gully*0.46); b*=(1-gully*0.38);
+      r=Math.min(255,Math.max(0,r+(n2-0.5)*22)); g=Math.min(255,Math.max(0,g+(n2-0.5)*16)); b=Math.min(255,Math.max(0,b+(n2-0.5)*10));
       const i4=(ty*TW+tx)*4;
       rid.data[i4]=r|0; rid.data[i4+1]=g|0; rid.data[i4+2]=b|0; rid.data[i4+3]=255;
     }
@@ -545,40 +544,13 @@ class Game3D {
     bodyMesh.position.set(cx,pH/2,cz);
     this.scene.add(bodyMesh);
 
-    // ── Lava flow streaks ─────────────────────────────────────────────────────
-    for(let i=0;i<8;i++){
-      const ang=(i/8)*Math.PI*2+(fbm(i*1.3,i*0.7,2)-0.5)*0.9;
-      const startH=pH*(0.48+fbm(i*0.5,3.2,2)*0.38);
-      const endH=pH*(0.03+fbm(i*0.8,1.5,2)*0.16);
-      const pts=[];
-      for(let s=0;s<=10;s++){
-        const frac=s/10;
-        const h=startH+(endH-startH)*frac;
-        const rH=bR-(bR-(crR*0.88))*(h/pH)+(fbm(ang+frac*3,frac*5,2)*0.5-0.25);
-        const wob=(fbm(ang*4+frac*6+i,frac*8,2)-0.5)*0.4;
-        pts.push(new THREE.Vector3(cx+Math.cos(ang+wob)*rH,h,cz+Math.sin(ang+wob)*rH));
-      }
-      const w=0.15+fbm(i*2.1,0.5,2)*0.16;
-      const sGeo=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),12,w,5,false);
-      this.scene.add(new THREE.Mesh(sGeo,lavaMat));
-    }
-
-    // ── Crater rim ────────────────────────────────────────────────────────────
-    const rimGeo=new THREE.TorusGeometry(crR+1.8,1.05,24,64);
-    const rpos=rimGeo.attributes.position;
-    for(let vi=0;vi<rpos.count;vi++){
-      const vx=rpos.getX(vi),vy=rpos.getY(vi),vz=rpos.getZ(vi);
-      const n=fbm(vx*3+7,vz*3+2,3);
-      rpos.setXYZ(vi,vx+n*0.32-0.16,vy+n*0.14,vz+n*0.32-0.16);
-    }
-    rimGeo.computeVertexNormals();
-    const rimMat=new THREE.MeshStandardMaterial({
-      map:rockTex,bumpMap:bumpTex,bumpScale:2.0,
-      roughness:0.95,metalness:0.02,color:0x555555,
-    });
-    const rimMesh=new THREE.Mesh(rimGeo,rimMat);
-    rimMesh.position.set(cx,pH+0.25,cz);
-    this.scene.add(rimMesh);
+    // ── Summit vent collar — dark ring around vent opening ────────────────────
+    const ventCapGeo=new THREE.RingGeometry(crR*0.85,crR*1.6,36);
+    const ventCapMat=new THREE.MeshStandardMaterial({color:0x1a1410,roughness:0.98,metalness:0.01});
+    const ventCap=new THREE.Mesh(ventCapGeo,ventCapMat);
+    ventCap.rotation.x=-Math.PI/2;
+    ventCap.position.set(cx,pH-0.05,cz);
+    this.scene.add(ventCap);
 
     // ── Crater inner walls ────────────────────────────────────────────────────
     const cwGeo=new THREE.CylinderGeometry(crR*0.72,crR+1.8,pH-cFloor,32,4,true);
@@ -637,21 +609,21 @@ class Game3D {
     this.scene.add(ashMesh);
 
     // ── Lights ────────────────────────────────────────────────────────────────
-    const crLight=new THREE.PointLight(0xff4400,10,22);
+    const crLight=new THREE.PointLight(0xff4400,10,55);
     crLight.position.set(cx,cFloor+1.5,cz);
     this.scene.add(crLight);
     this._volcanoLight=crLight;
 
-    const topGlow=new THREE.PointLight(0xff3300,4.0,50);
+    const topGlow=new THREE.PointLight(0xff3300,4.0,120);
     topGlow.position.set(cx,pH+3,cz);
     this.scene.add(topGlow);
     this._volcanoTopGlow=topGlow;
 
-    const midLight=new THREE.PointLight(0xff6600,2.8,28);
+    const midLight=new THREE.PointLight(0xff6600,2.8,70);
     midLight.position.set(cx,pH*0.45,cz);
     this.scene.add(midLight);
 
-    const fillLight=new THREE.PointLight(0xff5500,1.8,20);
+    const fillLight=new THREE.PointLight(0xff5500,1.8,50);
     fillLight.position.set(cx+bR*0.4,pH*0.3,cz+bR*0.4);
     this.scene.add(fillLight);
 
