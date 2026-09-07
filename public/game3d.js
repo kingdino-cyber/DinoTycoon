@@ -511,6 +511,9 @@ class Game3D {
     const rockMat=new THREE.MeshStandardMaterial({
       map:rockTex, bumpMap:bumpTex, bumpScale:1.4,
       roughness:0.93, metalness:0.02,
+      side:THREE.DoubleSide, // the body is open-ended (real crater hole) — if any
+      // viewing angle ever catches an interior backface, it must still render lit
+      // rock instead of an unlit black void.
     });
     const lavaMat=new THREE.MeshBasicMaterial({map:lavaTex, side:THREE.DoubleSide});
 
@@ -546,6 +549,18 @@ class Game3D {
     const bodyMesh=new THREE.Mesh(bodyGeo,rockMat);
     bodyMesh.position.set(cx,pH/2,cz);
     this.scene.add(bodyMesh);
+
+    // ── Floor cap — the body is open-ended (real crater hole at the summit) so
+    // CylinderGeometry also strips its BOTTOM cap; without this the mountain is a
+    // fully hollow shell and some viewing angles look straight through the base
+    // into an unlit black void. A simple opaque disc closes it off completely.
+    const bodyFloor=new THREE.Mesh(
+      new THREE.CircleGeometry(bR*1.02,64),
+      new THREE.MeshLambertMaterial({color:0x0e0c08})
+    );
+    bodyFloor.rotation.x=-Math.PI/2;
+    bodyFloor.position.set(cx,0.01,cz);
+    this.scene.add(bodyFloor);
 
     // ── Crater inner walls — funnel from the body's real open summit down to the vent
     const ventTopR=crR*0.90, ventBotR=crR*0.36;
