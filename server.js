@@ -996,7 +996,10 @@ function startRoomLoop(room) {
   // Hard mode gets periodic meteor strikes — first one a bit into the match so
   // players have time to get settled before chaos starts
   if (room.difficulty === 'hard') room._nextMeteorAt = room.matchStartTime + 8000 + Math.random() * 5000;
-  room._nextVolcanoEruptAt = room.matchStartTime + 75000;
+  // Volcano eruption frequency scales with difficulty — none on easy, moderate on
+  // medium (100s), frequent on hard (65s).
+  room._volcanoIntervalMs = room.difficulty === 'easy' ? null : room.difficulty === 'hard' ? 65000 : 100000;
+  room._nextVolcanoEruptAt = room._volcanoIntervalMs ? room.matchStartTime + room._volcanoIntervalMs : null;
   let lastTick = Date.now();
 
   // Main tick
@@ -1169,9 +1172,9 @@ function startRoomLoop(room) {
       }
     }
 
-    // ── Volcano eruption every 90 s ──────────────────────────────────────────
+    // ── Volcano eruption — frequency set by difficulty in startRoomLoop() ───────
     if (room._nextVolcanoEruptAt && now >= room._nextVolcanoEruptAt) {
-      room._nextVolcanoEruptAt = now + 75000;
+      room._nextVolcanoEruptAt = now + room._volcanoIntervalMs;
       const BOMB_COUNT = 8;
       const bombs = [];
       const alive = allEntities.filter(e => !e.isDead);

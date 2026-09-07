@@ -1664,11 +1664,8 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <div style="margin-top:12px;">
       <label class="modal-label">🗺️ Map</label>
       <select class="modal-select" id="roomMap">
-        <option value="jungle">🌴 Jungle</option>
-        <option value="desert">🏜️ Desert</option>
-        <option value="volcanic">🌋 Volcanic</option>
-        <option value="arctic">❄️ Arctic</option>
-        <option value="swamp">🌿 Swamp</option>
+        <option value="jungle">🌴 Classic</option>
+        <option value="realistic" disabled>🗻 Realistic (Coming Soon)</option>
       </select>
     </div>
 
@@ -2557,7 +2554,7 @@ function renderRooms(rooms) {
 }
 
 function modeLabel(m){return{classic:'🦕 Classic',rumble:'⚔️ Rumble',survival:'☄️ Survival'}[m]||m;}
-function mapLabel(m){return{jungle:'🌴 Jungle',desert:'🏜️ Desert',volcanic:'🌋 Volcanic',arctic:'❄️ Arctic',swamp:'🌿 Swamp'}[m]||m;}
+function mapLabel(m){return{jungle:'🌴 Classic',desert:'🏜️ Desert',volcanic:'🌋 Volcanic',arctic:'❄️ Arctic',swamp:'🌿 Swamp'}[m]||m;}
 function esc(s){return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── Create room modal ─────────────────────────────────────────────────────────
