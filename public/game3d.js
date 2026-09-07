@@ -2,7 +2,7 @@
 (function() {
 'use strict';
 
-const WORLD_SIZE = 4000;
+const WORLD_SIZE = 5600;   // expanded 40% so the bigger volcano doesn't crowd base territories
 const PAD_SIZE = 620;
 const WU = 1 / 24;          // server units -> three.js units — bigger than before so the world feels larger
 const DINO_SCALE = 1.4;     // base scale for all dino models
@@ -21,18 +21,18 @@ const MAP_THEMES = {
 };
 
 const PADS_DATA = [
-  { x:100,  y:100,  hex:0xe84393 },
-  { x:3280, y:100,  hex:0x1e90ff },
-  { x:100,  y:3280, hex:0x2ed573 },
-  { x:3280, y:3280, hex:0xffa502 },
-  { x:1690, y:100,  hex:0xa29bfe },
-  { x:1690, y:3280, hex:0xfd79a8 },
-  { x:100,  y:1690, hex:0x00cec9 },
-  { x:3280, y:1690, hex:0xfdcb6e },
+  { x:140,  y:140,  hex:0xe84393 },
+  { x:4592, y:140,  hex:0x1e90ff },
+  { x:140,  y:4592, hex:0x2ed573 },
+  { x:4592, y:4592, hex:0xffa502 },
+  { x:2366, y:140,  hex:0xa29bfe },
+  { x:2366, y:4592, hex:0xfd79a8 },
+  { x:140,  y:2366, hex:0x00cec9 },
+  { x:4592, y:2366, hex:0xfdcb6e },
 ];
 
 // ── Volcano ───────────────────────────────────────────────────────────────────
-const VOLCANO_CX_SRV = 2000, VOLCANO_CZ_SRV = 2000;
+const VOLCANO_CX_SRV = 2800, VOLCANO_CZ_SRV = 2800;
 const VOLCANO_BASE_R   = 1107 * WU;   // base radius in Three.js units — 35% bigger footprint
 const VOLCANO_PEAK_H   = 52;          // summit height — unchanged, not taller
 const VOLCANO_CRATER_R = 8.0;         // giant summit vent — a real hole, not a pinhole
@@ -51,7 +51,17 @@ function dirToRotY(theta) { return Math.PI / 2 - theta; }
 function volcanoHeightAt(worldX, worldZ) {
   const d = Math.hypot(worldX - sx(VOLCANO_CX_SRV), worldZ - sz(VOLCANO_CZ_SRV));
   if (d >= VOLCANO_BASE_R) return 0;
-  const t = 1 - d / VOLCANO_BASE_R; // 0 at edge, 1 at center
+  // The body mesh is open-ended at the summit — the crater is a real hole, not a
+  // solid cap. Model that dip here too, or a player's rendered elevation keeps
+  // climbing to the (nonexistent) solid peak and clips straight through the
+  // crater wall mesh instead of standing on the rim / descending into the bowl.
+  const ventR = VOLCANO_CRATER_R * 0.90; // matches the crater wall's rim radius
+  const rimH = VOLCANO_PEAK_H * Math.pow(1 - ventR / VOLCANO_BASE_R, 0.75);
+  if (d <= ventR) {
+    const ct = d / ventR; // 0 at the very center (lava floor), 1 at the rim
+    return VOLCANO_CRATER_FLOOR + (rimH - VOLCANO_CRATER_FLOOR) * ct;
+  }
+  const t = 1 - d / VOLCANO_BASE_R; // 0 at edge, 1 at rim
   return VOLCANO_PEAK_H * Math.pow(t, 0.75);
 }
 function hexStr2num(s) { return parseInt(s.replace('#', ''), 16); }

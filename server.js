@@ -65,19 +65,19 @@ async function putSave(id, data) {
 }
 
 // ── Game Constants ────────────────────────────────────────────────────────────
-const WORLD_SIZE = 4000;
+const WORLD_SIZE = 5600;   // expanded 40% so the bigger volcano doesn't crowd base territories
 const PAD_SIZE = 620;
-const VOLCANO_CENTER = { x: 2000, y: 2000 };
+const VOLCANO_CENTER = { x: 2800, y: 2800 };
 const VOLCANO_BASE_R_SRV = 1107; // solid footprint radius — matches client visual base
 const PADS = [
-  { x:100,  y:100,  color:'#e84393', name:'Lava Zone' },
-  { x:3280, y:100,  color:'#1e90ff', name:'Ice Tundra' },
-  { x:100,  y:3280, color:'#2ed573', name:'Jungle' },
-  { x:3280, y:3280, color:'#ffa502', name:'Desert' },
-  { x:1690, y:100,  color:'#a29bfe', name:'Sky Cliffs' },
-  { x:1690, y:3280, color:'#fd79a8', name:'Swamp' },
-  { x:100,  y:1690, color:'#00cec9', name:'Ocean Reef' },
-  { x:3280, y:1690, color:'#fdcb6e', name:'Volcano' },
+  { x:140,  y:140,  color:'#e84393', name:'Lava Zone' },
+  { x:4592, y:140,  color:'#1e90ff', name:'Ice Tundra' },
+  { x:140,  y:4592, color:'#2ed573', name:'Jungle' },
+  { x:4592, y:4592, color:'#ffa502', name:'Desert' },
+  { x:2366, y:140,  color:'#a29bfe', name:'Sky Cliffs' },
+  { x:2366, y:4592, color:'#fd79a8', name:'Swamp' },
+  { x:140,  y:2366, color:'#00cec9', name:'Ocean Reef' },
+  { x:4592, y:2366, color:'#fdcb6e', name:'Volcano' },
 ];
 const PLAYER_COLORS = PADS.map(p => p.color);
 
