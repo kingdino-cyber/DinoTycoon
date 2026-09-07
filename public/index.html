@@ -222,10 +222,6 @@ canvas{display:block;}
   0%{transform:rotate(0deg) scale(1.1);}
   100%{transform:rotate(360deg) scale(1.1);}
 }
-@keyframes arenaRing{
-  0%{transform:rotate(0deg);}
-  100%{transform:rotate(360deg);}
-}
 @keyframes pedestalPulse{
   0%,100%{opacity:.4;transform:scaleX(1);}
   50%{opacity:.8;transform:scaleX(1.15);}
@@ -330,9 +326,7 @@ canvas{display:block;}
 .lby-left-btn:hover{transform:translateX(4px);filter:brightness(1.12);border-color:rgba(255,255,255,.1);}
 .lby-btn-friends{background:linear-gradient(135deg,#1a5500,#2d9e00);box-shadow:0 2px 12px rgba(30,150,0,.3);}
 .lby-btn-rewards{background:linear-gradient(135deg,#5a0080,#9c27b0);box-shadow:0 2px 12px rgba(120,0,180,.3);}
-.lby-btn-stats  {background:linear-gradient(135deg,#003d7a,#1565c0);box-shadow:0 2px 12px rgba(0,60,160,.3);}
 .lby-btn-saves  {background:linear-gradient(135deg,#004d5a,#00838f);box-shadow:0 2px 12px rgba(0,100,120,.3);}
-.lby-btn-settings{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:#ccc;}
 .lby-btn-achievements{background:linear-gradient(135deg,#7a5a00,#d4af37);box-shadow:0 2px 12px rgba(180,140,0,.3);}
 .lby-btn-leaderboard{background:linear-gradient(135deg,#003d7a,#1565c0);}
 .lby-btn-tutorial{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:#ccc;}
@@ -385,22 +379,6 @@ canvas{display:block;}
 .lby-dino-stage{
   display:flex;flex-direction:column;align-items:center;
   position:relative;
-}
-/* Rotating glow ring around the container using its own pseudo-element */
-#heroDinoContainer::after{
-  content:'';position:absolute;inset:-18px;
-  border-radius:50%;
-  border:1.5px solid rgba(127,255,106,.22);
-  background:conic-gradient(transparent 0deg,rgba(127,255,106,.15) 60deg,transparent 130deg);
-  animation:arenaRing 10s linear infinite;
-  pointer-events:none;
-}
-#heroDinoContainer::before{
-  content:'';position:absolute;inset:-8px;
-  border-radius:50%;
-  border:1px solid rgba(127,255,106,.1);
-  animation:arenaRing 16s linear infinite reverse;
-  pointer-events:none;
 }
 
 .lby-dino-hero{font-size:9rem;line-height:1;
@@ -1448,10 +1426,8 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
       <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">🔑 Join by Code</button>
       <button class="lby-left-btn" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,165,0,.1));border-color:rgba(255,215,0,.3);color:#ffd700;" onclick="openDailyQuestsModal()">📋 Daily Quests</button>
-      <button class="lby-left-btn lby-btn-stats"   onclick="openStatsModal()">📊 My Stats</button>
-      <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()">🏆 Achievements</button>
-      <button class="lby-left-btn lby-btn-settings" onclick="openSettingsModal()">⚙️ Settings</button>
-      <button class="lby-left-btn lby-btn-tutorial" onclick="openTutorialModal()">❓ How to Play</button>
+      <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()"><svg width="15" height="15" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:3px;"><path fill="currentColor" d="M9 13.9 5.6 21.6 9 20.1l1.7 2.3L13.3 15z"/><path fill="currentColor" d="M15 13.9 18.4 21.6 15 20.1l-1.7 2.3L11.7 15z"/><circle cx="12" cy="9" r="6.8" fill="none" stroke="currentColor" stroke-width="1.7"/><path fill="currentColor" d="m12 5.2 1.1 2.3 2.5.4-1.8 1.8.4 2.5L12 11l-2.2 1.2.4-2.5-1.8-1.8 2.5-.4z"/></svg>Achievements</button>
+      <button class="lby-left-btn lby-btn-tutorial" onclick="openTutorialModal()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="vertical-align:-3px;margin-right:3px;"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.3a2.7 2.7 0 1 1 4 2.4c-1 .5-1.3 1.1-1.3 2.1" stroke-linecap="round"/><circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none"/></svg>How to Play</button>
 
       <div class="lby-left-divider"></div>
       <div class="lby-invites-label">📨 Invites</div>
@@ -1493,7 +1469,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       </div>
 
       <!-- PLAY NOW below the row -->
-      <button class="lby-play-btn" onclick="openPlayModeModal()" style="margin-top:14px;min-width:180px;padding:12px 28px;font-size:1rem;letter-spacing:1.5px;">
+      <button class="lby-play-btn" onclick="openPlayModeModal()" style="margin-top:14px;min-width:260px;padding:20px 44px;font-size:1.5rem;letter-spacing:2px;">
         ▶ PLAY NOW!
       </button>
     </div>
@@ -1587,19 +1563,19 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   <!-- BOTTOM TABS -->
   <div class="lby-tabs">
     <button class="lby-tab active" id="lbyTab-home" onclick="switchLbyTab('home')">
-      <span class="lby-tab-icon">🏠</span> HOME
+      <span class="lby-tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 1 12h3v9h6v-6h4v6h6v-9h3z"/></svg></span> HOME
     </button>
     <button class="lby-tab" id="lbyTab-rooms" onclick="switchLbyTab('rooms')">
-      <span class="lby-tab-icon">⚔️</span> SERVERS
+      <span class="lby-tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.1" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="4.3" y1="6.8" x2="19.7" y2="6.8"/><line x1="4.3" y1="17.2" x2="19.7" y2="17.2"/></svg></span> SERVERS
     </button>
     <button class="lby-tab" id="lbyTab-shop" onclick="switchLbyTab('shop')">
       <span class="lby-tab-icon">🛒</span> SHOP
     </button>
     <button class="lby-tab" id="lbyTab-saves" onclick="switchLbyTab('saves')">
-      <span class="lby-tab-icon">💾</span> SAVED
+      <span class="lby-tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><rect x="7.2" y="4" width="7.6" height="4.6"/><rect x="6.2" y="13.4" width="11.6" height="5.6"/></svg></span> SAVED
     </button>
     <button class="lby-tab" id="lbyTab-leaderboard" onclick="switchLbyTab('leaderboard')">
-      <span class="lby-tab-icon">🌍</span> LEADERBOARD
+      <span class="lby-tab-icon"><svg width="19" height="19" viewBox="0 0 24 24"><path fill="#eef3ff" stroke="#4a7fe0" stroke-width="0.6" d="m12 2.4 1.5 3 3.3.5-2.4 2.3.6 3.3L12 9.9l-3 1.6.6-3.3-2.4-2.3 3.3-.5z"/><rect x="9.3" y="11.6" width="5.4" height="9.6" fill="#dbe6ff" stroke="#4a7fe0" stroke-width="0.7"/><rect x="2.6" y="14.6" width="5.4" height="6.6" fill="#dbe6ff" stroke="#4a7fe0" stroke-width="0.7"/><rect x="16" y="15.6" width="5.4" height="5.6" fill="#dbe6ff" stroke="#4a7fe0" stroke-width="0.7"/><text x="12" y="18.4" font-size="4" text-anchor="middle" fill="#4a7fe0" font-weight="700">1</text><text x="5.3" y="19.4" font-size="3.4" text-anchor="middle" fill="#4a7fe0" font-weight="700">2</text><text x="18.7" y="19.9" font-size="3.2" text-anchor="middle" fill="#4a7fe0" font-weight="700">3</text></svg></span> LEADERBOARD
     </button>
   </div>
 
@@ -2008,7 +1984,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <div id="hud" class="hidden">
   <div id="topBar">
     <div class="hud-card" style="min-width:190px;">
-      <span class="hud-label">🦕 HEALTH</span>
+      <span class="hud-label"><svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:2px;"><path fill="#ff4757" d="M12 21.3s-8.4-4.8-8.4-11.3a5.1 5.1 0 0 1 9.2-3.1 5.1 5.1 0 0 1 9.2 3.1c0 6.5-8.4 11.3-8.4 11.3z"/><path d="M4.2 12h3.2l1.6-3.4 2.1 5.6 1.6-4.4 1.6 2.2h6" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg> HEALTH</span>
       <div style="display:flex;align-items:center;gap:7px;">
         <div class="bar-bg" style="flex:1"><div class="bar-fill" id="hpFill" style="width:100%"></div></div>
         <span id="hpText" style="font-size:.75rem;color:#7fff6a;min-width:50px;">100/100</span>
