@@ -277,14 +277,6 @@ class Game3D {
       this.scene.add(plat);
     }
 
-    // Central battle arena marker
-    const arena = new THREE.Mesh(
-      new THREE.CylinderGeometry(22, 22, 0.12, 48),
-      new THREE.MeshLambertMaterial({ color: 0xff4400, transparent: true, opacity: 0.25 })
-    );
-    arena.position.set(sx(2000), 0.06, sz(2000));
-    this.scene.add(arena);
-
     this.buildSky();
     this.buildDecorations();
     this.buildVolcano();
@@ -526,16 +518,18 @@ class Game3D {
       const ang=Math.atan2(vz,vx);
       // Concave exponential profile
       const profileR=(crR*0.88)+(bR-(crR*0.88))*Math.pow(1-t,1.40);
-      // Large-scale asymmetric bumps (angular, not height-based)
+      // Large-scale asymmetric bumps (angular, not height-based) — kept subtle so
+      // volcanoHeightAt()'s idealized profile stays a close match to the real mesh;
+      // a bigger wobble here reads as "floating"/clipping for anything standing on it.
       const n1=fbm(Math.cos(ang)*2.5+5,Math.sin(ang)*2.5+t*2,4);
-      const broadDisp=(n1-0.5)*profileR*0.062*(1-t*0.32);
+      const broadDisp=(n1-0.5)*profileR*0.008*(1-t*0.32);
       // Erosion gullies — radially inward only, no Y change (prevents banding)
-      const gullyD=profileR*0.050*(1-t*0.65)*Math.min(1,t*4+0.12);
+      const gullyD=profileR*0.008*(1-t*0.65)*Math.min(1,t*4+0.12);
       const gl1=Math.pow(Math.max(0,-Math.sin(ang*8+n1*3.0)),4)*gullyD;
       const gl2=Math.pow(Math.max(0,-Math.sin(ang*13+n1*4.5+1.1)),5)*gullyD*0.52;
       // Fine surface roughness
       const n2=fbm(Math.cos(ang)*6+t*4+2,Math.sin(ang)*6+1,3);
-      const fineDisp=(n2-0.5)*profileR*0.019*(1-t*0.42);
+      const fineDisp=(n2-0.5)*profileR*0.008*(1-t*0.42);
       const finalR=profileR+broadDisp+fineDisp-gl1-gl2;
       pos.setXYZ(vi, Math.cos(ang)*finalR, vy, Math.sin(ang)*finalR);
     }
