@@ -1646,19 +1646,9 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   <div class="modal" style="width:520px;">
     <h2 style="font-size:1.5rem;letter-spacing:1px;">🦖 PLAY NOW!</h2>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div>
-        <label class="modal-label">Room Name</label>
-        <input class="modal-input" id="roomName" placeholder="My Dino Lair" maxlength="40">
-      </div>
-      <div>
-        <label class="modal-label">Game Mode</label>
-        <select class="modal-select" id="roomMode">
-          <option value="classic">🦕 Classic Tycoon</option>
-          <option value="rumble">⚔️ Dino Rumble</option>
-          <option value="survival">☄️ Survival</option>
-        </select>
-      </div>
+    <div>
+      <label class="modal-label">Room Name</label>
+      <input class="modal-input" id="roomName" placeholder="My Dino Lair" maxlength="40">
     </div>
 
     <div style="margin-top:12px;">
@@ -3356,7 +3346,7 @@ function closeModal(id) { window.SFX?.click?.(); document.getElementById(id).cla
 
 function submitCreateRoom() {
   const name       = document.getElementById('roomName').value.trim() || currentUser + "'s Jungle";
-  const mode       = document.getElementById('roomMode').value;
+  const mode       = 'classic';
   const max        = parseInt(document.getElementById('maxPlayers').value);
   const isPublic   = document.getElementById('publicToggle').classList.contains('on');
   const freshStart = document.getElementById('freshStartToggle').classList.contains('on');
