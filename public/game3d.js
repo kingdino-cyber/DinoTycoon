@@ -1691,7 +1691,14 @@ class Game3D {
         myObj.data.x = this.myPlayer.x; myObj.data.y = this.myPlayer.y;
       }
       const forwardCam = { x: Math.sin(phi), z: Math.cos(phi) };
-      const pitchLift = Math.sin(pitch) * 1.8;
+      // Orbit camera around a point CAM_BASE_HEIGHT above the player at a constant
+      // radius _cd, decomposed into horizontal/vertical spherical components. Scaling
+      // pitchLift by a fixed 1.8 instead of _cd broke that: cos(pitch) shrinks the
+      // horizontal offset toward 0 as you look straight up/down, but the vertical
+      // offset barely grew to compensate, so the camera collapsed onto the player —
+      // the "snapping" zoom when tilting the view.
+      const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
+      const pitchLift = Math.sin(pitch) * _cd;
       const pitchPull = Math.cos(pitch);
       let shakeX = 0, shakeY = 0;
       if (this._shakeUntil && performance.now() < this._shakeUntil) {
@@ -1744,7 +1751,6 @@ class Game3D {
         this.camera.lookAt(lx, ly, lz);
       } else if (this._camMode === 2) {
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
-        const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
         this.camera.position.set(
           px + forwardCam.x * _cd * pitchPull + shakeX,
           CAM_BASE_HEIGHT + terrainH + pitchLift + shakeY + jY,
@@ -1753,7 +1759,6 @@ class Game3D {
         this.camera.lookAt(px, 1.3 + jY + terrainH, pz);
       } else {
         if (myObj) myObj.group.visible = !this.myPlayer.isDead;
-        const _cd = (window.GAME_SETTINGS?.camDist ?? CAM_DISTANCE_DEFAULT) * WU * 24;
         this.camera.position.set(
           px - forwardCam.x * _cd * pitchPull + shakeX,
           CAM_BASE_HEIGHT + terrainH + pitchLift + shakeY + jY,
