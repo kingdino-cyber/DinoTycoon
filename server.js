@@ -190,13 +190,12 @@ function checkAchievements(room, p) {
 // effect site).
 const MS_DAY = 86400000;
 const WEEKLY_EVENTS = [
-  { id:'double_xp',     name:'Double XP Tuesday',     icon:'🎯', startDay:2, durationDays:1, xpMult:2 },
   { id:'bounty',        name:'Bounty Thursday',       icon:'⚔️', startDay:4, durationDays:1, pointsMult:2 },
   { id:'lucky_drop',    name:'Lucky Drop Friday',     icon:'🍀', startDay:5, durationDays:1, dropMult:1.5 },
   { id:'double_income', name:'Double Income Weekend', icon:'💰', startDay:6, durationDays:2, mpsMultiplier:2 },
 ];
-// Monday and Wednesday are intentionally left as quiet "gap" days with no
-// event — getActiveEvent() returns null and the banner falls back to
+// Monday, Tuesday, and Wednesday are intentionally left as quiet "gap" days
+// with no event — getActiveEvent() returns null and the banner falls back to
 // getNextEvent()'s "starts in X" countdown on those days.
 function getWeeklyWindow(startDay, durationDays, refDate = new Date()) {
   const day = refDate.getUTCDay(); // 0=Sun..6=Sat

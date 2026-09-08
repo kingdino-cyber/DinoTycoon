@@ -2154,11 +2154,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <button onclick="saveCurrentGame()" style="
       width:100%;padding:13px;border:1px solid rgba(100,200,80,.3);border-radius:12px;
       cursor:pointer;background:rgba(100,200,80,.08);color:#7fff6a;font-size:1rem;margin-bottom:10px;
-    ">💾 Save Game</button>
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    "><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><rect x="7.2" y="4" width="7.6" height="4.6"/><rect x="6.2" y="13.4" width="11.6" height="5.6"/></svg> Save Game</button>
     <button onclick="quitToLobby()" style="
       width:100%;padding:13px;border:1px solid rgba(255,100,100,.3);border-radius:12px;
       cursor:pointer;background:transparent;color:#ff8888;font-size:1rem;
-    ">🚪 Quit to Lobby</button>
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    "><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Quit to Lobby</button>
     <div id="autoUpdateHint" style="display:none;margin-top:8px;font-size:.72rem;color:#7fff6a;opacity:.85;">
       🔄 Auto-update ON — quitting will overwrite your save
     </div>
