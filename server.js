@@ -183,20 +183,12 @@ function checkAchievements(room, p) {
 }
 
 // ── Seasonal Events ──────────────────────────────────────────────────────────────
-// A weekly rotation of events, computed live from the real clock (no static
-// dates to maintain, no manual toggling). Not every day has an event — Monday
-// and Wednesday are deliberately quiet. Effects only apply to casual matches —
-// ranked stays purely skill-based and predictable (see isRanked checks at each
-// effect site).
+// Weekly special-day rotation — removed entirely (kept as an empty list so
+// getActiveEvent()/getNextEvent() below stay valid and every call site's
+// `ev?.xxx` checks stay harmlessly inert) since the rotating banner and
+// per-day effects made things harder to follow than they were worth.
 const MS_DAY = 86400000;
-const WEEKLY_EVENTS = [
-  { id:'bounty',        name:'Bounty Thursday',       icon:'⚔️', startDay:4, durationDays:1, pointsMult:2 },
-  { id:'lucky_drop',    name:'Lucky Drop Friday',     icon:'🍀', startDay:5, durationDays:1, dropMult:1.5 },
-  { id:'double_income', name:'Double Income Weekend', icon:'💰', startDay:6, durationDays:2, mpsMultiplier:2 },
-];
-// Monday, Tuesday, and Wednesday are intentionally left as quiet "gap" days
-// with no event — getActiveEvent() returns null and the banner falls back to
-// getNextEvent()'s "starts in X" countdown on those days.
+const WEEKLY_EVENTS = [];
 function getWeeklyWindow(startDay, durationDays, refDate = new Date()) {
   const day = refDate.getUTCDay(); // 0=Sun..6=Sat
   const daysSinceStart = (day - startDay + 7) % 7;
