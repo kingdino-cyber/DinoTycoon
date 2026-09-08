@@ -688,9 +688,27 @@ class Game3D {
       if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 1.6;
     }, Math.max(0, 900 - latencyMs));
 
-    // ── Upward burst particles ────────────────────────────────────────────────
+    // ── Instant eruption jet — a bright column that whooshes up from the vent the
+    // moment it blows, before the particle debris takes over ─────────────────────
+    const jetMat = new THREE.MeshBasicMaterial({ color: 0xffaa33, transparent: true, opacity: 0.9 });
+    const jet = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.2, 1, 12, 1, true), jetMat);
+    jet.position.set(cx, originY, cz);
+    this.scene.add(jet);
+    const jetStart = performance.now();
+    const stepJet = () => {
+      const t = Math.min((performance.now() - jetStart) / 550, 1);
+      jet.scale.set(1 + t * 0.6, 1 + t * 26, 1 + t * 0.6);
+      jet.position.y = originY + t * 13;
+      jetMat.opacity = 0.9 * (1 - t);
+      if (t < 1) requestAnimationFrame(stepJet);
+      else this.scene.remove(jet);
+    };
+    requestAnimationFrame(stepJet);
+
+    // ── Upward burst particles — fine ash/ember debris ─────────────────────────
     const burstGeo = new THREE.SphereGeometry(0.36, 5, 4);
     const BURST = 90;
+    this._volcanoParticles = this._volcanoParticles || [];
     for (let i = 0; i < BURST; i++) {
       const mat = new THREE.MeshBasicMaterial({ color: i % 3 === 0 ? 0x552200 : (i % 3 === 1 ? 0xff5500 : 0xff9900) });
       const p = new THREE.Mesh(burstGeo, mat);
@@ -704,8 +722,29 @@ class Game3D {
       p._life = 1.3 + Math.random() * 1.1;
       p.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6);
       this.scene.add(p);
-      this._volcanoParticles = this._volcanoParticles || [];
       this._volcanoParticles.push(p);
+    }
+
+    // ── Molten lava chunks — bigger, brighter, glowing debris that reads as
+    // actual lava flying out (not just fine ash), a few carrying their own light ──
+    const chunkGeo = new THREE.SphereGeometry(1, 6, 5);
+    const CHUNKS = 18;
+    for (let i = 0; i < CHUNKS; i++) {
+      const mat = new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xff6a00 : 0xffcc33 });
+      const chunk = new THREE.Mesh(chunkGeo, mat);
+      chunk.scale.setScalar(0.7 + Math.random() * 0.9);
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 16 + Math.random() * 16;
+      chunk._vx = Math.cos(ang) * spd * 0.45;
+      chunk._vy = spd;
+      chunk._vz = Math.sin(ang) * spd * 0.45;
+      chunk._g  = -26;
+      chunk._born = nowAdj();
+      chunk._life = 2.2 + Math.random() * 1.4;
+      chunk.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.5, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.5);
+      if (i % 3 === 0) chunk.add(new THREE.PointLight(0xff5500, 3.5, 9));
+      this.scene.add(chunk);
+      this._volcanoParticles.push(chunk);
     }
 
     // ── Billowing ash cloud filling the sky above the crater ───────────────────
@@ -1681,7 +1720,17 @@ class Game3D {
           const hw = isH ? 28 : 9, hh = isH ? 9 : 28;
           return Math.abs(sxToServer - b.data.x) < hw && Math.abs(szToServer - b.data.y) < hh;
         });
-        if (!blocked) {
+        // Crater rim acts as a low wall — walking into/out of it is blocked, same as
+        // a building wall, but jumping (space bar) lets you clear it, the way hopping
+        // over a ledge would. Only the CROSSING is blocked; once you've landed inside
+        // (or are already outside), normal grounded movement resumes.
+        const craterCX = sx(VOLCANO_CX_SRV), craterCZ = sz(VOLCANO_CZ_SRV);
+        const ventTopR = VOLCANO_CRATER_R * 0.90;
+        const oldD = Math.hypot(sx(this.myPlayer.x) - craterCX, sz(this.myPlayer.y) - craterCZ);
+        const newD = Math.hypot(nx - craterCX, nz - craterCZ);
+        const crossingRim = (oldD >= ventTopR) !== (newD >= ventTopR);
+        const craterBlocked = crossingRim && this._jumpY <= 0;
+        if (!blocked && !craterBlocked) {
           this.myPlayer.x = sxToServer; this.myPlayer.y = szToServer;
         }
 

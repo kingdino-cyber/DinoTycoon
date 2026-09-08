@@ -1020,9 +1020,11 @@ function startRoomLoop(room) {
       const prestigeBonus = 1 + (p.prestige || 0) * 0.1;
       const earned = p.mps * incomeMult * prestigeBonus * dt;
       p.money += earned; p.totalEarned += earned;
-      if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * dt);
+      const distToVolcano = dist(p, VOLCANO_CENTER);
+      const regenMult = distToVolcano < VOLCANO_BASE_R_SRV ? 0.4 : 1; // regen is slower anywhere on the volcano itself
+      if (p.regen > 0 && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + p.regen * regenMult * dt);
       // Volcano crater heat damage
-      if (dist(p, VOLCANO_CENTER) < CRATER_R) {
+      if (distToVolcano < CRATER_R) {
         const dmg = HEAT_DPS * dt;
         p.hp -= dmg;
         p.damageTaken = (p.damageTaken || 0) + dmg;
