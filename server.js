@@ -1461,8 +1461,14 @@ async function startMatch(room) {
     return { sid, lp, dbId, rawSave };
   }));
   for (const { sid, lp, dbId, rawSave } of playerSaveData) {
+    // Fresh Start resets in-match progress (money/level/xp/upgrades/kills/deaths/
+    // prestige) but must NOT touch account-persistent fields living in the same
+    // rawSave object — Dino Points, achievements, ranked MMR, etc. Spreading
+    // rawSave first and overriding just the reset fields keeps those intact;
+    // building the object without rawSave at all (the old code) silently zeroed
+    // everything not in the explicit list, including the player's Dino Points.
     let save2 = room.freshStart
-      ? { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0 }
+      ? { ...rawSave, money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0 }
       : { money:0, total_earned:0, level:1, xp:0, upgrades:[], kills:0, deaths:0, prestige:0, ...rawSave };
     // Load a saved game slot if requested
     const sg = room.loadSavedGame && Array.isArray(rawSave.savedGames)

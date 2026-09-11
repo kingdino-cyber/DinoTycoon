@@ -679,14 +679,19 @@ class Game3D {
     // exactly when the server's damage/landing event fires.
     const latencyMs = erupAt ? Math.max(0, Date.now() - erupAt) : 0;
     const nowAdj = () => performance.now() - latencyMs;
+    const ERUPTION_MS = 6000; // how long the whole eruption reads as "active" visually
 
-    // ── Crater flash ─────────────────────────────────────────────────────────
-    if (this._volcanoLight)  { this._volcanoLight.intensity  = 30; }
-    if (this._volcanoTopGlow){ this._volcanoTopGlow.intensity = 16; }
-    setTimeout(() => {
-      if (this._volcanoLight)   this._volcanoLight.intensity  = 6.0;
-      if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 1.6;
-    }, Math.max(0, 900 - latencyMs));
+    // ── Crater flash — bright spike that smoothly settles over the full eruption ──
+    if (this._volcanoLight)  this._volcanoLight.intensity  = 30;
+    if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 16;
+    const flashStart = nowAdj();
+    const stepFlash = () => {
+      const t = Math.min((nowAdj() - flashStart) / ERUPTION_MS, 1);
+      if (this._volcanoLight)   this._volcanoLight.intensity  = 30 - t * (30 - 6.0);
+      if (this._volcanoTopGlow) this._volcanoTopGlow.intensity = 16 - t * (16 - 1.6);
+      if (t < 1) requestAnimationFrame(stepFlash);
+    };
+    requestAnimationFrame(stepFlash);
 
     // ── Instant eruption jet — a bright column that whooshes up from the vent the
     // moment it blows, before the particle debris takes over ─────────────────────
@@ -719,7 +724,7 @@ class Game3D {
       p._vz = Math.sin(ang) * spd * 0.3;
       p._g  = -30;
       p._born = nowAdj();
-      p._life = 1.3 + Math.random() * 1.1;
+      p._life = 2.0 + Math.random() * 2.0;
       p.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.6);
       this.scene.add(p);
       this._volcanoParticles.push(p);
@@ -740,12 +745,43 @@ class Game3D {
       chunk._vz = Math.sin(ang) * spd * 0.45;
       chunk._g  = -26;
       chunk._born = nowAdj();
-      chunk._life = 2.2 + Math.random() * 1.4;
+      chunk._life = 2.5 + Math.random() * 2.5;
       chunk.position.set(cx + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.5, originY, cz + (Math.random() - 0.5) * VOLCANO_CRATER_R * 0.5);
       if (i % 3 === 0) chunk.add(new THREE.PointLight(0xff5500, 3.5, 9));
       this.scene.add(chunk);
       this._volcanoParticles.push(chunk);
     }
+
+    // ── Lava oozing down the slopes — glowing streams that bloom in, hold bright
+    // through the eruption, then fade as it dies down ──────────────────────────
+    const crRtop = VOLCANO_CRATER_R * 0.88; // matches the body mesh's own summit radius
+    const profileRAt = (t) => crRtop + (VOLCANO_BASE_R - crRtop) * Math.pow(1 - t, 1.40);
+    const oozeMat = new THREE.MeshBasicMaterial({ map: this._lavaTex, transparent: true, opacity: 0, side: THREE.DoubleSide });
+    const oozeMeshes = [];
+    const OOZE_N = 9;
+    for (let i = 0; i < OOZE_N; i++) {
+      const ang = (i / OOZE_N) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+      const wob = (Math.random() - 0.5) * 0.25;
+      const pts = [];
+      for (let s = 0; s <= 12; s++) {
+        const t = 0.97 - (0.97 - 0.42) * (s / 12); // from just below the rim down to mid-slope
+        const r = profileRAt(t) + 0.12; // sit just proud of the surface, no z-fighting
+        const a = ang + wob * (1 - t);
+        pts.push(new THREE.Vector3(cx + Math.cos(a) * r, t * VOLCANO_PEAK_H, cz + Math.sin(a) * r));
+      }
+      const tubeGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, 0.28 + Math.random() * 0.18, 6, false);
+      const mesh = new THREE.Mesh(tubeGeo, oozeMat);
+      this.scene.add(mesh);
+      oozeMeshes.push(mesh);
+    }
+    const oozeStart = nowAdj();
+    const stepOoze = () => {
+      const t = (nowAdj() - oozeStart) / ERUPTION_MS;
+      if (t >= 1) { for (const m of oozeMeshes) this.scene.remove(m); return; }
+      oozeMat.opacity = t < 0.08 ? t / 0.08 : (t > 0.7 ? (1 - t) / 0.3 : 1);
+      requestAnimationFrame(stepOoze);
+    };
+    requestAnimationFrame(stepOoze);
 
     // ── Billowing ash cloud filling the sky above the crater ───────────────────
     const ashPuffs = [];
@@ -830,11 +866,13 @@ class Game3D {
     }, delay);
     spawnShockwave(0);
     spawnShockwave(220);
+    spawnShockwave(1700);
+    spawnShockwave(3400);
 
     // Camera shake if player is on/near the volcano
     if (this.myPlayer) {
       const dSrv = Math.hypot(this.myPlayer.x - VOLCANO_CX_SRV, this.myPlayer.y - VOLCANO_CZ_SRV);
-      if (dSrv < 1400) this._shakeUntil = performance.now() + 900;
+      if (dSrv < 1400) this._shakeUntil = performance.now() + 2500;
     }
     window.addChatMessage?.('🌋 Volcano', 'The volcano erupts! Take cover!', '#ff4400');
     window.SFX?.crunch?.();
