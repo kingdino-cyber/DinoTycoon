@@ -949,14 +949,50 @@ class Game3D {
     window.SFX?.crunch?.();
   }
 
+  // Start (or resume) play: go fullscreen first, THEN take pointer lock. The order
+  // matters — Keyboard Lock (what lets Ctrl+W reach the game instead of closing the
+  // tab) only works in script-initiated fullscreen, and its spec forbids enabling it
+  // while pointer lock is held outside fullscreen. If fullscreen is switched off in
+  // settings, unsupported, or refused, fall back to a plain pointer lock.
+  _enterPlay(canvas) {
+    const lockPointer = () => canvas.requestPointerLock()?.catch(() => {});
+    const el = document.documentElement;
+    const wantFullscreen = window.GAME_SETTINGS?.fullscreenPlay !== false && el.requestFullscreen && !document.fullscreenElement;
+    if (!wantFullscreen) { lockPointer(); return; }
+    el.requestFullscreen().then(lockPointer, lockPointer);
+  }
+
   setupInput() {
     const canvas = this.renderer.domElement;
     canvas.addEventListener('click', () => {
       // Don't re-acquire pointer lock while shop/pause overlay is open
       if (typeof _paused !== 'undefined' && _paused) return;
-      if (!this.locked) { canvas.requestPointerLock()?.catch(() => {}); return; }
+      if (!this.locked) { this._enterPlay(canvas); return; }
       this.tryAttackOrCollect();
     });
+    this._onFullscreenChange = () => {
+      if (document.fullscreenElement) {
+        // Deliver Ctrl+W & co. to the game as ordinary key events instead of the browser
+        // acting on them (Chrome/Edge; a silent no-op elsewhere). Escape is deliberately
+        // NOT locked, so it keeps exiting fullscreen/pointer lock.
+        navigator.keyboard?.lock?.([...CTRL_GAME_KEYS])?.catch?.(() => {});
+        return;
+      }
+      navigator.keyboard?.unlock?.();
+      // Esc / F11 just left fullscreen mid-match. Browsers usually consume that Escape
+      // instead of delivering the keydown that normally opens the pause menu, so open it
+      // here — after a beat, in case the keydown did arrive and has already paused.
+      setTimeout(() => {
+        if (this._stopped || window._gameScene !== this || !this.myPlayer) return;
+        if (typeof _paused === 'undefined' || _paused) return;
+        const hud = document.getElementById('hud');
+        if (!hud || hud.classList.contains('hidden')) return;
+        const over = document.getElementById('matchOver');
+        if (over && !over.classList.contains('hidden')) return;
+        window.togglePause?.();
+      }, 80);
+    };
+    document.addEventListener('fullscreenchange', this._onFullscreenChange);
     this._onPointerLockChange = () => {
       this.locked = document.pointerLockElement === canvas;
       // Right after the lock engages, some browsers report one bogus movementX/Y
@@ -1747,6 +1783,8 @@ class Game3D {
     this._stopped = true;
     this.renderer.dispose();
     if (this._onPointerLockChange) document.removeEventListener('pointerlockchange', this._onPointerLockChange);
+    if (this._onFullscreenChange) document.removeEventListener('fullscreenchange', this._onFullscreenChange);
+    navigator.keyboard?.unlock?.();
     const btn = document.getElementById('collectHoleBtn');
     if (btn) btn.style.display = 'none';
     const ch = document.getElementById('crosshair3d');

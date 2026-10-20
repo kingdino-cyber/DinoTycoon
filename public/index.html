@@ -2175,7 +2175,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=15', null, () => {
-        appendScript('game3d.js?v=34', null, () => {
+        appendScript('game3d.js?v=35', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -2393,6 +2393,7 @@ const SETTINGS_DEFS = [
   { key:'viewBobbing',     label:'👀 View Bobbing (3D)',     desc:'Arms and camera bob as you walk in first-person mode', default:true },
   { key:'colorblindHpBar', label:'🎨 Colorblind-Friendly HP Bars', desc:'Switch HP bar colors from green/red to blue/orange', default:false },
   // ── Controls ──
+  { key:'fullscreenPlay',  label:'🖥️ Fullscreen While Playing', desc:'Go fullscreen when you start playing. In Chrome/Edge this lets Ctrl+W (sprint forward) work without closing the tab.', default:true },
   { key:'alwaysSprint',    label:'🏃 Always Sprint',         desc:'Sprint whenever you move forward, no Ctrl needed. You only get sweep hits while standing, strafing or backing up.', default:false },
   // ── Audio ──
   { key:'soundEnabled',    label:'🔊 Sound Effects',         desc:'All in-game sounds (hits, buys, level ups, etc.)',   default:true },
@@ -2441,7 +2442,7 @@ function openSettingsModal() {
     'Performance': ['lowQuality'],
     'Visuals': ['killExplosions','coinSparkles','killBannerOn','damageNumbers','arenaFlash','cameraShake','knockbackEffect','comboCounter','roarEffect','lobbyParticles'],
     'Gameplay UI': ['viewBobbing','colorblindHpBar'],
-    'Controls': ['alwaysSprint'],
+    'Controls': ['fullscreenPlay','alwaysSprint'],
     'Audio': ['soundEnabled','musicEnabled'],
   };
   let html = '';
@@ -3599,6 +3600,8 @@ function _leaveGame() {
   if (window._game3D?.dispose) window._game3D.dispose();
   window._game3D = null;
   window._gameScene = null;
+  // Back in the lobby — leave the fullscreen the match put us in
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   window._gameInitialized = false;
   window._gameReady = false;
   window._pendingGameData = null;
@@ -3616,6 +3619,13 @@ document.addEventListener('keydown',e=>{
   }
   if(e.key==='Enter') document.getElementById('chatInput').focus();
   if(e.key==='b'||e.key==='B') toggleShop();
+});
+// Safety net for Ctrl+W (sprint + forward), which closes the tab. Fullscreen + Keyboard
+// Lock stops that in Chrome/Edge; this asks "Leave site?" instead everywhere that can't
+// (Firefox, Safari, or fullscreen switched off). Only while actually in a match.
+window.addEventListener('beforeunload', e => {
+  const inGame = window._gameScene && window._gameScene.myPlayer && !document.getElementById('hud').classList.contains('hidden');
+  if (inGame) { e.preventDefault(); e.returnValue = ''; }
 });
 function sendChat(){const i=document.getElementById('chatInput');const m=i.value.trim();if(!m)return;if(window.gameSocket)window.gameSocket.emit('chat',m);i.value='';}
 function addChatMessage(u,msg,color){
