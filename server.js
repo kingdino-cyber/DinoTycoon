@@ -121,21 +121,12 @@ const UPGRADES = {
   // HP
   dinoBlood:   { name:'Dino Blood',       cost:250,   icon:'❤️', effect:{maxHp:120}, req:null,           desc:'+120 HP',   cat:'health' },
   titanBody:   { name:'Titan Dino Body',  cost:900,   icon:'🦕', effect:{maxHp:300}, req:'dinoBlood',    desc:'+300 HP',   cat:'health' },
-  immortalDino:{ name:'Immortal Dino',    cost:4000,  icon:'✨', effect:{maxHp:700}, req:'titanBody',    desc:'+700 HP',   cat:'health' },
   // Regen (now its own chain starting from no req)
   mossCloth:   { name:'Moss Cloth',       cost:100,   icon:'🍃', effect:{regen:2},   req:null,           desc:'+2 HP/s — starter regen',  cat:'health' },
   healingFern: { name:'Healing Ferns',    cost:600,   icon:'🌿', effect:{regen:5},   req:'mossCloth',    desc:'+5 HP/s',   cat:'health' },
   dinoVitality:{ name:'Dino Vitality',    cost:2500,  icon:'💚', effect:{regen:12},  req:'healingFern',  desc:'+12 HP/s',  cat:'health' },
-  ancientBlood:{ name:'Ancient Blood',    cost:8000,  icon:'🩸', effect:{regen:30},  req:'dinoVitality', desc:'+30 HP/s',  cat:'health' },
-  titanRegen:  { name:'Titan Regen',      cost:25000, icon:'💉', effect:{regen:80},  req:'ancientBlood', desc:'+80 HP/s — near unkillable!', cat:'health' },
-  // Attack (extended)
-  ancientFang:  { name:'Ancient Fang',    cost:22000, icon:'🦷', effect:{damage:150}, req:'meteorStrike', desc:'+150 Dmg — prehistoric power!', cat:'attack' },
   // Defense (extended)
   dinoShell:    { name:'Dino Shell',      cost:20000, icon:'🐢', effect:{defense:80}, req:'boneArmor',   desc:'+80 Def — nearly impenetrable', cat:'defense' },
-  // Loot — earn more from kills
-  scavenger:    { name:'Scavenger Gene',  cost:600,   icon:'🪙', effect:{lootMult:0.25}, req:null,          desc:'+25% loot from kills', cat:'loot' },
-  fossilHunter: { name:'Fossil Hunter',   cost:2500,  icon:'🏹', effect:{lootMult:0.5},  req:'scavenger',   desc:'+50% loot from kills', cat:'loot' },
-  apexHunter:   { name:'Apex Hunter',     cost:10000, icon:'💀', effect:{lootMult:1.0},  req:'fossilHunter',desc:'+100% loot from kills (2× total!)', cat:'loot' },
   // ── Defense Buildings (placed on your base) ──
   stoneWall:     { name:'Stone Wall',      cost:120,   icon:'🪨', effect:{}, req:null, desc:'Blocks everyone including you (250 HP). Damages on contact.', cat:'build' },
   spikeTrap:     { name:'Spike Trap',      cost:300,   icon:'🔺', effect:{}, req:null, desc:'Damages enemies on your base (20 dmg)',    cat:'build' },
@@ -614,7 +605,7 @@ function emitToRoom(room, event, data) {
 
 // ── Stats calc ────────────────────────────────────────────────────────────────
 function calcStats(upgrades) {
-  let mps=1, speed=260, damage=15, defense=0, maxHp=100, regen=0, lootMult=1, xpBoost=1;
+  let mps=1, speed=260, damage=15, defense=0, maxHp=100, regen=0, xpBoost=1;
   for (const id of upgrades) {
     const u = UPGRADES[id]; if (!u) continue;
     if (u.effect.mps)      mps      += u.effect.mps;
@@ -623,10 +614,9 @@ function calcStats(upgrades) {
     if (u.effect.defense)  defense  += u.effect.defense;
     if (u.effect.maxHp)    maxHp    += u.effect.maxHp;
     if (u.effect.regen)    regen    += u.effect.regen;
-    if (u.effect.lootMult) lootMult += u.effect.lootMult;
     if (u.effect.xpBoost)  xpBoost  += u.effect.xpBoost;
   }
-  return { mps, speed, damage, defense, maxHp, regen, lootMult, xpBoost };
+  return { mps, speed, damage, defense, maxHp, regen, xpBoost };
 }
 
 function xpForLevel(l) { return Math.floor(100 * Math.pow(1.4, l-1)); }
@@ -987,7 +977,7 @@ function handleAttack(attacker, target, room, opts = {}) {
     const bountyEvent = !room.isRanked ? getActiveEvent() : null;
     const pointsGain = Math.round(10 * (bountyEvent?.pointsMult || 1));
     attacker.points = (attacker.points || 0) + pointsGain;
-    const loot = Math.floor(target.money * 0.25 * (attacker.lootMult || 1));
+    const loot = Math.floor(target.money * 0.25);
     target.money = Math.max(0, target.money - loot);
     attacker.money += loot; attacker.totalEarned += loot;
     addXP(attacker, 80 + target.level*10, room);

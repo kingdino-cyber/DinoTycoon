@@ -2079,8 +2079,15 @@ window.SFX = (() => {
     hit:       () => play(()=>{ noise(0.1,0.35,1200); osc(150,'square',0.08,0.2); }),
     // Sweep hit: a high, fast rising swish (layered on top of the normal hit sound)
     sweep:     () => play(()=>{ swoosh(0.22,0.8,2400,7500); osc(2200,'sine',0.18,0.1,4600); }),
-    // Critical hit: a bright two-note "ting"
-    crit:      () => play(()=>{ noise(0.08,0.35,3000); osc(1319,'triangle',0.14,0.28); setTimeout(()=>osc(1976,'triangle',0.18,0.26),50); }),
+    // Critical hit: layered — a low impact thud and sharp crack, a ringing bell chord
+    // (slightly detuned partials so it shimmers), then a fast sparkle climbing above it
+    crit:      () => play(()=>{
+      osc(70,'sine',0.22,0.55,38); osc(140,'triangle',0.14,0.3,70);
+      noise(0.12,0.5,5000); noise(0.05,0.4,9000);
+      [[1319,0.5,0.22],[1976,0.45,0.2],[2637,0.35,0.16],[3322,0.3,0.1],[1324,0.5,0.14]].forEach(([f,d,v],i)=>
+        setTimeout(()=>osc(f,i===4?'sine':'triangle',d,v,null,(i-2)*0.25),i<4?30:34));
+      [3951,4699,5588,6644].forEach((f,i)=>setTimeout(()=>osc(f,'sine',0.14,0.1,null,(i%2?0.5:-0.5)),110+i*45));
+    }),
     death:     () => play(()=>{ noise(0.55,0.6,400); osc(55,'sawtooth',0.4,0.5); osc(40,'sine',0.6,0.3); }),
     kill:      () => play(()=>{ osc(523,'sine',0.1,0.4); osc(784,'sine',0.12,0.4); osc(1047,'sine',0.1,0.35); }),
     coin:      () => play(()=>{ osc(1400,'sine',0.08,0.3,1800); osc(1800,'sine',0.06,0.2); }),
@@ -3321,7 +3328,7 @@ window.updateLeaderboard = function(lb) {
     </div>`).join('');
 };
 
-const SHOP_CATS = {income:'⛏️ Income',speed:'💨 Speed',attack:'⚔️ Attack',defense:'🛡️ Defense',health:'❤️ Health',loot:'🪙 Loot',build:'🏗️ Build'};
+const SHOP_CATS = {income:'⛏️ Income',speed:'💨 Speed',attack:'⚔️ Attack',defense:'🛡️ Defense',health:'❤️ Health',build:'🏗️ Build'};
 let shopCatFilter='income';
 
 window.buildShop = function(upgrades, owned) {
