@@ -16,6 +16,7 @@ const BASE_KNOCKBACK = 120;
 const HIT_KB_MULT = { normal: 1, sweep: 0.55, sprint: 1.8, crit: 1 };
 const SPRINT_SPEED_MULT = 1.3;  // sprinting moves 30% faster than walking
 const SPRINT_FOV_KICK = 8;      // degrees the FOV widens while sprinting
+const SPRINT_HIT_GRACE_MS = 80; // a hit this soon after you stop sprinting (W released) is still a sprint hit
 // Keys that must not fire browser shortcuts when held with Ctrl (the sprint key)
 const CTRL_GAME_KEYS = new Set(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyX','Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
 
@@ -205,6 +206,7 @@ class Game3D {
     this._isWalking = false;
     this._kbDur = 0; this._kbT = 0;
     this._sprinting = false;  // true while moving forward with sprint active (Ctrl or Always Sprint)
+    this._lastSprintTime = 0; // performance.now() of the last frame spent sprinting
     this._fovKick = 0;        // current extra FOV from sprinting, eased toward SPRINT_FOV_KICK
     this._kbFromX = 0; this._kbFromY = 0;
     this._kbToX   = 0; this._kbToY   = 0;
@@ -964,11 +966,21 @@ class Game3D {
 
   setupInput() {
     const canvas = this.renderer.domElement;
+    // Attack on button PRESS, like Minecraft — not on release. A browser "click" only
+    // fires on mouse-up, 50-100ms after the press; releasing W in that gap (the
+    // sprint -> hit -> release-W technique) cancelled the sprint before the hit was
+    // judged, so sprint hits came out as sweeps.
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || !this.locked) return;
+      // Don't swing while the shop/pause overlay is open
+      if (typeof _paused !== 'undefined' && _paused) return;
+      this.tryAttackOrCollect();
+    });
+    // Click is only for taking (or re-taking) the pointer lock; attacks are handled above
     canvas.addEventListener('click', () => {
       // Don't re-acquire pointer lock while shop/pause overlay is open
       if (typeof _paused !== 'undefined' && _paused) return;
-      if (!this.locked) { this._enterPlay(canvas); return; }
-      this.tryAttackOrCollect();
+      if (!this.locked) this._enterPlay(canvas);
     });
     this._onFullscreenChange = () => {
       if (document.fullscreenElement) {
@@ -1159,7 +1171,10 @@ class Game3D {
         //   on the ground        -> sweep      (a bit more damage, little knockback)
         // The server re-validates crit/sweep against the jump timing it has seen.
         const falling = this._jumpY > 0 && this._jumpVel < 0;
-        const hitType = this._sprinting ? 'sprint' : falling ? 'crit' : this._jumpY > 0 ? 'normal' : 'sweep';
+        // Still counts as sprinting for a moment after W is released — Minecraft handles
+        // the click and the key release inside the same 50ms tick and judges the hit first
+        const sprintHit = this._sprinting || performance.now() - this._lastSprintTime < SPRINT_HIT_GRACE_MS;
+        const hitType = sprintHit ? 'sprint' : falling ? 'crit' : this._jumpY > 0 ? 'normal' : 'sweep';
         window.gameSocket.emit('attack', { id: chosen.id, type: hitType });
         this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
@@ -1878,6 +1893,7 @@ class Game3D {
       const fwdHeld = (this.keys['KeyW'] || this.keys['ArrowUp']) && !(this.keys['KeyS'] || this.keys['ArrowDown']);
       const sprintKey = this.keys['ControlLeft'] || this.keys['ControlRight'] || window.GAME_SETTINGS?.alwaysSprint === true;
       this._sprinting = !!(fwdHeld && sprintKey && mlen > 0.001);
+      if (this._sprinting) this._lastSprintTime = performance.now();
       const sprintMult = this._sprinting ? SPRINT_SPEED_MULT : 1;
       if (this._isWalking) this._walkPhase += dt * 8 * sprintMult;
       if (mlen > 0.001) {
