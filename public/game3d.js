@@ -11,6 +11,13 @@ const PICKUP_RADIUS = 42;   // server units — "touch" radius for coin pickup
 const CAM_DISTANCE_DEFAULT = 4.2;
 const CAM_DISTANCE = 4.2;   // three.js units behind the player, rear-view camera
 const CAM_BASE_HEIGHT = 2.0;// camera height above ground
+// Mirrors the server's HIT_TYPES knockback scale (server.js) so predicted knockback matches
+const BASE_KNOCKBACK = 120;
+const HIT_KB_MULT = { normal: 1, sweep: 0.55, sprint: 1.8, crit: 1 };
+const SPRINT_SPEED_MULT = 1.3;  // sprinting moves 30% faster than walking
+const SPRINT_FOV_KICK = 8;      // degrees the FOV widens while sprinting
+// Keys that must not fire browser shortcuts when held with Ctrl (the sprint key)
+const CTRL_GAME_KEYS = new Set(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyX','Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
 
 const MAP_THEMES = {
   jungle:   { sky:0x6ec6ff, fogNear:45, fogFar:130, ground:0x3cb043, grid:0x2d8a35, ambient:0xcce4ff, sun:0xfff8e0 },
@@ -197,6 +204,8 @@ class Game3D {
     this._walkPhase = 0;
     this._isWalking = false;
     this._kbDur = 0; this._kbT = 0;
+    this._sprinting = false;  // true while moving forward with sprint active (Ctrl or Always Sprint)
+    this._fovKick = 0;        // current extra FOV from sprinting, eased toward SPRINT_FOV_KICK
     this._kbFromX = 0; this._kbFromY = 0;
     this._kbToX   = 0; this._kbToY   = 0;
 
@@ -974,12 +983,21 @@ class Game3D {
     });
     window.addEventListener('keydown', (e) => {
       this.keys[e.code] = true;
+      // Ctrl is the sprint key, so Ctrl+<game key> must not trigger browser shortcuts
+      // (Ctrl+S save page, Ctrl+D bookmark, Ctrl+E search bar, Ctrl+A select all...).
+      // Ctrl+W (close tab) is reserved by browsers and cannot be intercepted.
+      if (this.locked && e.ctrlKey && CTRL_GAME_KEYS.has(e.code)) e.preventDefault();
       if (e.code === 'Space') {
         e.preventDefault();
         // Gate on pointer lock like the other gameplay keys — without this, pressing
         // Space while paused (pointer unlocked) queues a jump impulse that update()
         // skips applying while paused, then fires unexpectedly the instant you resume.
-        if (this.locked && this._jumpY === 0 && !this.myPlayer?.isDead) this._jumpVel = 11; // jump
+        if (this.locked && this._jumpY === 0 && !this.myPlayer?.isDead) {
+          this._jumpVel = 11; // jump
+          // Tell the server — a jump right before you're hit is a "jump reset", and
+          // it's also how crits get validated
+          window.gameSocket?.emit('jump');
+        }
       }
       if (e.code === 'Tab' && this.locked && window.gameSocket) {
         e.preventDefault();
@@ -1010,6 +1028,9 @@ class Game3D {
       }
     });
     window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
+    // A key released while the window isn't focused (alt-tab, Ctrl+Tab, a browser
+    // dialog) never fires keyup — clear them so Ctrl/WASD can't stay stuck down.
+    window.addEventListener('blur', () => { this.keys = {}; });
   }
 
   // Projects a screen point onto the ground plane (y=0) and returns server-unit (x,y).
@@ -1095,11 +1116,21 @@ class Game3D {
     }
     if (chosen) {
       if (chosen.type === 'player') {
-        window.gameSocket.emit('attack', chosen.id);
+        // Minecraft-style hit type, decided by what you're doing at the moment you swing:
+        //   sprinting            -> sprint hit (less damage, big knockback)
+        //   falling, not sprint  -> crit       (big damage)
+        //   airborne rising      -> normal hit
+        //   on the ground        -> sweep      (a bit more damage, little knockback)
+        // The server re-validates crit/sweep against the jump timing it has seen.
+        const falling = this._jumpY > 0 && this._jumpVel < 0;
+        const hitType = this._sprinting ? 'sprint' : falling ? 'crit' : this._jumpY > 0 ? 'normal' : 'sweep';
+        window.gameSocket.emit('attack', { id: chosen.id, type: hitType });
         this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
         this._armSwinging = true; this._armSwingT = 0;
         window.SFX?.crunch();
+        if (hitType === 'sweep') { this.showSweepSlash(); window.SFX?.sweep?.(); }
+        else if (hitType === 'crit') { this.showCritBurst(chosen.data.x, chosen.data.y); window.SFX?.crit?.(); }
         // Instant client-side prediction — no waiting for server round-trip
         this.showLaser(this.myPlayer.x, this.myPlayer.y, chosen.data.x, chosen.data.y);
         this.showHitEffect(chosen.data.x, chosen.data.y, 0xff2222);
@@ -1108,9 +1139,12 @@ class Game3D {
         const ad = Math.hypot(adx, ady) || 1;
         const ptgt = this.playerObjs[chosen.id];
         if (ptgt) {
+          // Same knockback scale the server uses for this hit type, so the predicted
+          // slide matches the authoritative result that arrives in attackResult
+          const kb = BASE_KNOCKBACK * HIT_KB_MULT[hitType];
           ptgt._kbFromX = chosen.data.x; ptgt._kbFromY = chosen.data.y;
-          ptgt._kbToX = chosen.data.x + (adx / ad) * 120;
-          ptgt._kbToY = chosen.data.y + (ady / ad) * 120;
+          ptgt._kbToX = chosen.data.x + (adx / ad) * kb;
+          ptgt._kbToY = chosen.data.y + (ady / ad) * kb;
           ptgt._kbT = 0; ptgt._kbDur = 0.22;
         }
       } else {
@@ -1428,6 +1462,57 @@ class Game3D {
     requestAnimationFrame(tick);
   }
 
+  // Sweep hit: a bright slash that wipes across the screen, like Minecraft's sweep arc.
+  // One reusable element; element.animate() restarts it cleanly on every hit.
+  showSweepSlash() {
+    let el = this._sweepEl;
+    if (!el) {
+      el = document.createElement('div');
+      el.style.cssText = 'position:fixed;left:14vw;top:44%;width:72vw;height:7px;pointer-events:none;' +
+        'z-index:6000;opacity:0;border-radius:4px;transform:rotate(-12deg);' +
+        'background:linear-gradient(90deg,transparent,#fff 15%,#d8f2ff 50%,#fff 85%,transparent);' +
+        'box-shadow:0 0 16px 4px rgba(190,235,255,.9);';
+      document.body.appendChild(el);
+      this._sweepEl = el;
+    }
+    el.animate([
+      { clipPath: 'inset(0 100% 0 0)', opacity: 1 },
+      { clipPath: 'inset(0 0% 0 0)',   opacity: 1, offset: 0.5 },
+      { clipPath: 'inset(0 0% 0 0)',   opacity: 0 },
+    ], { duration: 260, easing: 'ease-out' });
+  }
+
+  // Crit hit: a burst of yellow-white sparks flying out of the target
+  showCritBurst(x, y) {
+    const geo = new THREE.OctahedronGeometry(0.09, 0);
+    const gy = volcanoHeightAt(sx(x), sz(y)) + 1.3;
+    const sparks = [];
+    for (let i = 0; i < 14; i++) {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffee66 : 0xffffff, transparent: true }));
+      const a = Math.random() * Math.PI * 2, sp = 2.5 + Math.random() * 2.5;
+      m._v = { x: Math.cos(a) * sp, y: 1.5 + Math.random() * 2.5, z: Math.sin(a) * sp };
+      m.position.set(sx(x), gy, sz(y));
+      this.scene.add(m);
+      sparks.push(m);
+    }
+    const t0 = performance.now();
+    let last = t0;
+    const step = () => {
+      const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      const t = (now - t0) / 450;
+      for (const m of sparks) {
+        m._v.y -= 9 * dt;
+        m.position.x += m._v.x * dt; m.position.y += m._v.y * dt; m.position.z += m._v.z * dt;
+        m.rotation.x += 8 * dt; m.rotation.y += 8 * dt;
+        m.material.opacity = Math.max(0, 1 - t);
+      }
+      if (t < 1) requestAnimationFrame(step);
+      else { for (const m of sparks) { this.scene.remove(m); m.material.dispose(); } geo.dispose(); }
+    };
+    requestAnimationFrame(step);
+  }
+
   showChargeTrail(fromX, fromY, toX, toY, colorHex) {
     const col = new THREE.Color(colorHex || '#ffffff');
     const dx = (toX - fromX) * WU, dz = (toY - fromY) * WU;
@@ -1573,13 +1658,14 @@ class Game3D {
     requestAnimationFrame(fade);
   }
 
-  showDamageNum(x, y, amount) {
-    const big = amount >= 30;
+  showDamageNum(x, y, amount, hitType) {
+    const crit = hitType === 'crit';
+    const big = amount >= 30 || crit;
     const size = big ? 48 : 32;
     const cv = document.createElement('canvas'); cv.width = 128; cv.height = 64;
     const ctx = cv.getContext('2d');
     ctx.font = `bold ${size}px Segoe UI`; ctx.textAlign = 'center';
-    ctx.fillStyle = big ? '#ffdd00' : '#ff5555';
+    ctx.fillStyle = crit ? '#ff9d00' : big ? '#ffdd00' : '#ff5555';
     ctx.strokeStyle = '#000'; ctx.lineWidth = big ? 6 : 4;
     ctx.strokeText('-' + amount, 64, 44); ctx.fillText('-' + amount, 64, 44);
     const tex = new THREE.CanvasTexture(cv);
@@ -1728,6 +1814,14 @@ class Game3D {
       if (t >= 1) { this._chargeAnim = null; this.myPlayer.x = toX; this.myPlayer.y = toY; }
     }
 
+    // Ease the FOV toward the sprint widening (using last frame's sprint state), then
+    // clear the flag — it's only set again below while actually moving with sprint on.
+    const baseFov = window.GAME_SETTINGS?.fov ?? 70;
+    this._fovKick += ((this._sprinting ? SPRINT_FOV_KICK : 0) - this._fovKick) * Math.min(1, dt * 9);
+    const wantFov = baseFov + this._fovKick;
+    if (Math.abs(this.camera.fov - wantFov) > 0.02) { this.camera.fov = wantFov; this.camera.updateProjectionMatrix(); }
+    this._sprinting = false;
+
     if (this.myPlayer && this.myId && !this.myPlayer.isDead && this._countdown <= 0) {
       const speed = (this.myPlayer.speed || 260) * WU;
       // forward/right use the SAME convention as the dino model's facing (rotation.y = phi
@@ -1741,11 +1835,17 @@ class Game3D {
       if (this.keys['KeyD'] || this.keys['ArrowRight']) { mx += right.x; mz += right.z; }
       const mlen = Math.hypot(mx, mz);
       this._isWalking = mlen > 0.001;
-      if (this._isWalking) this._walkPhase += dt * 8;
+      // Sprint: moving forward (W without S) with Ctrl held or Always Sprint on.
+      // Strafing or backing up on their own never sprint, same as Minecraft.
+      const fwdHeld = (this.keys['KeyW'] || this.keys['ArrowUp']) && !(this.keys['KeyS'] || this.keys['ArrowDown']);
+      const sprintKey = this.keys['ControlLeft'] || this.keys['ControlRight'] || window.GAME_SETTINGS?.alwaysSprint === true;
+      this._sprinting = !!(fwdHeld && sprintKey && mlen > 0.001);
+      const sprintMult = this._sprinting ? SPRINT_SPEED_MULT : 1;
+      if (this._isWalking) this._walkPhase += dt * 8 * sprintMult;
       if (mlen > 0.001) {
         mx /= mlen; mz /= mlen;
-        let nx = sx(this.myPlayer.x) + mx * speed * dt;
-        let nz = sz(this.myPlayer.y) + mz * speed * dt;
+        let nx = sx(this.myPlayer.x) + mx * speed * sprintMult * dt;
+        let nz = sz(this.myPlayer.y) + mz * speed * sprintMult * dt;
         const W = WORLD_SIZE * WU;
         nx = Math.max(0.5, Math.min(W - 0.5, nx));
         nz = Math.max(0.5, Math.min(W - 0.5, nz));
@@ -2252,21 +2352,24 @@ function setupGameSocketEvents() {
     }
   });
 
-  s.on('attackResult', ({ attackerId, targetId, damage, targetHp, targetMaxHp, knockback, combo }) => {
+  s.on('attackResult', ({ attackerId, targetId, damage, targetHp, targetMaxHp, knockback, combo, hitType, jumpReset }) => {
     const scene = gs(); if (!scene) return;
     const tgt = scene.playerObjs[targetId]; if (!tgt) return;
     tgt.data.hp = targetHp; tgt.data.maxHp = targetMaxHp;
     redrawHPSprite(tgt.hpSprite, targetHp, targetMaxHp);
     const predicted = attackerId === scene.myId && scene._lastAttackTargetId === targetId;
     if (predicted) scene._lastAttackTargetId = null;
-    scene.showDamageNum(tgt.data.x, tgt.data.y, damage);
+    scene.showDamageNum(tgt.data.x, tgt.data.y, damage, hitType);
     scene.showHitAnim(targetId);
     if (!predicted) {
       scene.showHitEffect(tgt.data.x, tgt.data.y, hexStr2num(tgt.data.color || '#ffffff'));
       scene.showBite(attackerId);
       const atk = scene.playerObjs[attackerId];
       if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);
+      if (hitType === 'crit') scene.showCritBurst(tgt.data.x, tgt.data.y);
     }
+    // You jumped just before this hit landed — it knocked you back far less
+    if (jumpReset && targetId === scene.myId) window.showToast?.('Jump reset', 800);
     // Always apply authoritative knockback — smoothly lerped (Minecraft-style ease-out)
     if (knockback) {
       const KB_DUR = 0.22;

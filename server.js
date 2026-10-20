@@ -934,12 +934,31 @@ function scheduleRespawn(target, room) {
   }, 5000);
 }
 
+// Minecraft-style melee hit types — multipliers on the base hit:
+//   sweep  — on the ground and not sprinting: a bit more damage, much less knockback
+//   sprint — sprinting: less damage, much more knockback (makes combos easy to chain)
+//   crit   — falling (past the top of a jump) and not sprinting: big damage bonus
+const HIT_TYPES = {
+  normal: { dmg: 1,    kb: 1 },
+  sweep:  { dmg: 1.15, kb: 0.55 },
+  sprint: { dmg: 0.8,  kb: 1.8 },
+  crit:   { dmg: 1.5,  kb: 1 },
+};
+// A victim who jumps within this window before a hit lands takes far less knockback
+// (a "jump reset" — it lets them stay in range and break the combo).
+const JUMP_RESET_MS = 300;
+const JUMP_RESET_KB = 0.4;
+
 function handleAttack(attacker, target, room, opts = {}) {
   if (attacker.isDead || target.isDead) return;
   const now = Date.now();
-  const mult = opts.damageMult || 1;
+  const hitType = HIT_TYPES[opts.hitType] ? opts.hitType : 'normal';
+  const ht = HIT_TYPES[hitType];
+  const mult = (opts.damageMult || 1) * ht.dmg;
   const rawDmg = (attacker.damage + Math.floor(Math.random()*10) - 5) * mult;
-  const dmg = Math.max(1, rawDmg - target.defense);
+  // Whole numbers only — hit-type multipliers (1.15, 0.8, 1.5...) otherwise leave
+  // float noise like 114.99999999999999 in the damage number and in HP
+  const dmg = Math.max(1, Math.round(rawDmg - target.defense));
   target.hp -= dmg;
   attacker.damageDealt = (attacker.damageDealt || 0) + dmg;
   target.damageTaken   = (target.damageTaken   || 0) + dmg;
@@ -948,7 +967,8 @@ function handleAttack(attacker, target, room, opts = {}) {
   const kbLen = Math.hypot(target.x - attacker.x, target.y - attacker.y) || 1;
   const kbDx  = (target.x - attacker.x) / kbLen;
   const kbDy  = (target.y - attacker.y) / kbLen;
-  const KNOCKBACK = 120;
+  const jumpReset = !target.isBot && !!target._lastJumpAt && now - target._lastJumpAt <= JUMP_RESET_MS;
+  const KNOCKBACK = 120 * ht.kb * (jumpReset ? JUMP_RESET_KB : 1);
   target.x = Math.max(20, Math.min(WORLD_SIZE-20, target.x + kbDx * KNOCKBACK));
   target.y = Math.max(20, Math.min(WORLD_SIZE-20, target.y + kbDy * KNOCKBACK));
 
@@ -957,6 +977,7 @@ function handleAttack(attacker, target, room, opts = {}) {
     damage: dmg, targetHp: target.hp, targetMaxHp: target.maxHp,
     knockback: { x: target.x, y: target.y },
     combo: opts.comboCount || 1,
+    hitType, jumpReset,
   });
 
   if (target.hp <= 0) {
@@ -2262,7 +2283,23 @@ io.on('connection', (socket) => {
     atk._comboCount = (atk._comboCount || 0) + 1;
     atk._comboExpiry = now + 2500;
     if (atk._comboCount >= 2) socket.emit('comboUpdate', { count: atk._comboCount });
-    handleAttack(atk, tgt, room, { comboCount: atk._comboCount });
+    // The client owns sprint/jump state and reports the hit type, but it's checked
+    // against the jump timing the server has actually seen so crits and sweeps can't
+    // be claimed for free: a jump lasts ~580ms and starts falling at ~290ms, and
+    // sweeps are ground-only hits.
+    let hitType = ['sweep', 'sprint', 'crit'].includes(payload?.type) ? payload.type : 'normal';
+    const jumpAge = now - (atk._lastJumpAt || 0);
+    if (hitType === 'crit' && !(jumpAge > 220 && jumpAge < 700)) hitType = 'normal';
+    if (hitType === 'sweep' && jumpAge < 700) hitType = 'normal';
+    handleAttack(atk, tgt, room, { comboCount: atk._comboCount, hitType });
+  });
+
+  // A grounded jump press — recorded so a hit landing right after it counts as a
+  // jump reset (reduced knockback), and so crits can be validated.
+  socket.on('jump', () => {
+    const room = rooms[socketRoom[socket.id]]; if (!room) return;
+    const p = room.players[socket.id]; if (!p || p.isDead) return;
+    p._lastJumpAt = Date.now();
   });
 
   socket.on('collectPadDrops', () => {

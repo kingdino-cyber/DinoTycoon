@@ -1814,7 +1814,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
 <!-- Controls -->
 <div id="controls" class="hidden">
-  <span class="key">WASD</span> Move &nbsp; <span class="key">Click</span> Attack<br>
+  <span class="key">WASD</span> Move &nbsp; <span class="key">Ctrl</span> Sprint &nbsp; <span class="key">Click</span> Attack<br>
   <span class="key">B</span> Shop &nbsp; <span class="key">Enter</span> Chat<br>
   <span class="key">Space</span> Jump &nbsp; <span class="key">Tab</span> Collect &nbsp; <span class="key">Click ON enemy</span> Bite 🦷<br>
 <span class="key">X</span> Demolish own building (aim at it first)
@@ -2009,6 +2009,24 @@ window.SFX = (() => {
     src.connect(filt); filt.connect(g); g.connect(c.destination);
     src.start(); src.stop(c.currentTime+dur+0.01);
   };
+  // Band-passed noise whose centre frequency glides f0 -> f1 — a "swish"/sweep
+  const swoosh = (dur, vol, f0, f1) => {
+    const c=getCtx(); const sz=Math.ceil(c.sampleRate*dur);
+    const buf=c.createBuffer(1,sz,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<sz;i++) d[i]=Math.random()*2-1;
+    const src=c.createBufferSource(); src.buffer=buf;
+    const filt=c.createBiquadFilter(); filt.type='bandpass'; filt.Q.value=2.5;
+    filt.frequency.setValueAtTime(f0,c.currentTime);
+    filt.frequency.exponentialRampToValueAtTime(f1,c.currentTime+dur);
+    // Quick fade-in, then a LINEAR fade-out: an exponential decay would leave the
+    // top of the glide (the high, rising part you actually want to hear) near-silent
+    const g=c.createGain();
+    g.gain.setValueAtTime(0.001,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(vol,c.currentTime+dur*0.3);
+    g.gain.linearRampToValueAtTime(0,c.currentTime+dur);
+    src.connect(filt); filt.connect(g); g.connect(c.destination);
+    src.start(); src.stop(c.currentTime+dur+0.01);
+  };
   const play = fn => { if (!(window.GAME_SETTINGS?.soundEnabled === false)) fn(); };
 
   // ── Ambient background music — a slow looping chord pad, fully procedural ──
@@ -2059,6 +2077,10 @@ window.SFX = (() => {
     click:     () => play(()=>{ osc(700,'sine',0.06,0.4); }),
     crunch:    () => play(()=>{ noise(0.15,0.5,800); osc(90,'sawtooth',0.12,0.35); }),
     hit:       () => play(()=>{ noise(0.1,0.35,1200); osc(150,'square',0.08,0.2); }),
+    // Sweep hit: a high, fast rising swish (layered on top of the normal hit sound)
+    sweep:     () => play(()=>{ swoosh(0.22,0.8,2400,7500); osc(2200,'sine',0.18,0.1,4600); }),
+    // Critical hit: a bright two-note "ting"
+    crit:      () => play(()=>{ noise(0.08,0.35,3000); osc(1319,'triangle',0.14,0.28); setTimeout(()=>osc(1976,'triangle',0.18,0.26),50); }),
     death:     () => play(()=>{ noise(0.55,0.6,400); osc(55,'sawtooth',0.4,0.5); osc(40,'sine',0.6,0.3); }),
     kill:      () => play(()=>{ osc(523,'sine',0.1,0.4); osc(784,'sine',0.12,0.4); osc(1047,'sine',0.1,0.35); }),
     coin:      () => play(()=>{ osc(1400,'sine',0.08,0.3,1800); osc(1800,'sine',0.06,0.2); }),
@@ -2153,7 +2175,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=15', null, () => {
-        appendScript('game3d.js?v=33', null, () => {
+        appendScript('game3d.js?v=34', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -2370,6 +2392,8 @@ const SETTINGS_DEFS = [
   // ── Gameplay UI ──
   { key:'viewBobbing',     label:'👀 View Bobbing (3D)',     desc:'Arms and camera bob as you walk in first-person mode', default:true },
   { key:'colorblindHpBar', label:'🎨 Colorblind-Friendly HP Bars', desc:'Switch HP bar colors from green/red to blue/orange', default:false },
+  // ── Controls ──
+  { key:'alwaysSprint',    label:'🏃 Always Sprint',         desc:'Sprint whenever you move forward, no Ctrl needed. You only get sweep hits while standing, strafing or backing up.', default:false },
   // ── Audio ──
   { key:'soundEnabled',    label:'🔊 Sound Effects',         desc:'All in-game sounds (hits, buys, level ups, etc.)',   default:true },
   { key:'musicEnabled',    label:'🎵 Background Music',      desc:'Soft ambient music loop while playing',              default:true },
@@ -2412,11 +2436,12 @@ function applySettings() {
 function openSettingsModal() {
   window.SFX?.pop();
   loadSettings();
-  const SECTIONS = { 'Performance':'⚡', 'Visuals':'🎨', 'Gameplay UI':'🖥️', 'Audio':'🔊' };
+  const SECTIONS = { 'Performance':'⚡', 'Visuals':'🎨', 'Gameplay UI':'🖥️', 'Controls':'🎮', 'Audio':'🔊' };
   const SECTION_KEYS = {
     'Performance': ['lowQuality'],
     'Visuals': ['killExplosions','coinSparkles','killBannerOn','damageNumbers','arenaFlash','cameraShake','knockbackEffect','comboCounter','roarEffect','lobbyParticles'],
     'Gameplay UI': ['viewBobbing','colorblindHpBar'],
+    'Controls': ['alwaysSprint'],
     'Audio': ['soundEnabled','musicEnabled'],
   };
   let html = '';
