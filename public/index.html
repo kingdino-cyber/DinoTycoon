@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🦕 Dino Tycoon</title>
+<title>Dino Tycoon</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
 :root{
@@ -75,138 +75,44 @@ canvas{display:block;}
 /* ── LANDING PAGE ── */
 #landingScreen{
   position:fixed;inset:0;z-index:2100;overflow-y:auto;
-  background:radial-gradient(ellipse at 50% 0%,#16401a 0%,#0a1a08 55%,#060f05 100%);
-  color:var(--text);
+  background:#0d1f0d;color:var(--text);
 }
-.land-bg-fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;opacity:.45;}
-.land-bg-fx span{position:absolute;font-size:3rem;animation:float 4s ease-in-out infinite;}
-.land-bg-fx span:nth-child(1){left:4%;top:10%;}
-.land-bg-fx span:nth-child(2){right:6%;top:18%;animation-delay:1s;font-size:4rem;}
-.land-bg-fx span:nth-child(3){left:10%;top:68%;animation-delay:.4s;}
-.land-bg-fx span:nth-child(4){right:9%;top:76%;animation-delay:1.3s;font-size:2.5rem;}
-.land-bg-fx span:nth-child(5){left:46%;top:4%;animation-delay:.7s;font-size:2rem;}
+.land-nav{
+  position:sticky;top:0;z-index:2;background:#0d1f0d;
+  border-bottom:1px solid rgba(232,245,233,.1);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 32px;
+}
+.land-logo{font-size:1.1rem;font-weight:700;color:var(--text);}
+.land-nav-btns{display:flex;gap:8px;}
+.land-btn{padding:9px 18px;border-radius:6px;font-size:.92rem;font-weight:600;cursor:pointer;
+  border:1px solid transparent;font-family:inherit;}
+.land-btn-primary{background:#4caf50;color:#08170a;}
+.land-btn-primary:hover{background:#5cc060;}
+.land-btn-ghost{background:transparent;border-color:rgba(232,245,233,.28);color:var(--text);}
+.land-btn-ghost:hover{border-color:rgba(232,245,233,.55);}
+.land-btn:focus-visible{outline:2px solid #7fff6a;outline-offset:2px;}
+.land-btn-lg{padding:13px 26px;font-size:1rem;}
 
-.land-nav{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
-  padding:22px 40px;flex-wrap:wrap;gap:12px;}
-.land-logo{font-size:1.3rem;font-weight:900;color:#7fff6a;text-shadow:0 0 16px rgba(100,255,80,.5);
-  letter-spacing:1px;display:flex;align-items:center;gap:8px;}
-.land-nav-btns{display:flex;gap:10px;}
-.land-nav-login{padding:9px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
-  background:rgba(255,255,255,.06);color:#e8f5e9;font-size:.85rem;cursor:pointer;}
-.land-nav-signup{padding:9px 18px;border-radius:10px;border:none;
-  background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-weight:bold;font-size:.85rem;cursor:pointer;}
-.land-nav-login:hover,.land-nav-signup:hover{transform:translateY(-1px);filter:brightness(1.1);}
+.land-wrap{max-width:960px;margin:0 auto;padding:0 32px;}
+.land-hero{padding:80px 0 56px;}
+.land-hero h1{font-size:2.6rem;line-height:1.15;font-weight:700;letter-spacing:-.5px;
+  max-width:15em;margin-bottom:18px;text-wrap:balance;}
+.land-hero p{font-size:1.1rem;line-height:1.6;color:#b6cdb8;max-width:34em;margin-bottom:28px;}
+.land-hero-ctas{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.land-hero-note{font-size:.85rem;color:#7d977f;}
 
-.land-hero{position:relative;z-index:2;max-width:780px;margin:0 auto;text-align:center;padding:50px 24px 30px;}
-.land-hero-badge{display:inline-block;padding:6px 16px;border-radius:20px;background:rgba(100,255,80,.1);
-  border:1px solid rgba(100,255,80,.3);color:#7fff6a;font-size:.78rem;font-weight:bold;letter-spacing:.5px;
-  margin-bottom:18px;animation:pulse 2.4s ease-in-out infinite;}
-.land-hero-title{font-size:2.6rem;font-weight:900;line-height:1.18;color:#e8f5e9;margin-bottom:18px;letter-spacing:-1px;}
-.land-hero-title-accent{color:#7fff6a;text-shadow:0 0 30px rgba(100,255,80,.5);}
-.land-hero-sub{color:#9bc99b;font-size:1rem;line-height:1.6;max-width:600px;margin:0 auto 30px;}
-.land-hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:26px;}
-.land-cta{padding:16px 30px;border-radius:14px;font-size:1.05rem;font-weight:900;cursor:pointer;border:none;
-  transition:transform .15s cubic-bezier(.2,1.6,.4,1),box-shadow .15s ease,filter .15s ease;}
-.land-cta-primary{background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;
-  box-shadow:0 8px 26px rgba(76,175,80,.4);}
-.land-cta-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#e8f5e9;}
-.land-cta:hover{transform:scale(1.05) translateY(-2px);filter:brightness(1.08);}
-.land-cta:active{transform:scale(.97) translateY(0);}
-.land-hero-stats{display:flex;gap:28px;justify-content:center;color:#668866;font-size:.8rem;flex-wrap:wrap;}
-.land-hero-stats b{color:#7fff6a;}
+.land-info{border-top:1px solid rgba(232,245,233,.1);padding:48px 0 72px;}
+.land-info h2{font-size:1.3rem;font-weight:700;margin-bottom:28px;}
+.land-info dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px 48px;}
+.land-info dt{font-size:1rem;font-weight:700;margin-bottom:6px;}
+.land-info dd{font-size:.95rem;line-height:1.6;color:#b6cdb8;}
 
-.land-section{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:30px 24px;}
-.land-section-title{text-align:center;font-size:1.5rem;font-weight:900;color:#e8f5e9;margin-bottom:26px;}
-.land-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px;}
-.land-shot{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.15);border-radius:18px;
-  padding:14px;transition:transform .2s ease,border-color .2s ease;}
-.land-shot:hover{transform:translateY(-4px);border-color:rgba(100,200,80,.4);}
-.land-shot-frame{position:relative;border-radius:12px;overflow:hidden;height:160px;margin-bottom:12px;
-  background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 45%,#3cb043 45%,#2d8a35 100%);}
-.land-shot-caption{font-size:.8rem;color:#9bc99b;text-align:center;}
-
-/* combat preview mockup — mirrors the real floating world-space HP bar/nametag/crosshair */
-.land-mock-hpbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:90px;height:8px;
-  border-radius:4px;background:rgba(0,0,0,.6);overflow:hidden;}
-.land-mock-hpbar i{display:block;width:72%;height:100%;background:#44dd44;}
-.land-mock-name{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:.7rem;font-weight:900;
-  color:#fff;text-shadow:0 0 4px #000,1px 1px 0 #000;white-space:nowrap;}
-.land-mock-crosshair{position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);opacity:.95;}
-
-/* Blocky low-poly dino built from stacked divs, mirroring buildDino3DModel's box geometry
-   (body/tail/legs/spikes/neck/head) — uses the real "Ocean Rex" teal skin palette */
-.land-mock-dino3d{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:86px;height:62px;}
-.land-mock-dino3d .d3-tail{position:absolute;background:#0097a7;border-radius:2px;}
-.land-mock-dino3d .d3-tail-1{width:15px;height:15px;left:-6px;bottom:18px;}
-.land-mock-dino3d .d3-tail-2{width:11px;height:11px;left:-15px;bottom:20px;}
-.land-mock-dino3d .d3-tail-3{width:7px;height:7px;left:-22px;bottom:22px;}
-.land-mock-dino3d .d3-leg{position:absolute;bottom:0;width:12px;height:20px;background:#006064;border-radius:0 0 2px 2px;}
-.land-mock-dino3d .d3-body{position:absolute;bottom:16px;left:8px;width:48px;height:32px;
-  background:linear-gradient(160deg,#26c6da 0%,#00acc1 55%,#0097a7 100%);border-radius:6px 6px 3px 3px;}
-.land-mock-dino3d .d3-belly{position:absolute;bottom:18px;left:20px;width:22px;height:14px;
-  background:rgba(245,230,200,.55);border-radius:5px;}
-.land-mock-dino3d .d3-spike{position:absolute;bottom:46px;width:0;height:0;
-  border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:9px solid #006064;}
-.land-mock-dino3d .d3-arm{position:absolute;bottom:14px;width:8px;height:14px;background:#00838f;border-radius:2px;}
-.land-mock-dino3d .d3-neck{position:absolute;bottom:36px;left:48px;width:18px;height:16px;background:#00acc1;border-radius:3px;}
-.land-mock-dino3d .d3-head{position:absolute;bottom:44px;left:56px;width:22px;height:20px;background:#26c6da;border-radius:5px;}
-.land-mock-dino3d .d3-head-hi{position:absolute;bottom:54px;left:58px;width:10px;height:6px;background:rgba(255,255,255,.4);border-radius:2px;}
-.land-mock-dino3d .d3-snout{position:absolute;bottom:46px;left:74px;width:13px;height:10px;background:#00bcd4;border-radius:3px;}
-.land-mock-dino3d .d3-eye{position:absolute;bottom:54px;left:62px;width:5px;height:5px;background:#fff;border-radius:50%;}
-.land-mock-dino3d .d3-eye::after{content:'';position:absolute;top:1px;left:1.5px;width:2px;height:2px;background:#111;border-radius:50%;}
-
-/* leaderboard mockup — literally reuses the real #lbPanel / .lb-row classes for 1:1 fidelity */
-.land-shot-board{background:rgba(0,15,0,.92);border:1px solid rgba(100,200,80,.12);}
-.land-mock-board{padding:16px;}
-.land-mock-board h3{color:#ffd700;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;}
-
-/* base-building mockup — mirrors buildBuilding3DModel's real colors (stoneWall/dinoTurret/healingTotem) */
-.land-shot-build{background:linear-gradient(180deg,#6ec6ff 0%,#6ec6ff 35%,#3cb043 35%,#2d8a35 100%);}
-.land-mock-wall{position:absolute;bottom:30px;width:13px;height:32px;background:linear-gradient(160deg,#a0a098,#888880);
-  border-radius:2px;}
-.land-mock-turret{position:absolute;bottom:30px;width:16px;height:28px;
-  background:linear-gradient(160deg,#c4a878,#aa8866);border-radius:5px 5px 2px 2px;}
-.land-mock-turret::after{content:'';position:absolute;top:6px;right:-11px;width:13px;height:4px;
-  background:#2a2a2a;border-radius:2px;}
-.land-mock-totem{position:absolute;bottom:30px;width:6px;height:34px;background:#8855dd;border-radius:2px;}
-.land-mock-totem::after{content:'';position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-  width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffaaff,#ff66ff);
-  box-shadow:0 0 8px #ff66ff;}
-
-/* skins mockup */
-.land-shot-skins{display:flex;align-items:center;justify-content:center;gap:8px;background:#0d1f0d;flex-wrap:wrap;}
-.land-skin-item{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.land-skin-item span{font-size:.62rem;color:#88aa88;}
-
-.land-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;}
-.land-feature{background:rgba(255,255,255,.03);border:1px solid rgba(100,200,80,.12);border-radius:16px;
-  padding:22px 20px;text-align:center;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
-  cursor:pointer;}
-.land-feature:hover{transform:translateY(-5px) scale(1.02);border-color:rgba(100,200,80,.4);
-  box-shadow:0 10px 30px rgba(0,0,0,.3);}
-.land-feature:active{transform:translateY(-2px) scale(.99);}
-.land-feature span{font-size:2rem;display:block;margin-bottom:10px;}
-.land-feature h3{font-size:1rem;color:#e8f5e9;margin-bottom:6px;}
-.land-feature p{font-size:.82rem;color:#88aa88;line-height:1.5;}
-.land-feature-more{display:block;margin-top:12px;font-size:.72rem;color:#5a9a5a;font-weight:bold;letter-spacing:.3px;}
-.land-feature:hover .land-feature-more{color:#7fff6a;}
-
-.land-footer-cta{position:relative;z-index:2;text-align:center;padding:50px 24px 70px;}
-.land-footer-cta h2{font-size:1.8rem;color:#e8f5e9;font-weight:900;margin-bottom:22px;}
-
-/* ── LANDING FEATURE DETAIL MODAL ── */
-#landFeatureModal{position:fixed;inset:0;z-index:2200;background:rgba(0,0,0,.72);
-  display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
-.land-feature-modal-box{position:relative;max-width:480px;width:100%;
-  background:rgba(10,30,10,.96);border:2px solid rgba(100,200,80,.3);border-radius:24px;
-  padding:42px 36px;text-align:center;box-shadow:0 0 60px rgba(50,200,50,.18);animation:slideIn .25s ease;}
-.land-feature-modal-close{position:absolute;top:14px;right:18px;background:none;border:none;
-  color:#557755;font-size:1.2rem;cursor:pointer;line-height:1;padding:4px;}
-.land-feature-modal-close:hover{color:#ff8888;}
-.land-feature-modal-icon{font-size:3rem;margin-bottom:10px;}
-.land-feature-modal-box h2{color:#7fff6a;font-size:1.4rem;font-weight:900;margin-bottom:16px;
-  text-shadow:0 0 16px rgba(100,255,80,.4);}
-.land-feature-modal-box p{color:#b8d8b8;font-size:.92rem;line-height:1.7;margin-bottom:6px;text-align:left;}
+@media (max-width:600px){
+  .land-nav{padding:12px 16px;}
+  .land-wrap{padding:0 16px;}
+  .land-hero{padding:44px 0 40px;}
+  .land-hero h1{font-size:2rem;}
+}
 
 /* ── LOBBY (Overtide-style) ── */
 @keyframes dinoIdle{0%,100%{transform:translateY(0) scaleX(-1)}50%{transform:translateY(-12px) scaleX(-1)}}
@@ -906,7 +812,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .settings-btn, .toggle,
 .lby-left-btn, .lby-play-btn,
 .buy-btn, .prestige-btn, .shop-tab,
-.land-cta, .land-nav-login, .land-nav-signup,
+.land-btn,
 .mode-choice-btn,
 #joinCodeModal .modal-confirm,
 .matchover-box button,
@@ -1025,20 +931,6 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .shop-tab:active {
   transform: scale(.95) !important;
   animation: btn-click-flash .15s ease-out;
-}
-
-/* Landing CTA */
-.land-cta:hover {
-  transform: scale(1.06) translateY(-3px) !important;
-  filter: brightness(1.08) !important;
-}
-.land-cta:active {
-  transform: scale(.96) translateY(0) !important;
-  animation: btn-click-flash .18s ease-out;
-}
-.land-nav-login:hover, .land-nav-signup:hover {
-  transform: translateY(-2px) scale(1.06) !important;
-  filter: brightness(1.12) !important;
 }
 
 /* Ripple ink spot injected by JS */
@@ -1218,143 +1110,37 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
 <!-- ══ LANDING PAGE ═════════════════════════════════════════════════════════ -->
 <div id="landingScreen">
-  <div class="land-bg-fx">
-    <span>🦕</span><span>🦖</span><span>🦴</span><span>🌿</span><span>⛰️</span>
-  </div>
-
-  <div class="land-nav">
-    <div class="land-logo"><span>🦕</span>DINO TYCOON</div>
+  <header class="land-nav">
+    <div class="land-logo">Dino Tycoon</div>
     <div class="land-nav-btns">
-      <button class="land-nav-login" onclick="goToAuth('login')">Log In</button>
-      <button class="land-nav-signup" onclick="goToAuth('register')">Sign Up</button>
+      <button class="land-btn land-btn-ghost" onclick="goToAuth('login')">Log in</button>
+      <button class="land-btn land-btn-primary" onclick="goToAuth('register')">Sign up</button>
     </div>
-  </div>
+  </header>
 
-  <div class="land-hero">
-    <div class="land-hero-badge">🔥 FREE MULTIPLAYER DINO BATTLER</div>
-    <h1 class="land-hero-title">BUILD. BATTLE.<br><span class="land-hero-title-accent">BECOME A DINO LEGEND.</span></h1>
-    <p class="land-hero-sub">
-      Hatch your prehistoric empire, fight rival dinosaurs in real 3D combat, defend your base with
-      turrets &amp; walls, and prestige your way to the top of the leaderboard — live, with friends.
-    </p>
-    <div class="land-hero-ctas">
-      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now — It's Free</button>
-      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
-    </div>
-    <div class="land-hero-stats">
-      <div><b>🦖</b> Multiplayer dino battles</div>
-      <div><b>2D + 3D</b> game modes</div>
-      <div><b>100%</b> free to play</div>
-    </div>
-  </div>
-
-  <div class="land-section">
-    <div class="land-section-title">⚔️ See It In Action</div>
-    <div class="land-gallery">
-      <div class="land-shot">
-        <div class="land-shot-frame">
-          <div class="land-mock-hpbar"><i></i></div>
-          <div class="land-mock-name">BrachBot50</div>
-          <div class="land-mock-dino3d">
-            <div class="d3-tail d3-tail-1"></div>
-            <div class="d3-tail d3-tail-2"></div>
-            <div class="d3-tail d3-tail-3"></div>
-            <div class="d3-leg" style="left:14px;"></div>
-            <div class="d3-leg" style="left:30px;"></div>
-            <div class="d3-body"></div>
-            <div class="d3-belly"></div>
-            <div class="d3-spike" style="left:16px;"></div>
-            <div class="d3-spike" style="left:25px;"></div>
-            <div class="d3-spike" style="left:34px;"></div>
-            <div class="d3-arm" style="left:42px;"></div>
-            <div class="d3-neck"></div>
-            <div class="d3-head"></div>
-            <div class="d3-head-hi"></div>
-            <div class="d3-eye"></div>
-            <div class="d3-snout"></div>
-          </div>
-          <div class="land-mock-crosshair">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="14" y1="4" x2="14" y2="11" stroke="black" stroke-width="3" stroke-linecap="round"/>
-              <line x1="14" y1="17" x2="14" y2="24" stroke="black" stroke-width="3" stroke-linecap="round"/>
-              <line x1="4" y1="14" x2="11" y2="14" stroke="black" stroke-width="3" stroke-linecap="round"/>
-              <line x1="17" y1="14" x2="24" y2="14" stroke="black" stroke-width="3" stroke-linecap="round"/>
-              <line x1="14" y1="4" x2="14" y2="11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="14" y1="17" x2="14" y2="24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="4" y1="14" x2="11" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="17" y1="14" x2="24" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="14" cy="14" r="2" fill="white" stroke="black" stroke-width="1"/>
-            </svg>
-          </div>
-        </div>
-        <div class="land-shot-caption">Real-time 3D combat with crosshair aiming</div>
+  <main class="land-wrap">
+    <section class="land-hero">
+      <h1>Build a dinosaur base and defend it.</h1>
+      <p>Dino Tycoon is a free multiplayer browser game. Earn fossils, place buildings, and fight other players and bots in 3D or a top-down view.</p>
+      <div class="land-hero-ctas">
+        <button class="land-btn land-btn-primary land-btn-lg" onclick="goToAuth('register')">Sign up free</button>
+        <button class="land-btn land-btn-ghost land-btn-lg" onclick="goToAuth('login')">Log in</button>
       </div>
+      <div class="land-hero-note">No download. It runs in your browser.</div>
+    </section>
 
-      <div class="land-shot">
-        <div class="land-shot-frame land-shot-board">
-          <div class="land-mock-board">
-            <h3>🏆 Fossil Leaders</h3>
-            <div class="lb-row"><span class="lb-rank">🥇</span><div class="lb-dot" style="background:#e84393"></div><span class="lb-name">You</span><span class="lb-money">$17.4K</span></div>
-            <div class="lb-row lb-bot"><span class="lb-rank">🥈</span><div class="lb-dot" style="background:#1e90ff"></div><span class="lb-name">T-RexBot3 🤖</span><span class="lb-money">$404</span></div>
-            <div class="lb-row lb-bot"><span class="lb-rank">🥉</span><div class="lb-dot" style="background:#ff4757"></div><span class="lb-name">ParaBot40 🤖</span><span class="lb-money">$377</span></div>
-            <div class="lb-row lb-bot"><span class="lb-rank">4</span><div class="lb-dot" style="background:#ff4757"></div><span class="lb-name">ParaBot47 🤖</span><span class="lb-money">$162</span></div>
-          </div>
-        </div>
-        <div class="land-shot-caption">Climb the live leaderboard every match</div>
-      </div>
-
-      <div class="land-shot">
-        <div class="land-shot-frame land-shot-build">
-          <div class="land-mock-wall" style="left:26%;"></div>
-          <div class="land-mock-wall" style="left:35%;"></div>
-          <div class="land-mock-turret" style="left:55%;"></div>
-          <div class="land-mock-totem" style="left:74%;"></div>
-        </div>
-        <div class="land-shot-caption">Build defenses &amp; income on your home base</div>
-      </div>
-
-      <div class="land-shot">
-        <div class="land-shot-frame land-shot-skins">
-          <div class="land-skin-item"><canvas id="landSkinCanvas1" width="62" height="56"></canvas><span>Ocean Rex</span></div>
-          <div class="land-skin-item"><canvas id="landSkinCanvas2" width="62" height="56"></canvas><span>Lava Dino</span></div>
-          <div class="land-skin-item"><canvas id="landSkinCanvas3" width="62" height="56"></canvas><span>Dino King</span></div>
-        </div>
-        <div class="land-shot-caption">Unlock skins, nametags &amp; prestige stars</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="land-section">
-    <div class="land-section-title">🌴 Why You'll Love It</div>
-    <div class="land-features">
-      <div class="land-feature" onclick="showLandFeature('modes')"><span>🎮</span><h3>2D &amp; 3D Modes</h3><p>Switch between the classic top-down tycoon view and full first/third-person 3D combat.</p><span class="land-feature-more">Learn more →</span></div>
-      <div class="land-feature" onclick="showLandFeature('build')"><span>🏗️</span><h3>Build Your Base</h3><p>Income towers, turrets, walls, traps &amp; healing totems defend what's yours.</p><span class="land-feature-more">Learn more →</span></div>
-      <div class="land-feature" onclick="showLandFeature('multiplayer')"><span>👥</span><h3>Multiplayer Rooms</h3><p>Public or private rooms, invite codes, friends, and AI bots at any difficulty.</p><span class="land-feature-more">Learn more →</span></div>
-      <div class="land-feature" onclick="showLandFeature('prestige')"><span>⭐</span><h3>Prestige System</h3><p>Cash in for permanent stat bonuses and climb the ranks all over again.</p><span class="land-feature-more">Learn more →</span></div>
-      <div class="land-feature" onclick="showLandFeature('rewards')"><span>🎁</span><h3>Daily Rewards</h3><p>Free Fossil Drops every day, plus Dino Points to spend on skins &amp; tags.</p><span class="land-feature-more">Learn more →</span></div>
-      <div class="land-feature" onclick="showLandFeature('save')"><span>💾</span><h3>Save &amp; Resume</h3><p>Save mid-match and continue your empire later — even auto-update it.</p><span class="land-feature-more">Learn more →</span></div>
-    </div>
-  </div>
-
-  <div id="landFeatureModal" class="hidden" onclick="if(event.target===this) closeLandFeature()">
-    <div class="land-feature-modal-box">
-      <button class="land-feature-modal-close" onclick="closeLandFeature()">✕</button>
-      <div class="land-feature-modal-icon" id="lfmIcon"></div>
-      <h2 id="lfmTitle"></h2>
-      <p id="lfmBody"></p>
-      <div class="land-hero-ctas" style="margin-top:24px;">
-        <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="land-footer-cta">
-    <h2>Ready to dominate the Jurassic? 🦖</h2>
-    <div class="land-hero-ctas">
-      <button class="land-cta land-cta-primary" onclick="goToAuth('register')">🚀 Sign Up Now</button>
-      <button class="land-cta land-cta-secondary" onclick="goToAuth('login')">🔑 Log In Now</button>
-    </div>
-  </div>
+    <section class="land-info">
+      <h2>How it works</h2>
+      <dl>
+        <div><dt>Earn fossils</dt><dd>Income buildings on your home base earn fossils every second, including while you are away from it fighting.</dd></div>
+        <div><dt>Build defenses</dt><dd>Place walls, turrets, traps, and healing totems around your base to protect it from other players and bots.</dd></div>
+        <div><dt>Fight</dt><dd>Bite, charge, and roar at other dinosaurs and break their buildings. Play in first- or third-person 3D, or in the original top-down 2D view.</dd></div>
+        <div><dt>Play with others</dt><dd>Join a public room, or make a private one and share the invite code. Fill empty spots with bots on easy, medium, or hard.</dd></div>
+        <div><dt>Prestige and rewards</dt><dd>Spend 100,000 fossils to prestige: your upgrades reset, but permanent bonuses to income, damage, defense, and health stay. Claim a free Fossil Drop daily and spend Dino Points on skins and nametags.</dd></div>
+        <div><dt>Save and resume</dt><dd>Save mid-match and continue later. With auto-update on, a save refreshes itself each time you quit.</dd></div>
+      </dl>
+    </section>
+  </main>
 </div>
 
 <!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
@@ -2395,52 +2181,6 @@ function backToLanding() {
 }
 window.backToLanding = backToLanding;
 
-// ── Landing page feature detail modal ──────────────────────────────────────────
-const LAND_FEATURES = {
-  modes: {
-    icon: '🎮', title: '2D & 3D Modes',
-    body: "Play your way. Drop into the classic top-down tycoon view for fast, bird's-eye base management — or jump into full first/third-person 3D combat with mouse-look, jumping, and crosshair-based attacks. Switch modes per match, no separate account needed — every build, upgrade, and stat carries over between them.",
-  },
-  build: {
-    icon: '🏗️', title: 'Build Your Base',
-    body: "Your home pad is your fortress. Place income generators to keep the money flowing even while you're off fighting, then ring your base with walls, turrets, and traps to make raiders regret it. A few buildings even heal you or slow down anyone careless enough to walk through them — mix and match a defense layout that fits how you like to play.",
-  },
-  multiplayer: {
-    icon: '👥', title: 'Multiplayer Rooms',
-    body: 'Host a public room and meet new rivals, or go private with a custom invite code just for your friends. Pick your difficulty, set a match timer, and fill empty slots with AI bots ranging from easy practice dummies to genuinely dangerous hardcore opponents. Chat, invite, and squad up — every room is built for playing together.',
-  },
-  prestige: {
-    icon: '⭐', title: 'Prestige System',
-    body: "Once your empire is big enough, you can cash it all in. Prestiging resets your shop — but locks in permanent bonuses that stack with every future run, making each prestige noticeably stronger than the last. It's a loop built for players who want long-term progression, not just one good match.",
-  },
-  rewards: {
-    icon: '🎁', title: 'Daily Rewards',
-    body: 'Log in and claim a free Fossil Drop every single day — no purchase required. Earn Dino Points just by playing and getting kills, then spend them in the lobby shop on cosmetic skins and nametags that show off your reputation to everyone else in the room.',
-  },
-  save: {
-    icon: '💾', title: 'Save & Resume',
-    body: "Mid-match and need to go? Save your progress and pick the exact same base back up later — buildings, upgrades, and all. Want it effortless? Flip on auto-update for a save and it'll silently re-save itself every time you quit, so your empire is always exactly where you left it.",
-  },
-};
-
-function showLandFeature(key) {
-  const f = LAND_FEATURES[key]; if (!f) return;
-  window.SFX?.pop();
-  document.getElementById('lfmIcon').textContent = f.icon;
-  document.getElementById('lfmTitle').textContent = f.title;
-  document.getElementById('lfmBody').textContent = f.body;
-  document.getElementById('landFeatureModal').classList.remove('hidden');
-}
-window.showLandFeature = showLandFeature;
-
-function closeLandFeature() {
-  document.getElementById('landFeatureModal').classList.add('hidden');
-}
-window.closeLandFeature = closeLandFeature;
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !document.getElementById('landFeatureModal').classList.contains('hidden')) closeLandFeature();
-});
-
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function switchTab(m) {
   authMode = m;
@@ -2493,13 +2233,6 @@ function enterGame(token) {
 window.addEventListener('load', () => {
   const tok = localStorage.getItem('dt_token'), u = localStorage.getItem('dt_user');
   if (tok && u) { currentUser = u; enterGame(tok); }
-
-  // Draw the landing page's skin showcase using the same renderer as the real game
-  const landColors = ['#00bcd4', '#ff4757', '#ffd700'];
-  ['landSkinCanvas1', 'landSkinCanvas2', 'landSkinCanvas3'].forEach((id, i) => {
-    const c = document.getElementById(id);
-    if (c && window.drawDinoCanvas) window.drawDinoCanvas(c, landColors[i]);
-  });
 });
 
 // ── Screen management — fully explicit, no clever logic ───────────────────────
@@ -4850,7 +4583,7 @@ window.addKillFeed=addKillFeed;
 
 // ── RIPPLE + GLOBAL SOUND EFFECTS ON ALL BUTTONS ──
 (function(){
-  const SELECTORS = 'button, .lby-play-btn, .lby-left-btn, .buy-btn, .prestige-btn, .shop-tab, .lb-cat-tab, .land-cta, .land-nav-login, .land-nav-signup, .room-card, .modal-confirm, .modal-cancel, .lby-mode-box, .lby-nav-icon, .lby-drop-btn, .lb-row, .lby-drop-card, .lby-invite-slot, .land-shot, .land-feature';
+  const SELECTORS = 'button, .lby-play-btn, .lby-left-btn, .buy-btn, .prestige-btn, .shop-tab, .lb-cat-tab, .room-card, .modal-confirm, .modal-cancel, .lby-mode-box, .lby-nav-icon, .lby-drop-btn, .lb-row, .lby-drop-card, .lby-invite-slot';
 
   // Hover sound — fires once per element entry, not repeatedly
   document.addEventListener('mouseover', e => {
