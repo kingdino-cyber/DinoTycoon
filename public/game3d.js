@@ -14,6 +14,7 @@ const CAM_BASE_HEIGHT = 2.0;// camera height above ground
 // Mirrors the server's HIT_TYPES knockback scale (server.js) so predicted knockback matches
 const BASE_KNOCKBACK = 120;
 const HIT_KB_MULT = { normal: 1, sweep: 0.55, sprint: 1.8, crit: 1 };
+const HIT_DMG_MULT = { normal: 1, sweep: 1.15, sprint: 0.8, crit: 1.5 }; // mirrors server HIT_TYPES
 const SPRINT_SPEED_MULT = 1.3;  // sprinting moves 30% faster than walking
 const SPRINT_FOV_KICK = 8;      // degrees the FOV widens while sprinting
 const SPRINT_HIT_GRACE_MS = 80; // a hit this soon after you stop sprinting (W released) is still a sprint hit
@@ -1176,10 +1177,16 @@ class Game3D {
         const sprintHit = this._sprinting || performance.now() - this._lastSprintTime < SPRINT_HIT_GRACE_MS;
         const hitType = sprintHit ? 'sprint' : falling ? 'crit' : this._jumpY > 0 ? 'normal' : 'sweep';
         window.gameSocket.emit('attack', { id: chosen.id, type: hitType });
+        const swingAt = performance.now();
+        // The server silently drops a swing that comes <200ms after the last counted one
+        const onCooldown = swingAt - (this._lastCountedAttackAt || 0) < 230;
+        if (!onCooldown) this._lastCountedAttackAt = swingAt;
         this._lastAttackTargetId = chosen.id;
         this.showBite(this.myId);
         this._armSwinging = true; this._armSwingT = 0;
         window.SFX?.crunch();
+        // A hit that is certain to kill plays out right now instead of one round-trip later
+        const lethal = !onCooldown && this._isCertainKill(chosen.data, hitType);
         if (hitType === 'sweep') { this.showSweepSlash(); window.SFX?.sweep?.(); }
         else if (hitType === 'crit') { this.showCritBurst(chosen.data.x, chosen.data.y); window.SFX?.crit?.(); }
         // Instant client-side prediction — no waiting for server round-trip
@@ -1189,7 +1196,8 @@ class Game3D {
         const adx = chosen.data.x - this.myPlayer.x, ady = chosen.data.y - this.myPlayer.y;
         const ad = Math.hypot(adx, ady) || 1;
         const ptgt = this.playerObjs[chosen.id];
-        if (ptgt) {
+        if (lethal && ptgt) this._predictKill(chosen.id);
+        else if (ptgt) {
           // Same knockback scale the server uses for this hit type, so the predicted
           // slide matches the authoritative result that arrives in attackResult
           const kb = BASE_KNOCKBACK * HIT_KB_MULT[hitType];
@@ -1208,6 +1216,43 @@ class Game3D {
       // Nothing in crosshair — still swing arms so the attack feels responsive
       this._armSwinging = true; this._armSwingT = 0;
     }
+  }
+
+  // True only when this swing cannot fail to kill, judged with the worst case on every
+  // number the server might disagree on: its damage roll (-5), the hit type being
+  // downgraded to normal (crit/sweep validation), and the target's HP having regenerated
+  // since the last sync. Anything uncertain falls back to waiting for the server.
+  _isCertainKill(t, hitType) {
+    const dmg = this.myPlayer?.damage, def = t.defense, hp = t.hp;
+    if (typeof dmg !== 'number' || typeof def !== 'number' || typeof hp !== 'number') return false;
+    const mult = Math.min(HIT_DMG_MULT[hitType] ?? 1, 1);
+    const minDmg = Math.max(1, Math.round((dmg - 5) * mult - def));
+    // statSync only arrives every 2s, so allow for that much regen on top of rounding
+    const maxHp = hp + (t.regen || 0) * 2.5 + 1;
+    return minDmg >= maxHp;
+  }
+
+  _predictKill(id) {
+    const obj = this.playerObjs[id]; if (!obj || obj.data.isDead) return;
+    obj._deathPredicted = true;
+    obj.data.isDead = true;
+    obj.group.visible = false;
+    redrawHPSprite(obj.hpSprite, 0, obj.data.maxHp || 100);
+    if ((window.GAME_SETTINGS?.killExplosions) !== false) this.showKillExplosion(obj.data.x, obj.data.y, obj.data.color);
+    window.SFX?.kill();
+    // If the server never confirms (dropped swing, stale stats) bring them back
+    clearTimeout(obj._deathPredictTimer);
+    obj._deathPredictTimer = setTimeout(() => this._revertPredictedKill(id), 1500);
+  }
+
+  _revertPredictedKill(id) {
+    const obj = this.playerObjs[id];
+    if (!obj || !obj._deathPredicted) return;
+    obj._deathPredicted = false;
+    clearTimeout(obj._deathPredictTimer);
+    obj.data.isDead = false;
+    obj.group.visible = true;
+    redrawHPSprite(obj.hpSprite, obj.data.hp, obj.data.maxHp || 100);
   }
 
   // Tear down one of YOUR OWN buildings — fixes misplaced walls/structures without
@@ -2411,6 +2456,8 @@ function setupGameSocketEvents() {
     const tgt = scene.playerObjs[targetId]; if (!tgt) return;
     tgt.data.hp = targetHp; tgt.data.maxHp = targetMaxHp;
     redrawHPSprite(tgt.hpSprite, targetHp, targetMaxHp);
+    // We showed this kill early and the server says they survived — undo it
+    if (tgt._deathPredicted && targetHp > 0) scene._revertPredictedKill(targetId);
     const predicted = attackerId === scene.myId && scene._lastAttackTargetId === targetId;
     if (predicted) scene._lastAttackTargetId = null;
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage, hitType);
@@ -2451,8 +2498,11 @@ function setupGameSocketEvents() {
     const scene = gs(); if (!scene) return;
     const victim = scene.playerObjs[victimId];
     const killer = scene.playerObjs[killerId];
+    // Our own swing already played the explosion + sound when it landed
+    const alreadyShown = !!victim?._deathPredicted;
     if (victim) {
-      if ((window.GAME_SETTINGS?.killExplosions) !== false) scene.showKillExplosion(victim.data.x, victim.data.y, victim.data.color);
+      if (alreadyShown) { victim._deathPredicted = false; clearTimeout(victim._deathPredictTimer); }
+      else if ((window.GAME_SETTINGS?.killExplosions) !== false) scene.showKillExplosion(victim.data.x, victim.data.y, victim.data.color);
       victim.data.isDead = true; victim.group.visible = false;
     }
     if (victimId === scene.myId) {
@@ -2471,7 +2521,7 @@ function setupGameSocketEvents() {
           window.SFX?.countdown?.();
         } else { clearInterval(_iv); }
       }, 1000);
-    } else {
+    } else if (!alreadyShown) {
       window.SFX?.kill();
     }
     if (killer && killerId === scene.myId) {
@@ -2709,8 +2759,10 @@ function setupGameSocketEvents() {
     const scene = gs(); if (!scene) return;
     for (const [id, st] of Object.entries(stats)) {
       const obj = scene.playerObjs[id]; if (!obj) continue;
-      obj.data.hp = st.hp; obj.data.money = st.money; obj.data.mps = st.mps; obj.data.isDead = st.isDead;
-      redrawHPSprite(obj.hpSprite, st.hp, obj.data.maxHp || 100);
+      obj.data.hp = st.hp; obj.data.money = st.money; obj.data.mps = st.mps;
+      // A sync generated before our kill landed must not resurrect the predicted corpse
+      if (!obj._deathPredicted) obj.data.isDead = st.isDead;
+      redrawHPSprite(obj.hpSprite, obj._deathPredicted ? 0 : st.hp, obj.data.maxHp || 100);
       if (id === scene.myId) { Object.assign(scene.myPlayer, st); window.updateHUD(scene.myPlayer); }
     }
   });
