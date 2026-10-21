@@ -2,6 +2,8 @@
   "name": "battle-tycoon",
   "version": "1.0.0",
   "description": "Multiplayer Fighting Tycoon Game",
+  "license": "UNLICENSED",
+  "private": true,
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
