@@ -17,7 +17,7 @@ const HIT_KB_MULT = { normal: 1, sweep: 0.55, sprint: 1.8, crit: 1 };
 const HIT_DMG_MULT = { normal: 1, sweep: 1.15, sprint: 0.8, crit: 1.5 }; // mirrors server HIT_TYPES
 const SPRINT_SPEED_MULT = 1.3;  // sprinting moves 30% faster than walking
 const SPRINT_FOV_KICK = 8;      // degrees the FOV widens while sprinting
-const SPRINT_HIT_GRACE_MS = 80; // a hit this soon after you stop sprinting (W released) is still a sprint hit
+const SPRINT_HIT_GRACE_MS = 50; // a hit this soon after you stop sprinting (W released) is still a sprint hit
 // Keys that must not fire browser shortcuts when held with Ctrl (the sprint key)
 const CTRL_GAME_KEYS = new Set(['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyX','Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight']);
 
@@ -1197,10 +1197,15 @@ class Game3D {
         const ad = Math.hypot(adx, ady) || 1;
         const ptgt = this.playerObjs[chosen.id];
         if (lethal && ptgt) this._predictKill(chosen.id);
-        else if (ptgt) {
+        else if (ptgt && !onCooldown) {
           // Same knockback scale the server uses for this hit type, so the predicted
           // slide matches the authoritative result that arrives in attackResult
           const kb = BASE_KNOCKBACK * HIT_KB_MULT[hitType];
+          // Position packets already in flight were sent before the server saw this hit
+          // and would drag the target back to where it was standing; setNetPos ignores
+          // them until the matching attackResult lands (or this gives up)
+          ptgt._predKbPending = (ptgt._predKbPending || 0) + 1;
+          ptgt._predKbExpire = performance.now() + 1000;
           ptgt._kbFromX = chosen.data.x; ptgt._kbFromY = chosen.data.y;
           ptgt._kbToX = chosen.data.x + (adx / ad) * kb;
           ptgt._kbToY = chosen.data.y + (ady / ad) * kb;
@@ -1351,6 +1356,8 @@ class Game3D {
   // "glitching" look from snapping directly to each 50ms server tick.
   setNetPos(id, x, y, dir) {
     const obj = this.playerObjs[id]; if (!obj) return;
+    if (obj._predKbPending > 0 && performance.now() < obj._predKbExpire) return;
+    obj._predKbPending = 0;
     obj.data.x = x; obj.data.y = y;
     if (dir !== undefined) obj.data.dir = dir;
     obj._netTargetX = x; obj._netTargetY = y;
@@ -2460,6 +2467,7 @@ function setupGameSocketEvents() {
     if (tgt._deathPredicted && targetHp > 0) scene._revertPredictedKill(targetId);
     const predicted = attackerId === scene.myId && scene._lastAttackTargetId === targetId;
     if (predicted) scene._lastAttackTargetId = null;
+    if (attackerId === scene.myId && tgt._predKbPending > 0) tgt._predKbPending--;
     scene.showDamageNum(tgt.data.x, tgt.data.y, damage, hitType);
     scene.showHitAnim(targetId);
     if (!predicted) {

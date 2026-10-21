@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -11,7 +11,7 @@
   --gold:#ffd700;--dark:#0d1f0d;--text:#e8f5e9;
 }
 
-/* ── ANIMATIONS ── */
+/* â”€â”€ ANIMATIONS â”€â”€ */
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 @keyframes comboBounce{0%{transform:translateX(-50%) scale(1.4)}60%{transform:translateX(-50%) scale(0.9)}100%{transform:translateX(-50%) scale(1)}}
 @keyframes buyFlash{0%{transform:scale(1)}30%{transform:scale(1.08);box-shadow:0 0 28px 6px #ffe06688}60%{transform:scale(0.96)}100%{transform:scale(1)}}
@@ -25,12 +25,12 @@
 @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes kfIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
 
-/* ── SHARED ── */
+/* â”€â”€ SHARED â”€â”€ */
 body{background:#0d1f0d;color:#e8f5e9;overflow:hidden;}
 .hidden{display:none!important;}
 canvas{display:block;}
 
-/* ── AUTH SCREEN ── */
+/* â”€â”€ AUTH SCREEN â”€â”€ */
 #authScreen{
   position:fixed;inset:0;z-index:2000;
   background:radial-gradient(ellipse at 60% 40%,#1a4a1a 0%,#0d1f0d 70%);
@@ -72,7 +72,7 @@ canvas{display:block;}
   background:none;border:none;padding:4px;z-index:2;}
 .auth-back:hover{color:#7fff6a;}
 
-/* ── LANDING PAGE ── */
+/* â”€â”€ LANDING PAGE â”€â”€ */
 #landingScreen{
   position:fixed;inset:0;z-index:2100;overflow-y:auto;
   background:#0d1f0d;color:var(--text);
@@ -114,7 +114,7 @@ canvas{display:block;}
   .land-hero h1{font-size:2rem;}
 }
 
-/* ── LOBBY (Overtide-style) ── */
+/* â”€â”€ LOBBY (Overtide-style) â”€â”€ */
 @keyframes dinoIdle{0%,100%{transform:translateY(0) scaleX(-1)}50%{transform:translateY(-12px) scaleX(-1)}}
 @keyframes dinoGlow{0%,100%{filter:drop-shadow(0 0 18px rgba(100,255,80,.35))}50%{filter:drop-shadow(0 0 38px rgba(100,255,80,.7))}}
 @keyframes bgDrift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -167,7 +167,7 @@ canvas{display:block;}
 }
 #lobbyScreen>*{position:relative;z-index:1;}
 
-/* ── TOP NAV ── */
+/* â”€â”€ TOP NAV â”€â”€ */
 .lby-nav{
   display:flex;align-items:center;padding:0 20px;height:58px;flex-shrink:0;
   background:linear-gradient(180deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,.5) 100%);
@@ -191,10 +191,10 @@ canvas{display:block;}
   background:rgba(100,200,80,.08);border:1px solid rgba(100,200,80,.2);border-radius:10px;cursor:pointer;}
 .lby-nav-username{font-weight:bold;font-size:.88rem;color:#b8f5b0;}
 
-/* ── MAIN AREA ── */
+/* â”€â”€ MAIN AREA â”€â”€ */
 .lby-main{flex:1;display:flex;overflow:hidden;min-height:0;}
 
-/* ── LEFT PANEL ── */
+/* â”€â”€ LEFT PANEL â”€â”€ */
 .lby-left{width:226px;padding:14px 12px;display:flex;flex-direction:column;gap:8px;
   background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,.35) 100%);
   border-right:1px solid rgba(127,255,106,.1);overflow-y:auto;flex-shrink:0;
@@ -248,7 +248,7 @@ canvas{display:block;}
 .invite-decline{flex:1;padding:6px;border:1px solid rgba(255,100,100,.3);border-radius:7px;
   cursor:pointer;background:transparent;color:#ff8888;font-size:.75rem;}
 
-/* ── CENTER HERO ── */
+/* â”€â”€ CENTER HERO â”€â”€ */
 .lby-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   position:relative;padding:16px;gap:0;overflow:hidden;}
 
@@ -280,7 +280,7 @@ canvas{display:block;}
   box-shadow:0 0 30px rgba(127,255,106,.1);}
 .lby-invite-slot-plus{font-size:2rem;color:rgba(127,255,106,.25);}
 
-/* Dino stage — the central showcase */
+/* Dino stage â€” the central showcase */
 .lby-dino-stage{
   display:flex;flex-direction:column;align-items:center;
   position:relative;
@@ -297,7 +297,7 @@ canvas{display:block;}
   filter:blur(2px);
 }
 
-/* ── RIGHT PLAY PANEL ── */
+/* â”€â”€ RIGHT PLAY PANEL â”€â”€ */
 .lby-right{width:265px;padding:14px 12px;display:flex;flex-direction:column;gap:8px;
   background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,.35) 100%);
   border-left:1px solid rgba(127,255,106,.1);flex-shrink:0;backdrop-filter:blur(8px);}
@@ -337,7 +337,7 @@ canvas{display:block;}
 .lby-servers-btn:hover{background:rgba(127,255,106,.14);border-color:rgba(127,255,106,.4);}
 .lby-right-divider{height:1px;background:rgba(255,255,255,.07);}
 
-/* ── LEADERBOARD PANEL ── */
+/* â”€â”€ LEADERBOARD PANEL â”€â”€ */
 .lb-panel-header{padding:18px 24px 0;background:rgba(0,0,0,.25);border-bottom:1px solid rgba(100,200,80,.1);flex-shrink:0;}
 .lb-panel-header h2{color:#b8f5b0;font-size:1rem;text-transform:uppercase;letter-spacing:1px;margin:0 0 14px;}
 .lb-cat-tabs{display:flex;gap:6px;padding-bottom:12px;}
@@ -365,7 +365,7 @@ canvas{display:block;}
 .lb-value{font-weight:900;font-size:.95rem;flex-shrink:0;text-align:right;}
 .lb-you{box-shadow:inset 0 0 0 1px rgba(76,220,30,.35);}
 
-/* ── BOTTOM TABS ── */
+/* â”€â”€ BOTTOM TABS â”€â”€ */
 .lby-tabs{height:54px;display:flex;flex-shrink:0;
   background:linear-gradient(180deg,rgba(0,0,0,.6) 0%,rgba(0,0,0,.8) 100%);
   border-top:1px solid rgba(127,255,106,.14);backdrop-filter:blur(16px);
@@ -384,7 +384,7 @@ canvas{display:block;}
   border-radius:99px;font-size:.6rem;padding:1px 5px;font-weight:900;min-width:16px;text-align:center;}
 .lby-tab-icon{font-size:1.05rem;}
 
-/* ── TAB CONTENT PANELS ── */
+/* â”€â”€ TAB CONTENT PANELS â”€â”€ */
 .lby-tab-panel{display:none;flex:1;overflow:hidden;min-height:0;}
 .lby-tab-panel.active{display:flex;animation:tabPop .2s ease;}
 
@@ -432,7 +432,7 @@ canvas{display:block;}
 .sidebar-divider{height:1px;background:rgba(100,200,80,.1);margin:4px 0;}
 .sidebar-title{color:#557755;font-size:.75rem;text-transform:uppercase;letter-spacing:1px;padding:4px 0;}
 
-/* ── RENDER MODE PICKER ── */
+/* â”€â”€ RENDER MODE PICKER â”€â”€ */
 .rmp-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;}
 .rmp-card{
   background:rgba(20,60,15,.5);border:2px solid rgba(100,200,80,.15);border-radius:16px;
@@ -446,7 +446,7 @@ canvas{display:block;}
 .badge-render{background:rgba(150,100,255,.15);color:#c8a0ff;border:1px solid rgba(150,100,255,.3);}
 .badge-map{background:rgba(30,180,180,.12);color:#7ff0e0;border:1px solid rgba(30,180,180,.25);}
 
-/* ── CREATE ROOM MODAL ── */
+/* â”€â”€ CREATE ROOM MODAL â”€â”€ */
 .modal-overlay{
   position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);
   display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
@@ -480,7 +480,7 @@ canvas{display:block;}
 .modal-slider{flex:1;accent-color:#4caf50;}
 .slider-val{color:#7fff6a;font-weight:bold;min-width:20px;text-align:center;}
 
-/* ── WAITING ROOM ── */
+/* â”€â”€ WAITING ROOM â”€â”€ */
 #waitingRoom{
   position:fixed;inset:0;z-index:2000;
   background:radial-gradient(ellipse at 50% 50%,#1a3a0a 0%,#0d1f0d 80%);
@@ -556,7 +556,7 @@ canvas{display:block;}
 .wait-chat-send{padding:7px 12px;background:#2d7a1e;border:none;border-radius:8px;
   color:#fff;cursor:pointer;font-size:.78rem;}
 
-/* ── HUD ── */
+/* â”€â”€ HUD â”€â”€ */
 #hud{position:fixed;top:0;left:0;right:0;z-index:100;pointer-events:none;}
 #topBar{
   display:flex;align-items:center;gap:10px;padding:8px 14px;
@@ -573,7 +573,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 #xpFill{background:linear-gradient(90deg,#7b1fa2,#e040fb);}
 .hud-spacer{flex:1;}
 
-/* ── SHOP ── */
+/* â”€â”€ SHOP â”€â”€ */
 #shopPanel{
   position:fixed;top:0;right:0;bottom:0;width:320px;z-index:250;
   background:rgba(5,20,5,.96);border-left:1px solid rgba(100,200,80,.12);
@@ -611,7 +611,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   background:linear-gradient(135deg,#7a5200,#ffd700);color:#000;font-size:.9rem;font-weight:bold;pointer-events:all;}
 .prestige-btn:hover{box-shadow:0 0 20px rgba(255,215,0,.4);}
 
-/* ── LEADERBOARD ── */
+/* â”€â”€ LEADERBOARD â”€â”€ */
 #lbPanel{
   position:fixed;top:68px;left:14px;z-index:200;
   background:rgba(0,15,0,.75);backdrop-filter:blur(10px);
@@ -625,7 +625,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .lb-money{color:#ffd700;white-space:nowrap;font-size:.72rem;}
 .lb-bot{opacity:.65;}
 
-/* ── CHAT ── */
+/* â”€â”€ CHAT â”€â”€ */
 #chatPanel{position:fixed;bottom:0;left:14px;z-index:200;width:300px;}
 #chatLog{max-height:140px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#224422 transparent;padding:6px 0;}
 .chat-msg{font-size:.76rem;padding:2px 0;}
@@ -638,7 +638,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 #chatInput::placeholder{color:#334433;}
 #chatSend{padding:4px 10px;background:#2d7a1e;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:.75rem;}
 
-/* ── SHOP TOGGLE ── */
+/* â”€â”€ SHOP TOGGLE â”€â”€ */
 #shopToggle{
   position:fixed;top:68px;right:14px;z-index:300;
   background:linear-gradient(135deg,#2d7a1e,#66bb6a);
@@ -648,13 +648,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 }
 #shopToggle:hover{transform:translateY(-2px);}
 
-/* ── KILLFEED ── */
+/* â”€â”€ KILLFEED â”€â”€ */
 #killfeed{position:fixed;top:68px;right:360px;z-index:200;pointer-events:none;}
 .kf-item{background:rgba(0,10,0,.8);border:1px solid rgba(100,200,80,.15);
   border-radius:8px;padding:5px 11px;margin-bottom:5px;font-size:.76rem;
   color:#e8f5e9;animation:kfIn .25s ease;white-space:nowrap;}
 
-/* ── DEATH ── */
+/* â”€â”€ DEATH â”€â”€ */
 #deathScreen{
   position:fixed;inset:0;z-index:500;pointer-events:none;
   display:none;align-items:center;justify-content:center;
@@ -676,13 +676,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 /* bone icon above text */
 .death-msg .death-icon{font-size:4rem;display:block;margin-bottom:8px;animation:float 1.5s ease-in-out infinite;}
 
-/* ── TOAST ── */
+/* â”€â”€ TOAST â”€â”€ */
 #toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:99999;pointer-events:none;}
 .toast-item{background:rgba(5,20,5,.92);border:1px solid rgba(100,200,80,.2);
   border-radius:10px;padding:9px 18px;color:#e8f5e9;font-size:.85rem;
   text-align:center;margin-bottom:5px;animation:slideIn .25s ease;}
 
-/* ── COUNTDOWN ── */
+/* â”€â”€ COUNTDOWN â”€â”€ */
 #countdownOverlay{
   position:fixed;inset:0;z-index:45000;pointer-events:none;
   display:flex;align-items:center;justify-content:center;
@@ -700,7 +700,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   to  {transform:scale(1);  opacity:1;}
 }
 
-/* ── MATCH TIMER ── */
+/* â”€â”€ MATCH TIMER â”€â”€ */
 #matchTimer{
   position:fixed;top:64px;left:50%;transform:translateX(-50%);
   z-index:500;background:rgba(5,20,5,.9);border:1px solid rgba(100,200,80,.25);
@@ -710,7 +710,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 }
 #matchTimer.urgent{color:#ff4757;border-color:rgba(255,71,87,.4);animation:pulse .5s ease infinite;}
 
-/* ── ABILITY HUD ── */
+/* â”€â”€ ABILITY HUD â”€â”€ */
 #abilityHud{
   position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
   display:flex;gap:14px;z-index:5000;pointer-events:none;
@@ -739,7 +739,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 }
 .ability-label-text{color:#aaa;font-size:.58rem;letter-spacing:.5px;text-transform:uppercase;}
 
-/* ── DAILY QUEST PANEL ── */
+/* â”€â”€ DAILY QUEST PANEL â”€â”€ */
 .quest-item{
   padding:14px 16px;border-radius:12px;
   background:rgba(30,60,30,.6);border:1px solid rgba(80,140,80,.25);
@@ -754,7 +754,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .quest-footer{display:flex;justify-content:space-between;margin-top:5px;}
 .quest-prog-txt{color:#6a9a6a;font-size:.7rem;}
 
-/* ── MATCH OVER SCREEN ── */
+/* â”€â”€ MATCH OVER SCREEN â”€â”€ */
 #matchOver{
   position:fixed;inset:0;z-index:60000;background:rgba(0,0,0,.85);
   display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);
@@ -780,8 +780,8 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .matchover-name{flex:1;font-weight:bold;font-size:.9rem;text-align:left;}
 .matchover-stat{color:#ffd700;font-size:.85rem;font-weight:bold;}
 
-/* ── BUTTON FEEDBACK ── */
-/* ── BUTTON ANIMATIONS ── */
+/* â”€â”€ BUTTON FEEDBACK â”€â”€ */
+/* â”€â”€ BUTTON ANIMATIONS â”€â”€ */
 @keyframes btn-ripple {
   from { transform:scale(0); opacity:.45; }
   to   { transform:scale(2.8); opacity:0; }
@@ -826,7 +826,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     background .18s ease;
 }
 
-/* Hover — pop up and glow */
+/* Hover â€” pop up and glow */
 .auth-btn:hover, .auth-tab:hover,
 .sidebar-btn:hover, .logout-btn:hover,
 .room-join-btn:hover, .room-card:hover,
@@ -844,7 +844,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   filter: brightness(1.1);
 }
 
-/* Active — fast squeeze down */
+/* Active â€” fast squeeze down */
 .auth-btn:active, .auth-tab:active,
 .sidebar-btn:active, .logout-btn:active,
 .room-join-btn:active, .room-card:active,
@@ -884,7 +884,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   animation: btn-click-flash .18s ease-out;
 }
 
-/* Play button — persistent pulse + bigger pop */
+/* Play button â€” persistent pulse + bigger pop */
 .lby-play-btn:hover {
   transform: translateY(-4px) scale(1.03) !important;
   animation: play-pulse .9s ease-in-out infinite !important;
@@ -912,7 +912,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   transform: scale(1.06) translateY(-2px) !important;
 }
 
-/* Prestige button — golden glow pulse on hover */
+/* Prestige button â€” golden glow pulse on hover */
 .prestige-btn:hover {
   transform: scale(1.04) translateY(-2px) !important;
   animation: btn-glow-pulse .9s ease-in-out infinite !important;
@@ -946,16 +946,16 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   animation: btn-ripple .45s cubic-bezier(.4,0,.2,1) forwards;
 }
 
-/* ── CONTROLS HINT ── */
+/* â”€â”€ CONTROLS HINT â”€â”€ */
 #controls{position:fixed;bottom:58px;right:14px;z-index:200;
   background:rgba(0,10,0,.65);border-radius:10px;padding:9px 13px;
   font-size:.72rem;color:#557755;backdrop-filter:blur(10px);line-height:1.8;}
 .key{color:#b8f5b0;background:rgba(100,200,80,.1);border-radius:4px;padding:1px 5px;font-size:.68rem;}
 
-/* ── JOIN CODE MODAL ── */
+/* â”€â”€ JOIN CODE MODAL â”€â”€ */
 #joinCodeModal .modal-input{font-size:1.2rem;text-align:center;letter-spacing:4px;text-transform:uppercase;}
 
-/* ── DIFFICULTY PICKER ── */
+/* â”€â”€ DIFFICULTY PICKER â”€â”€ */
 .diff-btn{padding:10px 6px;border:2px solid rgba(255,255,255,.1);border-radius:10px;
   cursor:pointer;background:rgba(255,255,255,.04);color:#888;font-size:.85rem;font-weight:bold;transition:all .2s;}
 .diff-btn.diff-active{color:#fff;}
@@ -963,7 +963,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .diff-medium.diff-active{background:rgba(255,165,2,.15); border-color:#ffa502;color:#ffa502;}
 .diff-hard.diff-active  {background:rgba(255,71,87,.15);  border-color:#ff4757;color:#ff4757;}
 
-/* ── STATS MODAL ── */
+/* â”€â”€ STATS MODAL â”€â”€ */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 .stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(100,200,80,.12);
   border-radius:12px;padding:14px 16px;text-align:center;}
@@ -980,20 +980,20 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:#224422;border-radius:2px;}
 
-/* ── POINTS PILL ── */
+/* â”€â”€ POINTS PILL â”€â”€ */
 .lby-nav-points{display:flex;align-items:center;gap:5px;background:rgba(255,215,0,.1);
   border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:5px 12px;
   font-size:.82rem;color:#ffd700;font-weight:bold;cursor:pointer;}
 .lby-nav-points:hover{background:rgba(255,215,0,.18);}
 
-/* ── HERO DINO SVG ── */
+/* â”€â”€ HERO DINO SVG â”€â”€ */
 .hero-dino-svg{width:150px;height:170px;display:block;
   animation:dinoIdle 3s ease-in-out infinite,dinoGlow 3s ease-in-out infinite;
   cursor:pointer;filter:drop-shadow(0 0 22px rgba(100,255,80,.45));}
 .hero-dino-tag{font-size:.82rem;font-weight:900;color:#ffd700;letter-spacing:1px;
   text-shadow:0 0 10px rgba(255,215,0,.5);margin-bottom:4px;min-height:18px;text-align:center;}
 
-/* ── HERO SHOP BTN ── */
+/* â”€â”€ HERO SHOP BTN â”€â”€ */
 .hero-shop-btn{margin-top:14px;background:linear-gradient(135deg,#7a4a00,#ff9800);
   border:none;border-radius:14px;color:#fff;font-size:1.05rem;font-weight:900;
   letter-spacing:2px;padding:13px 36px;cursor:pointer;
@@ -1001,7 +1001,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .hero-shop-btn:hover{transform:scale(1.07) translateY(-3px);box-shadow:0 12px 34px rgba(255,152,0,.6);}
 .hero-shop-btn:active{transform:scale(.96);}
 
-/* ── LOBBY SHOP PANEL ── */
+/* â”€â”€ LOBBY SHOP PANEL â”€â”€ */
 .lby-shop-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .lby-shop-header{padding:18px 24px 14px;background:rgba(0,0,0,.25);
   border-bottom:1px solid rgba(100,200,80,.1);flex-shrink:0;}
@@ -1054,7 +1054,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .tag-equip-btn{background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;}
 .tag-equipped-lbl{color:#ffd700;font-size:.75rem;padding:7px 10px;}
 
-/* ── CUSTOM SKIN MODAL ── */
+/* â”€â”€ CUSTOM SKIN MODAL â”€â”€ */
 .cs-upload-zone{border:2px dashed rgba(100,200,80,.3);border-radius:12px;padding:18px;
   text-align:center;cursor:pointer;transition:all .2s;color:#7fff6a;font-size:.85rem;}
 .cs-upload-zone:hover{border-color:rgba(100,200,80,.6);background:rgba(100,200,80,.05);}
@@ -1074,7 +1074,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 .cs-btn-set{background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;}
 .cs-status{color:#88aa88;font-size:.78rem;text-align:center;min-height:18px;}
 
-/* ── HERO CONTAINER ── */
+/* â”€â”€ HERO CONTAINER â”€â”€ */
 #heroDinoContainer{position:relative;width:220px;height:200px;margin:0 auto;}
 #heroDinoContainer canvas, #heroDinoContainer img{position:absolute;inset:0;width:100%;height:100%;}
 #heroDinoCustomImg{object-fit:contain;display:none;
@@ -1085,7 +1085,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 </head>
 <body>
 <script>
-// Apply cached skin instantly on load to prevent flash — uses 2D canvas, no Three.js needed
+// Apply cached skin instantly on load to prevent flash â€” uses 2D canvas, no Three.js needed
 (function() {
   try {
     const cached = JSON.parse(localStorage.getItem('dt_skin_cache') || 'null');
@@ -1108,7 +1108,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 })();
 </script>
 
-<!-- ══ LANDING PAGE ═════════════════════════════════════════════════════════ -->
+<!-- â•â• LANDING PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="landingScreen">
   <header class="land-nav">
     <div class="land-logo">Dino Tycoon</div>
@@ -1143,16 +1143,16 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </main>
 </div>
 
-<!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
+<!-- â•â• AUTH â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="authScreen" class="hidden">
   <div class="auth-dinos">
-    <span class="auth-dino">🦕</span><span class="auth-dino">🦖</span>
-    <span class="auth-dino">🦴</span><span class="auth-dino">🌿</span>
-    <span class="auth-dino">⛰️</span>
+    <span class="auth-dino">ðŸ¦•</span><span class="auth-dino">ðŸ¦–</span>
+    <span class="auth-dino">ðŸ¦´</span><span class="auth-dino">ðŸŒ¿</span>
+    <span class="auth-dino">â›°ï¸</span>
   </div>
   <div class="auth-box">
-    <button class="auth-back" onclick="backToLanding()">‹ Back</button>
-    <div class="auth-logo">🦕</div>
+    <button class="auth-back" onclick="backToLanding()">â€¹ Back</button>
+    <div class="auth-logo">ðŸ¦•</div>
     <div class="auth-title">DINO TYCOON</div>
     <div class="auth-sub">Build your prehistoric empire. Dominate the Jurassic.</div>
     <div class="auth-tabs">
@@ -1171,21 +1171,21 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   font-size:1.5rem;font-weight:900;color:#ffe066;text-shadow:0 0 12px #ff8800,0 2px 0 #000;
   letter-spacing:2px;z-index:2000;pointer-events:none;white-space:nowrap;"></div>
 
-<!-- ══ LOBBY ══════════════════════════════════════════════════════════════════ -->
+<!-- â•â• LOBBY â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="lobbyScreen" class="hidden">
 <canvas id="lobbyBgCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 <div id="lobbyParticles" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;"></div>
 
   <!-- TOP NAV -->
   <div class="lby-nav">
-    <div class="lby-nav-logo" onclick="switchLbyTab('home')" style="cursor:pointer;"><span>🦕</span>DINO TYCOON</div>
+    <div class="lby-nav-logo" onclick="switchLbyTab('home')" style="cursor:pointer;"><span>ðŸ¦•</span>DINO TYCOON</div>
     <div class="lby-nav-spacer"></div>
     <div class="lby-nav-pill"><span class="pip"></span><span id="lobbyOnline">0 online</span></div>
-    <div class="lby-nav-points" onclick="switchLbyTab('shop')" title="Dino Points — earned from kills">⚡ <span id="lobbyPoints">0</span> pts</div>
+    <div class="lby-nav-points" onclick="switchLbyTab('shop')" title="Dino Points â€” earned from kills">âš¡ <span id="lobbyPoints">0</span> pts</div>
     <div class="lby-nav-user">
       <span class="lby-nav-username" id="lobbyUsername"></span>
     </div>
-    <div class="lby-nav-icon" onclick="openSettingsModal()" title="Settings">⚙️</div>
+    <div class="lby-nav-icon" onclick="openSettingsModal()" title="Settings">âš™ï¸</div>
     <div class="lby-nav-icon" onclick="doLogout()" title="Logout" style="color:#ff8888;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -1195,26 +1195,26 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     </div>
   </div>
 
-  <!-- MAIN AREA — HOME tab default view -->
+  <!-- MAIN AREA â€” HOME tab default view -->
   <div class="lby-main" id="lbyHomeView">
 
     <!-- LEFT PANEL -->
     <div class="lby-left">
       <!-- Fossil Drop card -->
       <div class="lby-drop-card" id="fossilDropCard" onclick="claimFossilDrop()">
-        <div class="lby-drop-title">🥚 Fossil Drop</div>
+        <div class="lby-drop-title">ðŸ¥š Fossil Drop</div>
         <div class="lby-drop-subtitle" id="fossilDropSub">Daily reward</div>
-        <span class="lby-drop-egg">🦕</span>
-        <button class="lby-drop-btn" id="fossilDropBtn">CLAIM FREE ▶</button>
+        <span class="lby-drop-egg">ðŸ¦•</span>
+        <button class="lby-drop-btn" id="fossilDropBtn">CLAIM FREE â–¶</button>
       </div>
 
-      <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">🔑 Join by Code</button>
-      <button class="lby-left-btn" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,165,0,.1));border-color:rgba(255,215,0,.3);color:#ffd700;" onclick="openDailyQuestsModal()">📋 Daily Quests</button>
+      <button class="lby-left-btn lby-btn-friends" onclick="openJoinCodeModal()">ðŸ”‘ Join by Code</button>
+      <button class="lby-left-btn" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,165,0,.1));border-color:rgba(255,215,0,.3);color:#ffd700;" onclick="openDailyQuestsModal()">ðŸ“‹ Daily Quests</button>
       <button class="lby-left-btn lby-btn-achievements" onclick="openAchievementsModal()"><svg width="15" height="15" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:3px;"><path fill="currentColor" d="M9 13.9 5.6 21.6 9 20.1l1.7 2.3L13.3 15z"/><path fill="currentColor" d="M15 13.9 18.4 21.6 15 20.1l-1.7 2.3L11.7 15z"/><circle cx="12" cy="9" r="6.8" fill="none" stroke="currentColor" stroke-width="1.7"/><path fill="currentColor" d="m12 5.2 1.1 2.3 2.5.4-1.8 1.8.4 2.5L12 11l-2.2 1.2.4-2.5-1.8-1.8 2.5-.4z"/></svg>Achievements</button>
       <button class="lby-left-btn lby-btn-tutorial" onclick="openTutorialModal()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="vertical-align:-3px;margin-right:3px;"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.3a2.7 2.7 0 1 1 4 2.4c-1 .5-1.3 1.1-1.3 2.1" stroke-linecap="round"/><circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none"/></svg>How to Play</button>
 
       <div class="lby-left-divider"></div>
-      <div class="lby-invites-label">📨 Invites</div>
+      <div class="lby-invites-label">ðŸ“¨ Invites</div>
       <div class="invite-list" id="inviteList">
         <div style="color:#334433;font-size:.75rem;text-align:center;padding:16px 0;">No invites yet</div>
       </div>
@@ -1223,14 +1223,14 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <!-- CENTER HERO -->
     <div class="lby-hero">
       <div class="lby-hero-username">
-        <span class="lby-hero-username-icon">🦴</span>
+        <span class="lby-hero-username-icon">ðŸ¦´</span>
         <span id="heroUsername" style="color:#7fff6a;"></span>
       </div>
       <div class="lby-hero-row">
         <!-- Left invite slot -->
         <div class="lby-invite-slot" onclick="openJoinCodeModal()">
-          <span style="font-size:1.8rem;">🦕</span>
-          <span class="lby-invite-slot-plus">＋</span>
+          <span style="font-size:1.8rem;">ðŸ¦•</span>
+          <span class="lby-invite-slot-plus">ï¼‹</span>
           <span>Invite a Dino</span>
         </div>
 
@@ -1246,28 +1246,28 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
         <!-- Right invite slot -->
         <div class="lby-invite-slot" onclick="openJoinCodeModal()">
-          <span style="font-size:1.8rem;">🦕</span>
-          <span class="lby-invite-slot-plus">＋</span>
+          <span style="font-size:1.8rem;">ðŸ¦•</span>
+          <span class="lby-invite-slot-plus">ï¼‹</span>
           <span>Invite a Dino</span>
         </div>
       </div>
 
       <!-- PLAY NOW below the row -->
       <button class="lby-play-btn" onclick="openPlayModeModal()" style="margin-top:14px;min-width:260px;padding:20px 44px;font-size:1.5rem;letter-spacing:2px;">
-        ▶ PLAY NOW!
+        â–¶ PLAY NOW!
       </button>
     </div>
 
-    <!-- RIGHT PANEL — embedded chat -->
+    <!-- RIGHT PANEL â€” embedded chat -->
     <div class="lby-right">
       <!-- Embedded chat -->
       <div style="color:#557755;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-1.5v3.5L15 15H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><circle cx="11.5" cy="9" r="0.55" fill="currentColor" stroke="none"/><circle cx="14.5" cy="9" r="0.55" fill="currentColor" stroke="none"/><circle cx="17.5" cy="9" r="0.55" fill="currentColor" stroke="none"/><path d="M7 15v1.5a2 2 0 0 0 2 2h2L8.5 21v-2.5H7a2 2 0 0 1-2-2V13a2 2 0 0 1 2-2h1"/></svg> Lobby Chat</div>
       <div class="lobby-chat-messages" id="lobbyChatMessages" style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;">
-        <div class="lobby-chat-msg system-msg"><span class="chat-text">Welcome to Dino Tycoon! Be kind 🦕</span></div>
+        <div class="lobby-chat-msg system-msg"><span class="chat-text">Welcome to Dino Tycoon! Be kind ðŸ¦•</span></div>
       </div>
       <div class="lobby-chat-input-row" style="margin-top:6px;">
         <input class="lobby-chat-input" id="lobbyChatInput" maxlength="120" placeholder="Roar something..." onkeydown="if(event.key==='Enter')sendLobbyChat()">
-        <button class="lobby-chat-send" onclick="sendLobbyChat()">➤</button>
+        <button class="lobby-chat-send" onclick="sendLobbyChat()">âž¤</button>
       </div>
     </div>
   </div>
@@ -1277,15 +1277,15 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <div class="lby-shop-panel">
       <div class="lby-shop-header">
         <div class="lby-shop-pts-row">
-          <span style="font-size:1.8rem;">⚡</span>
+          <span style="font-size:1.8rem;">âš¡</span>
           <div>
             <div class="lby-shop-pts-val"><span id="shopPointsVal">0</span> pts</div>
-            <div class="lby-shop-pts-lbl">Dino Points — earn 10 per kill in any game</div>
+            <div class="lby-shop-pts-lbl">Dino Points â€” earn 10 per kill in any game</div>
           </div>
         </div>
         <div class="lby-shop-subtabs">
-          <button class="lby-shop-subtab active" id="shopSubSkins" onclick="switchShopTab('skins')">🦖 Skins</button>
-          <button class="lby-shop-subtab" id="shopSubTags" onclick="switchShopTab('tags')">🏷️ Nametags</button>
+          <button class="lby-shop-subtab active" id="shopSubSkins" onclick="switchShopTab('skins')">ðŸ¦– Skins</button>
+          <button class="lby-shop-subtab" id="shopSubTags" onclick="switchShopTab('tags')">ðŸ·ï¸ Nametags</button>
         </div>
       </div>
       <div class="lby-shop-body" id="shopBody">
@@ -1297,9 +1297,9 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   <!-- ROOMS TAB PANEL -->
   <div class="lby-tab-panel" id="lbyRoomsPanel">
     <div class="lby-rooms-panel">
-      <h2>🌿 Public Servers <span style="color:#557755;font-weight:normal;font-size:.75rem;margin-left:4px;" id="roomCount2"></span></h2>
+      <h2>ðŸŒ¿ Public Servers <span style="color:#557755;font-weight:normal;font-size:.75rem;margin-left:4px;" id="roomCount2"></span></h2>
       <div class="room-grid" id="roomGrid">
-        <div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>
+        <div class="no-rooms"><span class="no-rooms-icon">ðŸ¦•</span>No rooms yet.<br>Be the first to create one!</div>
       </div>
     </div>
   </div>
@@ -1314,7 +1314,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
           <h2 style="color:#b8f5b0;font-size:1rem;text-transform:uppercase;letter-spacing:1px;margin:0;display:flex;align-items:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><rect x="7.2" y="4" width="7.6" height="4.6"/><rect x="6.2" y="13.4" width="11.6" height="5.6"/></svg> Saved Games</h2>
           <span id="lbySavedCount" style="color:#557755;font-size:.75rem;"></span>
         </div>
-        <input id="lbySavedSearch" type="text" placeholder="🔍 Search saves by name..."
+        <input id="lbySavedSearch" type="text" placeholder="ðŸ” Search saves by name..."
           oninput="filterSavedGames()"
           style="width:100%;padding:9px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(100,200,80,.2);
           border-radius:10px;color:#eee;font-size:.88rem;outline:none;">
@@ -1332,10 +1332,10 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <div class="lb-panel-header">
         <h2 style="display:flex;align-items:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="8" y="13.5" width="8" height="7.5" rx="1"/><path d="m12 2 1.7 3.5 3.8.5-2.8 2.7.7 3.8L12 10.7l-3.4 1.8.7-3.8-2.8-2.7 3.8-.5z"/></svg> Global Leaderboard</h2>
         <div class="lb-cat-tabs" id="lbPanelCatTabs">
-          <button class="lb-cat-tab active" data-cat="earnings" onclick="switchLbCategory('earnings')">💰 Earnings</button>
-          <button class="lb-cat-tab" data-cat="kills"    onclick="switchLbCategory('kills')">⚔️ Kills</button>
-          <button class="lb-cat-tab" data-cat="prestige" onclick="switchLbCategory('prestige')">⭐ Prestige</button>
-          <button class="lb-cat-tab" data-cat="mmr"      onclick="switchLbCategory('mmr')">🏆 Ranked MMR</button>
+          <button class="lb-cat-tab active" data-cat="earnings" onclick="switchLbCategory('earnings')">ðŸ’° Earnings</button>
+          <button class="lb-cat-tab" data-cat="kills"    onclick="switchLbCategory('kills')">âš”ï¸ Kills</button>
+          <button class="lb-cat-tab" data-cat="prestige" onclick="switchLbCategory('prestige')">â­ Prestige</button>
+          <button class="lb-cat-tab" data-cat="mmr"      onclick="switchLbCategory('mmr')">ðŸ† Ranked MMR</button>
         </div>
       </div>
       <div class="lb-list" id="lbPanelContent">
@@ -1353,7 +1353,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <span class="lby-tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9.2"/><ellipse cx="12" cy="12" rx="4.1" ry="9.2"/><line x1="2.8" y1="12" x2="21.2" y2="12"/><line x1="4.3" y1="6.8" x2="19.7" y2="6.8"/><line x1="4.3" y1="17.2" x2="19.7" y2="17.2"/></svg></span> SERVERS
     </button>
     <button class="lby-tab" id="lbyTab-shop" onclick="switchLbyTab('shop')">
-      <span class="lby-tab-icon">🛒</span> SHOP
+      <span class="lby-tab-icon">ðŸ›’</span> SHOP
     </button>
     <button class="lby-tab" id="lbyTab-saves" onclick="switchLbyTab('saves')">
       <span class="lby-tab-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><rect x="7.2" y="4" width="7.6" height="4.6"/><rect x="6.2" y="13.4" width="11.6" height="5.6"/></svg></span> SAVED
@@ -1365,21 +1365,21 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
 </div>
 
-<!-- ══ RENDER MODE PICKER ════════════════════════════════════════════════════ -->
+<!-- â•â• RENDER MODE PICKER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="renderModeModal">
   <div class="modal" style="width:480px;">
-    <h2 style="font-size:1.4rem;letter-spacing:1px;">🦖 Choose Your Experience</h2>
-    <p style="color:#557755;font-size:.82rem;margin-bottom:16px;">Pick a game engine — you can have different rooms for each!</p>
+    <h2 style="font-size:1.4rem;letter-spacing:1px;">ðŸ¦– Choose Your Experience</h2>
+    <p style="color:#557755;font-size:.82rem;margin-bottom:16px;">Pick a game engine â€” you can have different rooms for each!</p>
     <div class="rmp-cards">
       <div class="rmp-card" id="rmpCard2d" onclick="selectRenderMode('2d')">
-        <span class="rmp-icon">🗺️</span>
+        <span class="rmp-icon">ðŸ—ºï¸</span>
         <div class="rmp-title">2D Classic</div>
-        <div class="rmp-desc">Top-down view, Phaser engine — the original Dino Tycoon experience.</div>
+        <div class="rmp-desc">Top-down view, Phaser engine â€” the original Dino Tycoon experience.</div>
       </div>
       <div class="rmp-card" id="rmpCard3d" onclick="selectRenderMode('3d')">
-        <span class="rmp-icon">🌐</span>
+        <span class="rmp-icon">ðŸŒ</span>
         <div class="rmp-title">3D Immersive</div>
-        <div class="rmp-desc">Third-person 3D world — full Three.js experience with a real camera.</div>
+        <div class="rmp-desc">Third-person 3D world â€” full Three.js experience with a real camera.</div>
       </div>
     </div>
     <div class="modal-footer" style="margin-top:20px;">
@@ -1388,22 +1388,22 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ PLAY MODE CHOICE MODAL ═══════════════════════════════════════════════ -->
+<!-- â•â• PLAY MODE CHOICE MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="playModeModal">
   <div class="modal" style="width:440px;text-align:center;">
-    <h2 style="font-size:1.4rem;letter-spacing:1px;">🦖 Choose Your Match</h2>
+    <h2 style="font-size:1.4rem;letter-spacing:1px;">ðŸ¦– Choose Your Match</h2>
     <div style="display:flex;gap:14px;margin:22px 0 8px;">
       <button class="mode-choice-btn" onclick="chooseCasual()" style="flex:1;padding:20px 12px;border:none;border-radius:14px;cursor:pointer;
         background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;">
-        <div style="font-size:2rem;margin-bottom:6px;">🎮</div>
+        <div style="font-size:2rem;margin-bottom:6px;">ðŸŽ®</div>
         <div style="font-weight:900;font-size:1.05rem;">Casual</div>
-        <div style="font-size:.72rem;opacity:.85;margin-top:4px;">Bots, friends, custom settings — no MMR tracked</div>
+        <div style="font-size:.72rem;opacity:.85;margin-top:4px;">Bots, friends, custom settings â€” no MMR tracked</div>
       </button>
       <button class="mode-choice-btn" onclick="chooseRanked()" style="flex:1;padding:20px 12px;border:none;border-radius:14px;cursor:pointer;
         background:linear-gradient(135deg,#7a5a00,#d4af37);color:#fff;">
-        <div style="font-size:2rem;margin-bottom:6px;">🏆</div>
+        <div style="font-size:2rem;margin-bottom:6px;">ðŸ†</div>
         <div style="font-weight:900;font-size:1.05rem;">Ranked</div>
-        <div style="font-size:.72rem;opacity:.85;margin-top:4px;">1v1 matchmaking — affects your Ranked MMR</div>
+        <div style="font-size:.72rem;opacity:.85;margin-top:4px;">1v1 matchmaking â€” affects your Ranked MMR</div>
       </button>
     </div>
     <div class="modal-footer">
@@ -1412,23 +1412,23 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ RANKED WAITING SCREEN ════════════════════════════════════════════════ -->
+<!-- â•â• RANKED WAITING SCREEN â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="rankedWaitingScreen" style="z-index:3000;">
   <div class="modal" style="width:380px;text-align:center;">
-    <div style="font-size:3rem;margin-bottom:10px;animation:pulse 1.6s ease-in-out infinite;">🔎</div>
+    <div style="font-size:3rem;margin-bottom:10px;animation:pulse 1.6s ease-in-out infinite;">ðŸ”Ž</div>
     <h2 style="font-size:1.2rem;">Searching for a Ranked Opponent...</h2>
     <div style="color:#88aa88;font-size:1.4rem;font-weight:bold;margin:16px 0;" id="rankedWaitingTime">0:00</div>
-    <div style="color:#557755;font-size:.78rem;margin-bottom:18px;">Closest-skill match — hang tight!</div>
+    <div style="color:#557755;font-size:.78rem;margin-bottom:18px;">Closest-skill match â€” hang tight!</div>
     <div class="modal-footer">
       <button class="modal-cancel" onclick="cancelRankedQueue()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- ══ PLAY NOW MODAL ═══════════════════════════════════════════════════════ -->
+<!-- â•â• PLAY NOW MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="playNowModal">
   <div class="modal" style="width:520px;">
-    <h2 style="font-size:1.5rem;letter-spacing:1px;">🦖 PLAY NOW!</h2>
+    <h2 style="font-size:1.5rem;letter-spacing:1px;">ðŸ¦– PLAY NOW!</h2>
 
     <div>
       <label class="modal-label">Room Name</label>
@@ -1436,21 +1436,21 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     </div>
 
     <div style="margin-top:12px;">
-      <label class="modal-label">🗺️ Map</label>
+      <label class="modal-label">ðŸ—ºï¸ Map</label>
       <select class="modal-select" id="roomMap">
-        <option value="jungle">🌴 Classic</option>
-        <option value="realistic" disabled>🗻 Realistic (Coming Soon)</option>
+        <option value="jungle">ðŸŒ´ Classic</option>
+        <option value="realistic" disabled>ðŸ—» Realistic (Coming Soon)</option>
       </select>
     </div>
 
-    <label class="modal-label" style="margin-top:12px;">⚙️ Difficulty</label>
+    <label class="modal-label" style="margin-top:12px;">âš™ï¸ Difficulty</label>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;" id="difficultyPicker">
-      <button onclick="setDifficulty('easy')"   id="diff_easy"   class="diff-btn diff-easy   diff-active">🌿 Easy</button>
-      <button onclick="setDifficulty('medium')" id="diff_medium" class="diff-btn diff-medium">⚔️ Medium</button>
-      <button onclick="setDifficulty('hard')"   id="diff_hard"   class="diff-btn diff-hard">☄️ Hard</button>
+      <button onclick="setDifficulty('easy')"   id="diff_easy"   class="diff-btn diff-easy   diff-active">ðŸŒ¿ Easy</button>
+      <button onclick="setDifficulty('medium')" id="diff_medium" class="diff-btn diff-medium">âš”ï¸ Medium</button>
+      <button onclick="setDifficulty('hard')"   id="diff_hard"   class="diff-btn diff-hard">â˜„ï¸ Hard</button>
     </div>
     <div id="difficultyDesc" style="color:#557755;font-size:.72rem;margin-bottom:4px;">
-      🌿 Easy — all upgrades cost <b style="color:#2ed573;">70% cheaper</b>. Great for learning the game!
+      ðŸŒ¿ Easy â€” all upgrades cost <b style="color:#2ed573;">70% cheaper</b>. Great for learning the game!
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
@@ -1463,9 +1463,9 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
         </div>
       </div>
       <div>
-        <label class="modal-label">⏱ Match Duration</label>
+        <label class="modal-label">â± Match Duration</label>
         <select class="modal-select" id="matchDuration" style="padding:8px 10px;">
-          <option value="0">♾ Unlimited</option>
+          <option value="0">â™¾ Unlimited</option>
           <option value="180">3 minutes</option>
           <option value="300">5 minutes</option>
           <option value="600">10 minutes</option>
@@ -1475,12 +1475,12 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       </div>
     </div>
 
-    <label class="modal-label" style="margin-top:14px;">🤖 Bots</label>
+    <label class="modal-label" style="margin-top:14px;">ðŸ¤– Bots</label>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
       <div style="text-align:center;">
         <div style="color:#2ed573;font-size:.72rem;font-weight:bold;margin-bottom:5px;">Easy</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
-          <button onclick="changeBotCount('easy',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <button onclick="changeBotCount('easy',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">âˆ’</button>
           <span id="botCount_easy" style="color:#2ed573;font-weight:bold;min-width:18px;text-align:center;">0</span>
           <button onclick="changeBotCount('easy',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#2d7a1e;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
         </div>
@@ -1488,7 +1488,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <div style="text-align:center;">
         <div style="color:#ffa502;font-size:.72rem;font-weight:bold;margin-bottom:5px;">Medium</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
-          <button onclick="changeBotCount('medium',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <button onclick="changeBotCount('medium',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">âˆ’</button>
           <span id="botCount_medium" style="color:#ffa502;font-weight:bold;min-width:18px;text-align:center;">0</span>
           <button onclick="changeBotCount('medium',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#7a4a00;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
         </div>
@@ -1496,15 +1496,15 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       <div style="text-align:center;">
         <div style="color:#ff4757;font-size:.72rem;font-weight:bold;margin-bottom:5px;">Hard</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
-          <button onclick="changeBotCount('hard',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <button onclick="changeBotCount('hard',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">âˆ’</button>
           <span id="botCount_hard" style="color:#ff4757;font-weight:bold;min-width:18px;text-align:center;">0</span>
           <button onclick="changeBotCount('hard',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#7a0000;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
         </div>
       </div>
       <div style="text-align:center;">
-        <div style="color:#ff2222;font-size:.72rem;font-weight:bold;margin-bottom:5px;">💀 Hardcore</div>
+        <div style="color:#ff2222;font-size:.72rem;font-weight:bold;margin-bottom:5px;">ðŸ’€ Hardcore</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
-          <button onclick="changeBotCount('hardcore',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">−</button>
+          <button onclick="changeBotCount('hardcore',-1)" style="width:26px;height:26px;border:none;border-radius:6px;background:#1a3a1a;color:#aaa;cursor:pointer;font-size:1.1rem;line-height:1;">âˆ’</button>
           <span id="botCount_hardcore" style="color:#ff2222;font-weight:bold;min-width:18px;text-align:center;">0</span>
           <button onclick="changeBotCount('hardcore',1)"  style="width:26px;height:26px;border:none;border-radius:6px;background:#ff2222;color:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">+</button>
         </div>
@@ -1513,17 +1513,17 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
       <div class="modal-toggle-row" style="border:none;padding:6px 0;">
-        <span class="modal-toggle-label">🌐 Public Room</span>
+        <span class="modal-toggle-label">ðŸŒ Public Room</span>
         <button class="toggle on" id="publicToggle" onclick="this.classList.toggle('on')"></button>
       </div>
       <div class="modal-toggle-row" style="border:none;padding:6px 0;">
-        <span class="modal-toggle-label" title="Everyone starts $0, no upgrades">🔄 Fresh Start</span>
+        <span class="modal-toggle-label" title="Everyone starts $0, no upgrades">ðŸ”„ Fresh Start</span>
         <button class="toggle" id="freshStartToggle" onclick="this.classList.toggle('on')"></button>
       </div>
     </div>
     <div id="savedGameRow" class="modal-toggle-row" style="border:1px solid rgba(100,200,80,.2);border-radius:10px;padding:10px 14px;margin-top:8px;background:rgba(100,200,80,.05);display:none;">
       <div>
-        <span class="modal-toggle-label">💾 Continue Saved Game</span>
+        <span class="modal-toggle-label">ðŸ’¾ Continue Saved Game</span>
         <div style="color:#557755;font-size:.7rem;" id="savedGameInfo">Loading...</div>
       </div>
       <button class="toggle" id="loadSavedToggle" onclick="this.classList.toggle('on')"></button>
@@ -1532,37 +1532,37 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       Fresh Start = everyone begins with $0 and no upgrades for this match only
     </div>
     <div id="savedGameTip" style="display:none;background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;color:#7fff6a;font-size:.78rem;">
-      🤖 You can still add bots and invite friends below — they'll join your saved game session!
+      ðŸ¤– You can still add bots and invite friends below â€” they'll join your saved game session!
     </div>
 
-    <label class="modal-label">Custom Invite Code <span style="color:#446644;font-weight:normal;">(optional, 4–8 chars)</span></label>
-    <input class="modal-input" id="customCode" placeholder="e.g. DINO42 — leave blank for random" maxlength="8" autocomplete="off"
+    <label class="modal-label">Custom Invite Code <span style="color:#446644;font-weight:normal;">(optional, 4â€“8 chars)</span></label>
+    <input class="modal-input" id="customCode" placeholder="e.g. DINO42 â€” leave blank for random" maxlength="8" autocomplete="off"
       style="text-transform:uppercase;letter-spacing:3px;"
       oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
 
     <div class="modal-footer" style="margin-top:20px;">
       <button class="modal-cancel" onclick="closeModal('playNowModal')">Cancel</button>
-      <button class="modal-confirm" style="font-size:1rem;font-weight:900;letter-spacing:1px;" onclick="submitCreateRoom()">🦖 LET'S GO!</button>
+      <button class="modal-confirm" style="font-size:1rem;font-weight:900;letter-spacing:1px;" onclick="submitCreateRoom()">ðŸ¦– LET'S GO!</button>
     </div>
   </div>
 </div>
 
-<!-- ══ SETTINGS MODAL ═══════════════════════════════════════════════════════ -->
+<!-- â•â• SETTINGS MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="settingsModal">
   <div class="modal" style="width:420px;">
-    <h2>⚙️ Settings</h2>
+    <h2>âš™ï¸ Settings</h2>
     <div id="settingsContent"></div>
     <div class="modal-footer" style="margin-top:20px;">
       <button class="modal-cancel" onclick="closeModal('settingsModal')">Close</button>
-      <button class="modal-confirm" onclick="saveSettings()">✅ Save</button>
+      <button class="modal-confirm" onclick="saveSettings()">âœ… Save</button>
     </div>
   </div>
 </div>
 
-<!-- ══ SAVED GAMES MODAL ════════════════════════════════════════════════════ -->
+<!-- â•â• SAVED GAMES MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="savedGamesModal">
   <div class="modal" style="width:480px;">
-    <h2>💾 Saved Games</h2>
+    <h2>ðŸ’¾ Saved Games</h2>
     <div id="savedGamesList" style="min-height:80px;">
       <div style="color:#557755;text-align:center;padding:20px;">Loading...</div>
     </div>
@@ -1572,21 +1572,21 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ CUSTOM SKIN MODAL ════════════════════════════════════════════════════ -->
+<!-- â•â• CUSTOM SKIN MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="customSkinModal">
   <div class="modal" style="width:520px;">
-    <h2>🎨 Import Custom Skin</h2>
-    <p style="color:#88aa88;font-size:.82rem;margin-bottom:12px;">Paste any image URL or upload a file — background is removed automatically. Free forever, up to 9 skins.</p>
+    <h2>ðŸŽ¨ Import Custom Skin</h2>
+    <p style="color:#88aa88;font-size:.82rem;margin-bottom:12px;">Paste any image URL or upload a file â€” background is removed automatically. Free forever, up to 9 skins.</p>
 
     <div style="display:flex;gap:8px;margin-bottom:8px;">
       <input id="csSkinName" class="modal-input" placeholder="Skin name (e.g. My Raptor)" style="width:180px;font-size:.88rem;">
       <input id="csUrlInput" class="modal-input" placeholder="https://... paste image URL" style="flex:1;font-size:.88rem;">
-      <button onclick="csFetchUrl()" class="modal-confirm" style="width:auto;padding:11px 14px;white-space:nowrap;font-size:.88rem;">Fetch →</button>
+      <button onclick="csFetchUrl()" class="modal-confirm" style="width:auto;padding:11px 14px;white-space:nowrap;font-size:.88rem;">Fetch â†’</button>
     </div>
-    <div class="cs-or">— or upload from your device —</div>
+    <div class="cs-or">â€” or upload from your device â€”</div>
     <label style="display:block;margin-bottom:14px;">
       <input type="file" id="csFileInput" accept="image/*" style="display:none;" onchange="csLoadFile(this)">
-      <div class="cs-upload-zone">📁 Click to upload an image</div>
+      <div class="cs-upload-zone">ðŸ“ Click to upload an image</div>
     </label>
 
     <div id="csPreviewSection" style="display:none;">
@@ -1600,15 +1600,15 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
           <div class="cs-canvas-lbl">Original</div>
           <canvas id="csOrigCanvas" class="cs-canvas" width="256" height="256"></canvas>
         </div>
-        <div class="cs-arrow">→</div>
+        <div class="cs-arrow">â†’</div>
         <div class="cs-canvas-wrap">
           <div class="cs-canvas-lbl">Background Removed</div>
           <canvas id="csResultCanvas" class="cs-canvas cs-result-canvas" width="256" height="256"></canvas>
         </div>
       </div>
       <div class="cs-btn-row">
-        <button class="cs-btn cs-btn-remove" onclick="csRemoveBg()">🔄 Re-remove Background</button>
-        <button class="cs-btn cs-btn-set" id="csSetBtn" style="display:none;" onclick="csSetSkin()">✅ Save as Skin</button>
+        <button class="cs-btn cs-btn-remove" onclick="csRemoveBg()">ðŸ”„ Re-remove Background</button>
+        <button class="cs-btn cs-btn-set" id="csSetBtn" style="display:none;" onclick="csSetSkin()">âœ… Save as Skin</button>
       </div>
       <div class="cs-status" id="csStatus"></div>
     </div>
@@ -1619,10 +1619,10 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ STATS MODAL ══════════════════════════════════════════════════════════ -->
+<!-- â•â• STATS MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="statsModal">
   <div class="modal" style="width:460px;">
-    <h2>📊 My Stats</h2>
+    <h2>ðŸ“Š My Stats</h2>
     <div id="statsContent">
       <div style="text-align:center;color:#557755;padding:20px;">Loading...</div>
     </div>
@@ -1632,10 +1632,10 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ ACHIEVEMENTS MODAL ═══════════════════════════════════════════════════ -->
+<!-- â•â• ACHIEVEMENTS MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="achievementsModal">
   <div class="modal" style="width:480px;">
-    <h2>🏆 Achievements</h2>
+    <h2>ðŸ† Achievements</h2>
     <div id="achievementsContent" style="max-height:420px;overflow-y:auto;">
       <div style="text-align:center;color:#557755;padding:20px;">Loading...</div>
     </div>
@@ -1645,7 +1645,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ PLAYER PROFILE MODAL (leaderboard click) ══════════════════════════════ -->
+<!-- â•â• PLAYER PROFILE MODAL (leaderboard click) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="lbProfileModal">
   <div class="modal" style="width:360px;text-align:center;padding:28px 24px 20px;">
     <div style="display:flex;justify-content:center;margin-bottom:4px;">
@@ -1661,23 +1661,23 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ TUTORIAL MODAL ═══════════════════════════════════════════════════════ -->
+<!-- â•â• TUTORIAL MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="tutorialModal">
   <div class="modal" style="width:480px;">
-    <h2 id="tutorialTitle">🦕 Welcome to Dino Tycoon!</h2>
+    <h2 id="tutorialTitle">ðŸ¦• Welcome to Dino Tycoon!</h2>
     <div id="tutorialContent" style="min-height:180px;color:#cde;font-size:.92rem;line-height:1.6;"></div>
     <div style="display:flex;justify-content:center;gap:6px;margin:14px 0;" id="tutorialDots"></div>
     <div class="modal-footer">
       <button class="modal-cancel" onclick="skipTutorial()">Skip</button>
-      <button class="modal-confirm" id="tutorialNextBtn" onclick="tutorialNext()">Next ▶</button>
+      <button class="modal-confirm" id="tutorialNextBtn" onclick="tutorialNext()">Next â–¶</button>
     </div>
   </div>
 </div>
 
-<!-- ══ JOIN CODE MODAL ══════════════════════════════════════════════════════ -->
+<!-- â•â• JOIN CODE MODAL â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal-overlay hidden" id="joinCodeModal">
   <div class="modal" style="width:320px;">
-    <h2>🔑 Join by Invite Code</h2>
+    <h2>ðŸ”‘ Join by Invite Code</h2>
     <label class="modal-label">Enter 6-digit code</label>
     <input class="modal-input" id="joinCodeInput" placeholder="ABC123" maxlength="6" autocomplete="off">
     <div class="modal-footer">
@@ -1687,10 +1687,10 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
 </div>
 
-<!-- ══ WAITING ROOM ══════════════════════════════════════════════════════════ -->
+<!-- â•â• WAITING ROOM â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="waitingRoom" class="hidden">
   <div class="waiting-header">
-    <span style="font-size:1.5rem">🦕</span>
+    <span style="font-size:1.5rem">ðŸ¦•</span>
     <span class="waiting-title" id="waitRoomName">Room Name</span>
     <span class="waiting-code" id="waitInviteCode" onclick="copyCode()" title="Click to copy invite code">Code: ------</span>
     <span style="flex:1"></span>
@@ -1706,7 +1706,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     <div class="waiting-sidebar">
       <!-- Host controls -->
       <div id="hostControls" class="hidden">
-        <h3 style="margin-bottom:10px;">⚙️ Settings</h3>
+        <h3 style="margin-bottom:10px;">âš™ï¸ Settings</h3>
         <div class="settings-row">
           <span class="settings-label">Public</span>
           <button class="settings-btn" id="togglePublicBtn" onclick="togglePublic()">Yes</button>
@@ -1719,16 +1719,16 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
           </select>
         </div>
         <div style="margin-top:10px;">
-          <h3 style="margin-bottom:8px;">🤖 Add Bots</h3>
+          <h3 style="margin-bottom:8px;">ðŸ¤– Add Bots</h3>
           <div class="bot-controls">
             <button class="bot-btn bot-easy" onclick="addBot('easy')">+ Easy</button>
             <button class="bot-btn bot-medium" onclick="addBot('medium')">+ Medium</button>
             <button class="bot-btn bot-hard" onclick="addBot('hard')">+ Hard</button>
-            <button class="bot-btn bot-hardcore" onclick="addBot('hardcore')" style="background:linear-gradient(135deg,#7a0000,#ff2222);color:#fff;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:bold;">💀 Hardcore</button>
+            <button class="bot-btn bot-hardcore" onclick="addBot('hardcore')" style="background:linear-gradient(135deg,#7a0000,#ff2222);color:#fff;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:bold;">ðŸ’€ Hardcore</button>
           </div>
         </div>
         <div style="margin-top:14px;">
-          <h3 style="margin-bottom:8px;">📨 Invite Player</h3>
+          <h3 style="margin-bottom:8px;">ðŸ“¨ Invite Player</h3>
           <div class="invite-input-row">
             <input class="invite-input" id="inviteUsernameInput" placeholder="Username">
             <button class="invite-send-btn" onclick="sendInvite()">Invite</button>
@@ -1737,7 +1737,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       </div>
       <!-- Chat -->
       <div class="chat-section" style="margin-top:16px;">
-        <h3 style="margin-bottom:8px;">💬 Chat</h3>
+        <h3 style="margin-bottom:8px;">ðŸ’¬ Chat</h3>
         <div class="wait-chat-log" id="waitChatLog"></div>
         <div class="wait-chat-input-row">
           <input class="wait-chat-input" id="waitChatInput" placeholder="Say something..." maxlength="120">
@@ -1745,13 +1745,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
         </div>
       </div>
       <!-- Start / Leave -->
-      <button class="start-btn hidden" id="startGameBtn" onclick="startGame()">🦕 START GAME!</button>
+      <button class="start-btn hidden" id="startGameBtn" onclick="startGame()">ðŸ¦• START GAME!</button>
       <button class="leave-room-btn" onclick="leaveRoom()" style="margin-top:8px;">Leave Room</button>
     </div>
   </div>
 </div>
 
-<!-- ══ HUD ══════════════════════════════════════════════════════════════════ -->
+<!-- â•â• HUD â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div id="hud" class="hidden">
   <div id="topBar">
     <div class="hud-card" style="min-width:190px;">
@@ -1762,44 +1762,44 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       </div>
     </div>
     <div class="hud-card">
-      <span class="hud-label">🦴 FOSSILS</span>
+      <span class="hud-label">ðŸ¦´ FOSSILS</span>
       <span id="hudMoney" style="color:#ffd700;font-weight:bold;">$0</span>
     </div>
     <div class="hud-card">
-      <span class="hud-label">⛏️ INCOME</span>
+      <span class="hud-label">â›ï¸ INCOME</span>
       <span id="hudMPS" style="color:#66bb6a;font-weight:bold;">+$1/s</span>
     </div>
     <div class="hud-card" style="min-width:140px;">
-      <span class="hud-label">✨ LVL <span id="hudLevel">1</span> XP</span>
+      <span class="hud-label">âœ¨ LVL <span id="hudLevel">1</span> XP</span>
       <div class="bar-bg" style="width:120px;"><div class="bar-fill" id="xpFill" style="width:0%"></div></div>
     </div>
     <div class="hud-card">
-      <span class="hud-label">⚔️ K/D</span>
+      <span class="hud-label">âš”ï¸ K/D</span>
       <span id="hudKD">0/0</span>
     </div>
     <div class="hud-card" id="hudPrestige" style="display:none;">
-      <span class="hud-label">⭐ PRESTIGE</span>
-      <span id="hudPrestigeVal" style="color:#ffd700;font-weight:bold;">★0</span>
+      <span class="hud-label">â­ PRESTIGE</span>
+      <span id="hudPrestigeVal" style="color:#ffd700;font-weight:bold;">â˜…0</span>
     </div>
     <div class="hud-spacer"></div>
-    <span style="color:#557755;font-size:.85rem;font-weight:bold;letter-spacing:2px;">🦕 DINO TYCOON</span>
+    <span style="color:#557755;font-size:.85rem;font-weight:bold;letter-spacing:2px;">ðŸ¦• DINO TYCOON</span>
   </div>
 </div>
 
 <!-- Shop toggle -->
-<button id="shopToggle" class="hidden" onclick="toggleShop()">🦴 Dino Den [B]</button>
+<button id="shopToggle" class="hidden" onclick="toggleShop()">ðŸ¦´ Dino Den [B]</button>
 
 <!-- Shop -->
 <div id="shopPanel">
-  <h2>🦴 Dino Den — Upgrade Shop</h2>
+  <h2>ðŸ¦´ Dino Den â€” Upgrade Shop</h2>
   <div class="shop-tabs" id="shopTabs"></div>
   <div id="shopList"></div>
-  <button class="prestige-btn" onclick="doPrestige()">⭐ PRESTIGE ($100,000 fossils)</button>
+  <button class="prestige-btn" onclick="doPrestige()">â­ PRESTIGE ($100,000 fossils)</button>
 </div>
 
 <!-- Leaderboard -->
 <div id="lbPanel" class="hidden">
-  <h3>🏆 Fossil Leaders</h3>
+  <h3>ðŸ† Fossil Leaders</h3>
   <div id="lbList"></div>
 </div>
 
@@ -1816,7 +1816,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <div id="controls" class="hidden">
   <span class="key">WASD</span> Move &nbsp; <span class="key">Ctrl</span> Sprint &nbsp; <span class="key">Click</span> Attack<br>
   <span class="key">B</span> Shop &nbsp; <span class="key">Enter</span> Chat<br>
-  <span class="key">Space</span> Jump &nbsp; <span class="key">Tab</span> Collect &nbsp; <span class="key">Click ON enemy</span> Bite 🦷<br>
+  <span class="key">Space</span> Jump &nbsp; <span class="key">Tab</span> Collect &nbsp; <span class="key">Click ON enemy</span> Bite ðŸ¦·<br>
 <span class="key">X</span> Demolish own building (aim at it first)
 </div>
 
@@ -1826,7 +1826,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <!-- Death screen -->
 <div id="deathScreen">
   <div class="death-msg">
-    <span class="death-icon">🦴</span>
+    <span class="death-icon">ðŸ¦´</span>
     <h2>FOSSILIZED!</h2>
     <p id="deathMsg">Respawning in 5s...</p>
   </div>
@@ -1850,32 +1850,32 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 </div>
 
 <!-- Match Timer -->
-<div id="matchTimer" class="hidden">⏱ 10:00</div>
+<div id="matchTimer" class="hidden">â± 10:00</div>
 
 <!-- Match Over Screen -->
 <div id="matchOver" class="hidden">
   <div class="matchover-box" style="min-width:820px;max-width:1000px;">
-    <div class="matchover-title">🏆 MATCH OVER!</div>
+    <div class="matchover-title">ðŸ† MATCH OVER!</div>
     <div class="matchover-sub" id="matchoverWinner" style="font-size:.95rem;margin-bottom:4px;"></div>
     <div id="matchoverQuestBanner" style="display:none;margin:8px 0;padding:10px 16px;border-radius:10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);color:#ffd700;font-size:.85rem;"></div>
     <div class="matchover-boards">
       <div class="matchover-board">
-        <div class="matchover-board-title wealth">💰 Wealth</div>
+        <div class="matchover-board-title wealth">ðŸ’° Wealth</div>
         <div id="matchoverWealth"></div>
       </div>
       <div class="matchover-board">
-        <div class="matchover-board-title kills">⚔️ Kills</div>
+        <div class="matchover-board-title kills">âš”ï¸ Kills</div>
         <div id="matchoverKills"></div>
       </div>
       <div class="matchover-board">
-        <div class="matchover-board-title" style="color:#ff6b6b;">🗡️ Damage</div>
+        <div class="matchover-board-title" style="color:#ff6b6b;">ðŸ—¡ï¸ Damage</div>
         <div id="matchoverDamage"></div>
       </div>
     </div>
     <button onclick="matchOverQuit()" style="
       margin-top:20px;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
       background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;font-size:1rem;font-weight:bold;
-    ">🚪 Back to Lobby</button>
+    ">ðŸšª Back to Lobby</button>
   </div>
 </div>
 
@@ -1883,7 +1883,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <div id="abilityHud" class="hidden">
   <div class="ability-slot">
     <div class="ability-box" id="abilityBoxQ">
-      <div class="ability-box-icon">⚡</div>
+      <div class="ability-box-icon">âš¡</div>
       <div class="ability-key-badge">Q</div>
       <div class="ability-cd-overlay hidden" id="abilityCdQ">6s</div>
     </div>
@@ -1891,7 +1891,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </div>
   <div class="ability-slot">
     <div class="ability-box" id="abilityBoxE">
-      <div class="ability-box-icon">🦖</div>
+      <div class="ability-box-icon">ðŸ¦–</div>
       <div class="ability-key-badge">E</div>
       <div class="ability-cd-overlay hidden" id="abilityCdE">9s</div>
     </div>
@@ -1902,7 +1902,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <!-- Daily Quests Modal -->
 <div class="modal-overlay hidden" id="dailyQuestsModal">
   <div class="modal" style="width:420px;">
-    <h2>📋 Daily Quests</h2>
+    <h2>ðŸ“‹ Daily Quests</h2>
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">
       <span style="color:#557755;font-size:.8rem;">Resets in</span>
       <span id="questResetTimer" style="color:#7fff6a;font-size:.85rem;font-weight:bold;background:rgba(100,200,80,.1);
@@ -1927,14 +1927,14 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
     padding:40px 48px;text-align:center;min-width:320px;
     box-shadow:0 0 60px rgba(50,200,50,.15);
   ">
-    <div style="font-size:3rem;margin-bottom:8px;">🦕</div>
+    <div style="font-size:3rem;margin-bottom:8px;">ðŸ¦•</div>
     <div style="font-size:1.5rem;font-weight:900;color:#7fff6a;margin-bottom:6px;">PAUSED</div>
     <div style="color:#557755;font-size:.85rem;margin-bottom:28px;">Press ESC to resume</div>
     <button onclick="togglePause()" style="
       width:100%;padding:13px;border:none;border-radius:12px;cursor:pointer;
       background:linear-gradient(135deg,#2d7a1e,#66bb6a);color:#fff;
       font-size:1rem;font-weight:bold;margin-bottom:10px;
-    ">▶ Resume Game</button>
+    ">â–¶ Resume Game</button>
     <button onclick="saveCurrentGame()" style="
       width:100%;padding:13px;border:1px solid rgba(100,200,80,.3);border-radius:12px;
       cursor:pointer;background:rgba(100,200,80,.08);color:#7fff6a;font-size:1rem;margin-bottom:10px;
@@ -1946,7 +1946,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
       display:flex;align-items:center;justify-content:center;gap:8px;
     "><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Quit to Lobby</button>
     <div id="autoUpdateHint" style="display:none;margin-top:8px;font-size:.72rem;color:#7fff6a;opacity:.85;">
-      🔄 Auto-update ON — quitting will overwrite your save
+      ðŸ”„ Auto-update ON â€” quitting will overwrite your save
     </div>
   </div>
 </div>
@@ -1954,7 +1954,7 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 <!-- Game -->
 <div id="gameContainer"></div>
 <div id="collectHoleBtn" style="display:none;position:fixed;transform:translate(-50%,-100%);z-index:1000;pointer-events:all;">
-  <button onclick="if(document.pointerLockElement)document.exitPointerLock();window.gameSocket&&window.gameSocket.emit('collectHoleCoins')" style="background:linear-gradient(135deg,#7b2ff7,#a855f7);color:#fff;border:none;border-radius:24px;padding:10px 28px;font-size:.9rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(123,47,247,.7);letter-spacing:.5px;white-space:nowrap;">🕳️ Collect All Coins</button>
+  <button onclick="if(document.pointerLockElement)document.exitPointerLock();window.gameSocket&&window.gameSocket.emit('collectHoleCoins')" style="background:linear-gradient(135deg,#7b2ff7,#a855f7);color:#fff;border:none;border-radius:24px;padding:10px 28px;font-size:.9rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(123,47,247,.7);letter-spacing:.5px;white-space:nowrap;">ðŸ•³ï¸ Collect All Coins</button>
 </div>
 <div id="crosshair3d" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:999;">
   <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1970,13 +1970,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
   </svg>
 </div>
 
-<!-- socket.io is local/fast — load it now -->
+<!-- socket.io is local/fast â€” load it now -->
 <script src="/socket.io/socket.io.js"></script>
 <!-- Three.js, dino3d.js, and game3d.js are loaded lazily when a 3D game starts.
      For 2D mode: Phaser + game.js are loaded lazily instead.
-     Homepage/shop use a fast 2D canvas renderer — no Three.js needed at lobby time. -->
+     Homepage/shop use a fast 2D canvas renderer â€” no Three.js needed at lobby time. -->
 <script>
-// ── Sound Engine (Web Audio API — no files needed) ───────────────────────────
+// â”€â”€ Sound Engine (Web Audio API â€” no files needed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.SFX = (() => {
   let ctx = null;
   const getCtx = () => {
@@ -2009,7 +2009,7 @@ window.SFX = (() => {
     src.connect(filt); filt.connect(g); g.connect(c.destination);
     src.start(); src.stop(c.currentTime+dur+0.01);
   };
-  // Band-passed noise whose centre frequency glides f0 -> f1 — a "swish"/sweep
+  // Band-passed noise whose centre frequency glides f0 -> f1 â€” a "swish"/sweep
   const swoosh = (dur, vol, f0, f1) => {
     const c=getCtx(); const sz=Math.ceil(c.sampleRate*dur);
     const buf=c.createBuffer(1,sz,c.sampleRate), d=buf.getChannelData(0);
@@ -2029,7 +2029,7 @@ window.SFX = (() => {
   };
   const play = fn => { if (!(window.GAME_SETTINGS?.soundEnabled === false)) fn(); };
 
-  // ── Ambient background music — a slow looping chord pad, fully procedural ──
+  // â”€â”€ Ambient background music â€” a slow looping chord pad, fully procedural â”€â”€
   const MUSIC_CHORDS = [
     [196.00, 246.94, 293.66], // G major
     [220.00, 261.63, 329.63], // A minor
@@ -2079,7 +2079,7 @@ window.SFX = (() => {
     hit:       () => play(()=>{ noise(0.1,0.35,1200); osc(150,'square',0.08,0.2); }),
     // Sweep hit: a high, fast rising swish (layered on top of the normal hit sound)
     sweep:     () => play(()=>{ swoosh(0.22,0.8,2400,7500); osc(2200,'sine',0.18,0.1,4600); }),
-    // Critical hit: layered — a low impact thud and sharp crack, a ringing bell chord
+    // Critical hit: layered â€” a low impact thud and sharp crack, a ringing bell chord
     // (slightly detuned partials so it shimmers), then a fast sparkle climbing above it
     crit:      () => play(()=>{
       osc(70,'sine',0.22,0.55,38); osc(140,'triangle',0.14,0.3,70);
@@ -2098,7 +2098,7 @@ window.SFX = (() => {
     chatMsg:   () => play(()=>{ osc(1200,'sine',0.05,0.15); }),
     countdown: () => play(()=>{ osc(600,'sine',0.12,0.1,600); }),
     start:     () => play(()=>{ noise(0.2,0.3,500); osc(130,'sawtooth',0.4,0.6); setTimeout(()=>osc(200,'sawtooth',0.3,0.3),180); }),
-    // Big celebratory "ta-da!" — rising sparkle arpeggio panned across the stereo
+    // Big celebratory "ta-da!" â€” rising sparkle arpeggio panned across the stereo
     // field, then a warm major chord landing. Used for fossil drops / achievements.
     fanfare:   () => play(()=>{
       const sparkle = [659,784,988,1175,1318];
@@ -2117,7 +2117,7 @@ document.addEventListener('click', e => {
     window.SFX.pop();
 }, true);
 
-// ── Global error surface (shows JS errors as toasts) ─────────────────────────
+// â”€â”€ Global error surface (shows JS errors as toasts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.onerror = function(msg, src, line, col, err) {
   const t = document.getElementById('toast');
   if (!t) return;
@@ -2125,7 +2125,7 @@ window.onerror = function(msg, src, line, col, err) {
   d.className = 'toast-item';
   d.style.borderColor = 'rgba(255,100,100,.5)';
   d.style.color = '#ff8888';
-  d.textContent = '⚠️ JS Error: ' + msg + ' (line ' + line + ')';
+  d.textContent = 'âš ï¸ JS Error: ' + msg + ' (line ' + line + ')';
   t.appendChild(d);
   setTimeout(() => d.remove(), 6000);
 };
@@ -2136,18 +2136,18 @@ window.addEventListener('unhandledrejection', e => {
   d.className = 'toast-item';
   d.style.borderColor = 'rgba(255,100,100,.5)';
   d.style.color = '#ff8888';
-  d.textContent = '⚠️ Async Error: ' + (e.reason?.message || e.reason || 'Unknown');
+  d.textContent = 'âš ï¸ Async Error: ' + (e.reason?.message || e.reason || 'Unknown');
   t.appendChild(d);
   setTimeout(() => d.remove(), 6000);
 });
 
-// ── Globals ──────────────────────────────────────────────────────────────────
+// â”€â”€ Globals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let authMode = 'login';
 let currentUser = null;
 let currentRoom = null;
 let isHost = false;
 let roomPublicFlag = true;
-// Per-mode load tracking — both files are IIFEs so loading both is safe (no const conflicts)
+// Per-mode load tracking â€” both files are IIFEs so loading both is safe (no const conflicts)
 const _engineLoaded = { '2d': false, '3d': false };
 const _engineLoading = { '2d': false, '3d': false };
 const _engineFuncs = { '2d': {}, '3d': {} }; // per-mode { startGame, onGameReady } refs
@@ -2164,13 +2164,13 @@ function loadGameScripts(mode, cb) {
     const s = document.createElement('script');
     s.src = src;
     if (opts?.crossOrigin) s.crossOrigin = opts.crossOrigin;
-    s.onerror = () => showToast('❌ Failed to load game engine', 5000);
+    s.onerror = () => showToast('âŒ Failed to load game engine', 5000);
     s.onload = onLoad;
     document.head.appendChild(s);
   }
 
   if (mode === '2d') {
-    showToast('🗺️ Loading 2D world...', 8000);
+    showToast('ðŸ—ºï¸ Loading 2D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js', null, () => {
       appendScript('game.js?v=13', null, () => {
         _engineLoaded['2d'] = true; _engineLoading['2d'] = false;
@@ -2179,10 +2179,10 @@ function loadGameScripts(mode, cb) {
       });
     });
   } else {
-    showToast('🌐 Loading 3D world...', 8000);
+    showToast('ðŸŒ Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=15', null, () => {
-        appendScript('game3d.js?v=37', null, () => {
+        appendScript('game3d.js?v=38', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -2192,7 +2192,7 @@ function loadGameScripts(mode, cb) {
   }
 }
 
-// ── Landing page ──────────────────────────────────────────────────────────────
+// â”€â”€ Landing page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function goToAuth(mode) {
   window.SFX?.pop();
   document.getElementById('landingScreen').classList.add('hidden');
@@ -2210,7 +2210,7 @@ function backToLanding() {
 }
 window.backToLanding = backToLanding;
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchTab(m) {
   authMode = m;
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',i===(m==='login'?0:1)));
@@ -2264,7 +2264,7 @@ window.addEventListener('load', () => {
   if (tok && u) { currentUser = u; enterGame(tok); }
 });
 
-// ── Screen management — fully explicit, no clever logic ───────────────────────
+// â”€â”€ Screen management â€” fully explicit, no clever logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showScreen(name) {
   // Hide everything first
   document.getElementById('authScreen').style.display   = 'none';
@@ -2283,12 +2283,12 @@ function showScreen(name) {
   }
 }
 
-// ── Lobby logic ────────────────────────────────────────────────────────────────
+// â”€â”€ Lobby logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderRooms(rooms) {
   const grid=document.getElementById('roomGrid');
   const _rc=document.getElementById('roomCount'); if(_rc) _rc.textContent=rooms.length ? `(${rooms.length})` : '';
   const _rc2=document.getElementById('roomCount2'); if(_rc2) _rc2.textContent=rooms.length ? `(${rooms.length})` : '';
-  if(!rooms.length){grid.innerHTML='<div class="no-rooms"><span class="no-rooms-icon">🦕</span>No rooms yet.<br>Be the first to create one!</div>';return;}
+  if(!rooms.length){grid.innerHTML='<div class="no-rooms"><span class="no-rooms-icon">ðŸ¦•</span>No rooms yet.<br>Be the first to create one!</div>';return;}
   grid.innerHTML=rooms.map(r=>`
     <div class="room-card" onclick="joinRoom('${r.id}')">
       <div class="room-name">${esc(r.name)}</div>
@@ -2296,25 +2296,25 @@ function renderRooms(rooms) {
       <div class="room-meta">
         <span class="room-badge badge-mode">${modeLabel(r.gameMode)}</span>
         ${r.map && r.map !== 'jungle' ? `<span class="room-badge badge-map">${mapLabel(r.map)}</span>` : ''}
-        <span class="room-badge badge-render">${r.renderMode==='2d'?'🗺️ 2D':'🌐 3D'}</span>
-        <span class="room-badge badge-players">🦕 ${r.playerCount}/${r.maxPlayers}</span>
-        <span class="room-badge badge-status">${r.status==='playing'?'🎮 In Game':'⏳ Waiting'}</span>
+        <span class="room-badge badge-render">${r.renderMode==='2d'?'ðŸ—ºï¸ 2D':'ðŸŒ 3D'}</span>
+        <span class="room-badge badge-players">ðŸ¦• ${r.playerCount}/${r.maxPlayers}</span>
+        <span class="room-badge badge-status">${r.status==='playing'?'ðŸŽ® In Game':'â³ Waiting'}</span>
       </div>
-      <button class="room-join-btn">Join Room →</button>
+      <button class="room-join-btn">Join Room â†’</button>
     </div>
   `).join('');
 }
 
-function modeLabel(m){return{classic:'🦕 Classic',rumble:'⚔️ Rumble',survival:'☄️ Survival'}[m]||m;}
-function mapLabel(m){return{jungle:'🌴 Classic',desert:'🏜️ Desert',volcanic:'🌋 Volcanic',arctic:'❄️ Arctic',swamp:'🌿 Swamp'}[m]||m;}
+function modeLabel(m){return{classic:'ðŸ¦• Classic',rumble:'âš”ï¸ Rumble',survival:'â˜„ï¸ Survival'}[m]||m;}
+function mapLabel(m){return{jungle:'ðŸŒ´ Classic',desert:'ðŸœï¸ Desert',volcanic:'ðŸŒ‹ Volcanic',arctic:'â„ï¸ Arctic',swamp:'ðŸŒ¿ Swamp'}[m]||m;}
 function esc(s){return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ── Create room modal ─────────────────────────────────────────────────────────
+// â”€â”€ Create room modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _botCounts = { easy:0, medium:0, hard:0, hardcore:0 };
 function changeBotCount(diff, delta) {
   const total = Object.values(_botCounts).reduce((a,b)=>a+b,0);
   const max = parseInt(document.getElementById('maxPlayers').value) - 1;
-  if (delta > 0 && total >= max) { window.SFX?.error(); showToast('❌ No more slots!'); return; }
+  if (delta > 0 && total >= max) { window.SFX?.error(); showToast('âŒ No more slots!'); return; }
   _botCounts[diff] = Math.max(0, _botCounts[diff] + delta);
   document.getElementById('botCount_' + diff).textContent = _botCounts[diff];
   window.SFX?.pop();
@@ -2327,9 +2327,9 @@ function setDifficulty(d) {
     document.getElementById('diff_'+x).classList.toggle('diff-active', x===d);
   });
   const descs = {
-    easy:   '🌿 Easy — all upgrades cost <b style="color:#2ed573;">70% cheaper</b>. Great for learning!',
-    medium: '⚔️ Medium — <b style="color:#ffa502;">normal costs</b>. The balanced experience.',
-    hard:   '☄️ Hard — all upgrades cost <b style="color:#ff4757;">50% more expensive</b>. For veterans!',
+    easy:   'ðŸŒ¿ Easy â€” all upgrades cost <b style="color:#2ed573;">70% cheaper</b>. Great for learning!',
+    medium: 'âš”ï¸ Medium â€” <b style="color:#ffa502;">normal costs</b>. The balanced experience.',
+    hard:   'â˜„ï¸ Hard â€” all upgrades cost <b style="color:#ff4757;">50% more expensive</b>. For veterans!',
   };
   document.getElementById('difficultyDesc').innerHTML = descs[d];
   window.SFX?.pop();
@@ -2370,41 +2370,41 @@ function _openCreateRoomForm() {
     savedRow.style.display = 'flex';
     const d = new Date(saved.savedAt);
     document.getElementById('savedGameInfo').textContent =
-      `${saved.buildings?.length||0} buildings · $${(saved.money||0).toLocaleString()} · saved ${d.toLocaleDateString()}`;
+      `${saved.buildings?.length||0} buildings Â· $${(saved.money||0).toLocaleString()} Â· saved ${d.toLocaleDateString()}`;
     document.getElementById('loadSavedToggle').classList.remove('on');
   } else {
     savedRow.style.display = 'none';
   }
   // Update modal title to show selected mode
-  const modeLabel = _selectedRenderMode === '2d' ? '🗺️ 2D Classic' : '🌐 3D Immersive';
-  document.querySelector('#playNowModal h2').textContent = `🦖 PLAY NOW! — ${modeLabel}`;
+  const modeLabel = _selectedRenderMode === '2d' ? 'ðŸ—ºï¸ 2D Classic' : 'ðŸŒ 3D Immersive';
+  document.querySelector('#playNowModal h2').textContent = `ðŸ¦– PLAY NOW! â€” ${modeLabel}`;
   document.getElementById('playNowModal').classList.remove('hidden');
 }
 
-// ── Settings ──────────────────────────────────────────────────────────────────
+// â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SETTINGS_DEFS = [
-  // ── Performance ──
-  { key:'lowQuality',      label:'⚡ Low Quality Mode',     desc:'Disables clouds, decorations & antialiasing — big FPS boost on slow devices', default:false },
-  // ── Visuals ──
-  { key:'killExplosions',  label:'💥 Kill Explosions',       desc:'Particle burst when a dino is eliminated',          default:true },
-  { key:'coinSparkles',    label:'✨ Coin Sparkles',          desc:'Gold particles when you pick up dropped money',      default:true },
-  { key:'killBannerOn',    label:'🏆 Kill Banner',           desc:'Animated on-screen banner when you eliminate someone', default:true },
-  { key:'damageNumbers',   label:'💢 Damage Numbers',        desc:'Floating numbers showing damage dealt/received',     default:true },
-  { key:'arenaFlash',      label:'🔴 Hit Screen Flash',      desc:'Brief red flash on screen when you take damage',    default:true },
-  { key:'cameraShake',     label:'📷 Camera Shake',          desc:'Screen wobbles when you take damage or knockback',   default:true },
-  { key:'knockbackEffect', label:'🌀 Knockback Animation',   desc:'Smooth slide when you or enemies get knocked back',  default:true },
-  { key:'comboCounter',    label:'🔥 Combo Counter',         desc:'Shows a combo multiplier when you land rapid hits',  default:true },
-  { key:'roarEffect',      label:'🦖 Roar Visual Effect',    desc:'Shockwave rings and camera shake when you or others roar', default:true },
-  { key:'lobbyParticles',  label:'🌿 Lobby Particles',       desc:'Floating emoji animations in the lobby background', default:true },
-  // ── Gameplay UI ──
-  { key:'viewBobbing',     label:'👀 View Bobbing (3D)',     desc:'Arms and camera bob as you walk in first-person mode', default:true },
-  { key:'colorblindHpBar', label:'🎨 Colorblind-Friendly HP Bars', desc:'Switch HP bar colors from green/red to blue/orange', default:false },
-  // ── Controls ──
-  { key:'fullscreenPlay',  label:'🖥️ Fullscreen While Playing', desc:'Go fullscreen when you start playing. In Chrome/Edge this lets Ctrl+W (sprint forward) work without closing the tab.', default:true },
-  { key:'alwaysSprint',    label:'🏃 Always Sprint',         desc:'Sprint whenever you move forward, no Ctrl needed. You only get sweep hits while standing, strafing or backing up.', default:false },
-  // ── Audio ──
-  { key:'soundEnabled',    label:'🔊 Sound Effects',         desc:'All in-game sounds (hits, buys, level ups, etc.)',   default:true },
-  { key:'musicEnabled',    label:'🎵 Background Music',      desc:'Soft ambient music loop while playing',              default:true },
+  // â”€â”€ Performance â”€â”€
+  { key:'lowQuality',      label:'âš¡ Low Quality Mode',     desc:'Disables clouds, decorations & antialiasing â€” big FPS boost on slow devices', default:false },
+  // â”€â”€ Visuals â”€â”€
+  { key:'killExplosions',  label:'ðŸ’¥ Kill Explosions',       desc:'Particle burst when a dino is eliminated',          default:true },
+  { key:'coinSparkles',    label:'âœ¨ Coin Sparkles',          desc:'Gold particles when you pick up dropped money',      default:true },
+  { key:'killBannerOn',    label:'ðŸ† Kill Banner',           desc:'Animated on-screen banner when you eliminate someone', default:true },
+  { key:'damageNumbers',   label:'ðŸ’¢ Damage Numbers',        desc:'Floating numbers showing damage dealt/received',     default:true },
+  { key:'arenaFlash',      label:'ðŸ”´ Hit Screen Flash',      desc:'Brief red flash on screen when you take damage',    default:true },
+  { key:'cameraShake',     label:'ðŸ“· Camera Shake',          desc:'Screen wobbles when you take damage or knockback',   default:true },
+  { key:'knockbackEffect', label:'ðŸŒ€ Knockback Animation',   desc:'Smooth slide when you or enemies get knocked back',  default:true },
+  { key:'comboCounter',    label:'ðŸ”¥ Combo Counter',         desc:'Shows a combo multiplier when you land rapid hits',  default:true },
+  { key:'roarEffect',      label:'ðŸ¦– Roar Visual Effect',    desc:'Shockwave rings and camera shake when you or others roar', default:true },
+  { key:'lobbyParticles',  label:'ðŸŒ¿ Lobby Particles',       desc:'Floating emoji animations in the lobby background', default:true },
+  // â”€â”€ Gameplay UI â”€â”€
+  { key:'viewBobbing',     label:'ðŸ‘€ View Bobbing (3D)',     desc:'Arms and camera bob as you walk in first-person mode', default:true },
+  { key:'colorblindHpBar', label:'ðŸŽ¨ Colorblind-Friendly HP Bars', desc:'Switch HP bar colors from green/red to blue/orange', default:false },
+  // â”€â”€ Controls â”€â”€
+  { key:'fullscreenPlay',  label:'ðŸ–¥ï¸ Fullscreen While Playing', desc:'Go fullscreen when you start playing. In Chrome/Edge this lets Ctrl+W (sprint forward) work without closing the tab.', default:true },
+  { key:'alwaysSprint',    label:'ðŸƒ Always Sprint',         desc:'Sprint whenever you move forward, no Ctrl needed. You only get sweep hits while standing, strafing or backing up.', default:false },
+  // â”€â”€ Audio â”€â”€
+  { key:'soundEnabled',    label:'ðŸ”Š Sound Effects',         desc:'All in-game sounds (hits, buys, level ups, etc.)',   default:true },
+  { key:'musicEnabled',    label:'ðŸŽµ Background Music',      desc:'Soft ambient music loop while playing',              default:true },
 ];
 let GAME_SETTINGS = {};
 
@@ -2435,7 +2435,7 @@ function applySettings() {
     cam.fov = GAME_SETTINGS.fov;
     cam.updateProjectionMatrix();
   }
-  // Background music toggle — only matters while actually in a match
+  // Background music toggle â€” only matters while actually in a match
   if (GAME_SETTINGS.musicEnabled && window._gameScene) window.SFX?.startMusic?.();
   else window.SFX?.stopMusic?.();
   document.body.classList.toggle('colorblind-hp', !!GAME_SETTINGS.colorblindHpBar);
@@ -2444,7 +2444,7 @@ function applySettings() {
 function openSettingsModal() {
   window.SFX?.pop();
   loadSettings();
-  const SECTIONS = { 'Performance':'⚡', 'Visuals':'🎨', 'Gameplay UI':'🖥️', 'Controls':'🎮', 'Audio':'🔊' };
+  const SECTIONS = { 'Performance':'âš¡', 'Visuals':'ðŸŽ¨', 'Gameplay UI':'ðŸ–¥ï¸', 'Controls':'ðŸŽ®', 'Audio':'ðŸ”Š' };
   const SECTION_KEYS = {
     'Performance': ['lowQuality'],
     'Visuals': ['killExplosions','coinSparkles','killBannerOn','damageNumbers','arenaFlash','cameraShake','knockbackEffect','comboCounter','roarEffect','lobbyParticles'],
@@ -2470,7 +2470,7 @@ function openSettingsModal() {
     <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div>
-          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">🎯 3D Mouse Sensitivity</div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">ðŸŽ¯ 3D Mouse Sensitivity</div>
           <div style="color:#557755;font-size:.72rem;margin-top:2px;">How fast the camera turns in 3D mode</div>
         </div>
         <span id="sensDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.mouseSensitivity}</span>
@@ -2485,23 +2485,23 @@ function openSettingsModal() {
     <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div>
-          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">🔭 3D Field of View</div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">ðŸ”­ 3D Field of View</div>
           <div style="color:#557755;font-size:.72rem;margin-top:2px;">How wide the camera sees in 3D mode</div>
         </div>
-        <span id="fovDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.fov}°</span>
+        <span id="fovDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.fov}Â°</span>
       </div>
       <input type="range" id="setting_fov" min="60" max="110" value="${GAME_SETTINGS.fov}"
         style="width:100%;accent-color:#4caf50;"
-        oninput="document.getElementById('fovDisplay').textContent=this.value+'°'">
+        oninput="document.getElementById('fovDisplay').textContent=this.value+'Â°'">
       <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
-        <span>Narrow</span><span>Default (70°)</span><span>Wide</span>
+        <span>Narrow</span><span>Default (70Â°)</span><span>Wide</span>
       </div>
     </div>
-    <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4a7a4a;padding:14px 0 6px;">🎮 Camera</div>
+    <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4a7a4a;padding:14px 0 6px;">ðŸŽ® Camera</div>
     <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div>
-          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">📏 Camera Distance (3D)</div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">ðŸ“ Camera Distance (3D)</div>
           <div style="color:#557755;font-size:.7rem;margin-top:2px;">How far behind the dino the camera sits</div>
         </div>
         <span id="camDistDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.camDist ?? 7}</span>
@@ -2516,7 +2516,7 @@ function openSettingsModal() {
     <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div>
-          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">🌫️ Render Distance</div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.88rem;">ðŸŒ«ï¸ Render Distance</div>
           <div style="color:#557755;font-size:.7rem;margin-top:2px;">How far into the distance you can see (lower = better FPS)</div>
         </div>
         <span id="fogDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.renderDist ?? 5}</span>
@@ -2546,7 +2546,7 @@ function saveSettings() {
   localStorage.setItem('dt_settings', JSON.stringify(GAME_SETTINGS));
   applySettings();
   closeModal('settingsModal');
-  showToast('✅ Settings saved!');
+  showToast('âœ… Settings saved!');
   window.SFX?.pop();
 }
 
@@ -2567,11 +2567,11 @@ function initFossilDropCard(lastDailyReward) {
   if (msLeft > 0) {
     const hrs = Math.ceil(msLeft / 3600000);
     if (sub) sub.textContent = `Come back in ${hrs}h`;
-    if (btn) { btn.textContent = '⏳ Already claimed'; btn.disabled = true; btn.style.opacity = '0.5'; }
+    if (btn) { btn.textContent = 'â³ Already claimed'; btn.disabled = true; btn.style.opacity = '0.5'; }
     if (card) card.style.cursor = 'default';
   } else {
     if (sub) sub.textContent = 'Daily reward';
-    if (btn) { btn.textContent = 'CLAIM FREE ▶'; btn.disabled = false; btn.style.opacity = '1'; }
+    if (btn) { btn.textContent = 'CLAIM FREE â–¶'; btn.disabled = false; btn.style.opacity = '1'; }
     if (card) card.style.cursor = 'pointer';
   }
 }
@@ -2586,7 +2586,7 @@ function openSavedGamesModal() {
 function renderSavedGamesList(games) {
   const el = document.getElementById('savedGamesList');
   if (!games.length) {
-    el.innerHTML = '<div style="color:#557755;text-align:center;padding:30px;">No saved games yet.<br><span style="font-size:.8rem;">Save a game mid-match using ESC → 💾 Save Game</span></div>';
+    el.innerHTML = '<div style="color:#557755;text-align:center;padding:30px;">No saved games yet.<br><span style="font-size:.8rem;">Save a game mid-match using ESC â†’ ðŸ’¾ Save Game</span></div>';
     return;
   }
   const diffColors = {easy:'#2ed573',medium:'#ffa502',hard:'#ff4757'};
@@ -2598,18 +2598,18 @@ function renderSavedGamesList(games) {
       ? (() => { const lp = new Date(g.lastPlayedAt); return lp.toLocaleDateString() + ' ' + lp.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); })()
       : 'Never';
     const autoBtn = g.autoUpdate
-      ? `<span style="font-size:.72rem;padding:4px 8px;border-radius:6px;background:rgba(100,200,80,.2);color:#7fff6a;border:1px solid rgba(100,200,80,.4);">🔄 Auto-update ON</span>`
-      : `<button onclick="toggleAutoUpdate(${g.id})" style="font-size:.72rem;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.05);color:#aaa;border:1px solid rgba(255,255,255,.1);cursor:pointer;">🔄 Auto-update</button>`;
+      ? `<span style="font-size:.72rem;padding:4px 8px;border-radius:6px;background:rgba(100,200,80,.2);color:#7fff6a;border:1px solid rgba(100,200,80,.4);">ðŸ”„ Auto-update ON</span>`
+      : `<button onclick="toggleAutoUpdate(${g.id})" style="font-size:.72rem;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.05);color:#aaa;border:1px solid rgba(255,255,255,.1);cursor:pointer;">ðŸ”„ Auto-update</button>`;
     return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(100,200,80,.15);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
       <div style="flex:1;">
         <div style="font-weight:bold;color:#e8f5e9;margin-bottom:3px;">${esc(g.name)}</div>
-        <div style="font-size:.75rem;color:#557755;">Saved ${dateStr} · <span style="color:${dc}">${g.difficulty||'medium'}</span></div>
+        <div style="font-size:.75rem;color:#557755;">Saved ${dateStr} Â· <span style="color:${dc}">${g.difficulty||'medium'}</span></div>
         <div style="font-size:.75rem;color:#668866;margin-top:2px;">Last played: ${lpStr}</div>
-        <div style="font-size:.78rem;color:#88aa88;margin-top:3px;">💰 $${fmt(g.money)} · ⭐ Lvl ${g.level||1} · 🏗️ ${(g.buildings||[]).length} buildings</div>
+        <div style="font-size:.78rem;color:#88aa88;margin-top:3px;">ðŸ’° $${fmt(g.money)} Â· â­ Lvl ${g.level||1} Â· ðŸ—ï¸ ${(g.buildings||[]).length} buildings</div>
         <div style="margin-top:6px;">${autoBtn}</div>
       </div>
-      <button onclick="loadSavedGameNow(${g.id})" style="padding:8px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.8rem;font-weight:bold;cursor:pointer;margin-right:6px;">▶ Play</button>
-      <button onclick="deleteSavedGame(${g.id})" style="padding:8px 10px;border:1px solid rgba(255,100,100,.3);border-radius:8px;background:transparent;color:#ff8888;font-size:.8rem;cursor:pointer;">🗑</button>
+      <button onclick="loadSavedGameNow(${g.id})" style="padding:8px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#2d7a1e,#4caf50);color:#fff;font-size:.8rem;font-weight:bold;cursor:pointer;margin-right:6px;">â–¶ Play</button>
+      <button onclick="deleteSavedGame(${g.id})" style="padding:8px 10px;border:1px solid rgba(255,100,100,.3);border-radius:8px;background:transparent;color:#ff8888;font-size:.8rem;cursor:pointer;">ðŸ—‘</button>
     </div>`;
   }).join('');
 }
@@ -2624,7 +2624,7 @@ function renderSavedGamesPanel(games, el) {
 function _renderSavedCards(games, el) {
   if (!el) el = document.getElementById('lbySavedList');
   if (!games || !games.length) {
-    el.innerHTML = '<div style="color:#557755;text-align:center;padding:60px 0;font-size:.95rem;">No saved games yet.<br><span style="font-size:.8rem;color:#334433;display:block;margin-top:8px;">Save a game mid-match using ESC → 💾 Save Game</span></div>';
+    el.innerHTML = '<div style="color:#557755;text-align:center;padding:60px 0;font-size:.95rem;">No saved games yet.<br><span style="font-size:.8rem;color:#334433;display:block;margin-top:8px;">Save a game mid-match using ESC â†’ ðŸ’¾ Save Game</span></div>';
     return;
   }
   const diffColors = {easy:'#2ed573',medium:'#ffa502',hard:'#ff4757'};
@@ -2636,19 +2636,19 @@ function _renderSavedCards(games, el) {
       ? (() => { const lp = new Date(g.lastPlayedAt); return lp.toLocaleDateString() + ' ' + lp.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); })()
       : 'Never';
     const autoBtn = g.autoUpdate
-      ? `<span style="font-size:.72rem;padding:4px 9px;border-radius:6px;background:rgba(100,200,80,.2);color:#7fff6a;border:1px solid rgba(100,200,80,.4);">🔄 Auto-update ON</span>`
-      : `<button onclick="toggleAutoUpdate(${g.id})" style="font-size:.72rem;padding:4px 9px;border-radius:6px;background:rgba(255,255,255,.05);color:#aaa;border:1px solid rgba(255,255,255,.1);cursor:pointer;">🔄 Auto-update</button>`;
+      ? `<span style="font-size:.72rem;padding:4px 9px;border-radius:6px;background:rgba(100,200,80,.2);color:#7fff6a;border:1px solid rgba(100,200,80,.4);">ðŸ”„ Auto-update ON</span>`
+      : `<button onclick="toggleAutoUpdate(${g.id})" style="font-size:.72rem;padding:4px 9px;border-radius:6px;background:rgba(255,255,255,.05);color:#aaa;border:1px solid rgba(255,255,255,.1);cursor:pointer;">ðŸ”„ Auto-update</button>`;
     return `<div style="background:rgba(20,50,15,.7);border:1px solid rgba(100,200,80,.18);border-radius:16px;padding:18px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;">
       <div style="color:#7fff6a;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><rect x="7.2" y="4" width="7.6" height="4.6"/><rect x="6.2" y="13.4" width="11.6" height="5.6"/></svg></div>
       <div style="flex:1;">
         <div style="font-weight:900;color:#e8f5e9;font-size:1rem;margin-bottom:4px;">${esc(g.name)}</div>
-        <div style="font-size:.75rem;color:#557755;">Saved ${dateStr} · <span style="color:${dc};font-weight:bold;">${g.difficulty||'medium'}</span></div>
+        <div style="font-size:.75rem;color:#557755;">Saved ${dateStr} Â· <span style="color:${dc};font-weight:bold;">${g.difficulty||'medium'}</span></div>
         <div style="font-size:.75rem;color:#668866;margin-top:2px;">Last played: ${lpStr}</div>
-        <div style="font-size:.8rem;color:#88aa88;margin-top:4px;">💰 $${fmt(g.money)} &nbsp;⭐ Lvl ${g.level||1} &nbsp;🏗️ ${(g.buildings||[]).length} buildings</div>
+        <div style="font-size:.8rem;color:#88aa88;margin-top:4px;">ðŸ’° $${fmt(g.money)} &nbsp;â­ Lvl ${g.level||1} &nbsp;ðŸ—ï¸ ${(g.buildings||[]).length} buildings</div>
         <div style="margin-top:7px;">${autoBtn}</div>
       </div>
-      <button onclick="loadSavedGameNow(${g.id})" style="padding:10px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;font-size:.88rem;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(76,220,30,.35);">▶ PLAY</button>
-      <button onclick="deleteSavedGame(${g.id})" style="padding:10px 12px;border:1px solid rgba(255,100,100,.3);border-radius:10px;background:transparent;color:#ff8888;font-size:.88rem;cursor:pointer;">🗑</button>
+      <button onclick="loadSavedGameNow(${g.id})" style="padding:10px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,#1a8000,#4cde1e);color:#fff;font-size:.88rem;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(76,220,30,.35);">â–¶ PLAY</button>
+      <button onclick="deleteSavedGame(${g.id})" style="padding:10px 12px;border:1px solid rgba(255,100,100,.3);border-radius:10px;background:transparent;color:#ff8888;font-size:.88rem;cursor:pointer;">ðŸ—‘</button>
     </div>`;
   }).join('');
 }
@@ -2680,9 +2680,9 @@ function loadSavedGameNow(saveId) {
   document.getElementById('loadSavedToggle').classList.add('on');
   const savedRow = document.getElementById('savedGameRow');
   savedRow.style.display = 'flex';
-  document.getElementById('savedGameInfo').textContent = 'Saved game selected — toggle off to start fresh';
+  document.getElementById('savedGameInfo').textContent = 'Saved game selected â€” toggle off to start fresh';
   document.getElementById('savedGameTip').style.display = 'block';
-  showToast('💾 Saved game loaded! Add bots or invite friends below before starting.', 4000);
+  showToast('ðŸ’¾ Saved game loaded! Add bots or invite friends below before starting.', 4000);
 }
 
 function toggleAutoUpdate(saveId) {
@@ -2708,30 +2708,30 @@ function openStatsModal() {
 
 function renderStats(s) {
   const el = document.getElementById('statsContent');
-  if (!s) { el.innerHTML='<div style="text-align:center;color:#557755;padding:20px;">No stats yet — play a match!</div>'; return; }
-  const kd = s.deaths > 0 ? (s.kills/s.deaths).toFixed(2) : s.kills > 0 ? '∞' : '0.00';
+  if (!s) { el.innerHTML='<div style="text-align:center;color:#557755;padding:20px;">No stats yet â€” play a match!</div>'; return; }
+  const kd = s.deaths > 0 ? (s.kills/s.deaths).toFixed(2) : s.kills > 0 ? 'âˆž' : '0.00';
   const upgrades = window._allUpgrades || {};
   const ownedNames = (s.upgrades||[]).map(id => upgrades[id]?.name || id);
   el.innerHTML = `
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-card-val">${s.level||1}</div><div class="stat-card-lbl">🌟 Level</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">$${fmt(s.total_earned||0)}</div><div class="stat-card-lbl">💰 Total Earned</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:#2ed573;">${s.kills||0}</div><div class="stat-card-lbl">⚔️ Total Kills</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:#ff4757;">${s.deaths||0}</div><div class="stat-card-lbl">💀 Total Deaths</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:#74b9ff;">${kd}</div><div class="stat-card-lbl">📈 K/D Ratio</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">${s.prestige||0}</div><div class="stat-card-lbl">⭐ Prestige</div></div>
-      <div class="stat-card"><div class="stat-card-val" style="color:#d4af37;">${s.mmr||1000}</div><div class="stat-card-lbl">🏆 Ranked MMR</div></div>
+      <div class="stat-card"><div class="stat-card-val">${s.level||1}</div><div class="stat-card-lbl">ðŸŒŸ Level</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">$${fmt(s.total_earned||0)}</div><div class="stat-card-lbl">ðŸ’° Total Earned</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#2ed573;">${s.kills||0}</div><div class="stat-card-lbl">âš”ï¸ Total Kills</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#ff4757;">${s.deaths||0}</div><div class="stat-card-lbl">ðŸ’€ Total Deaths</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#74b9ff;">${kd}</div><div class="stat-card-lbl">ðŸ“ˆ K/D Ratio</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#ffd700;">${s.prestige||0}</div><div class="stat-card-lbl">â­ Prestige</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:#d4af37;">${s.mmr||1000}</div><div class="stat-card-lbl">ðŸ† Ranked MMR</div></div>
     </div>
     <div style="color:#88aa88;font-size:.78rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
-      🧬 Upgrades Owned (${(s.upgrades||[]).length})
+      ðŸ§¬ Upgrades Owned (${(s.upgrades||[]).length})
     </div>
     <div class="stat-upgrades">
-      ${ownedNames.length ? ownedNames.map(n=>`<span class="stat-upg-chip">${n}</span>`).join('') : '<span style="color:#446644;font-size:.8rem;">None yet — buy upgrades in a match!</span>'}
+      ${ownedNames.length ? ownedNames.map(n=>`<span class="stat-upg-chip">${n}</span>`).join('') : '<span style="color:#446644;font-size:.8rem;">None yet â€” buy upgrades in a match!</span>'}
     </div>
   `;
 }
 
-// ── Daily Quests ──────────────────────────────────────────────────────────────
+// â”€â”€ Daily Quests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openDailyQuestsModal() {
   window.SFX?.pop?.();
   document.getElementById('dailyQuestsModal').classList.remove('hidden');
@@ -2757,7 +2757,7 @@ function renderDailyQuests(quests, progress, completed) {
     return `<div class="quest-item${done ? ' done' : ''}">
       <div class="quest-header">
         <span class="quest-desc">${q.icon} ${q.desc}</span>
-        <span class="quest-reward">+${q.reward} pts ${done ? '✅' : ''}</span>
+        <span class="quest-reward">+${q.reward} pts ${done ? 'âœ…' : ''}</span>
       </div>
       <div class="quest-bar-bg">
         <div class="quest-bar-fill" style="width:${pct}%;background:${bar}"></div>
@@ -2788,7 +2788,7 @@ function startQuestResetTimer(msUntilReset) {
   _questTimerInterval = setInterval(tick, 1000);
 }
 
-// ── Achievements ──────────────────────────────────────────────────────────────
+// â”€â”€ Achievements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openAchievementsModal() {
   window.SFX?.pop();
   document.getElementById('achievementsModal').classList.remove('hidden');
@@ -2807,20 +2807,20 @@ function openAchievementsModal() {
         <div style="font-size:.78rem;color:#88aa88;">${esc(a.desc)}</div>
       </div>
       <div style="font-size:.8rem;font-weight:bold;color:${unlocked?'#7fff6a':'#557755'};">
-        ${unlocked ? '✅ +'+a.reward : '🔒 +'+a.reward+' pts'}
+        ${unlocked ? 'âœ… +'+a.reward : 'ðŸ”’ +'+a.reward+' pts'}
       </div>
     </div>`;
   }).join('');
 }
 window.openAchievementsModal = openAchievementsModal;
 
-// ── Global Leaderboard ────────────────────────────────────────────────────────
+// â”€â”€ Global Leaderboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _lbCategory = 'earnings';
 const LB_CAT_META = {
-  earnings: { label: '💰 Earnings', fmt: v => '$' + fmt(v), color: '#ffd700' },
-  kills:    { label: '⚔️ Kills',    fmt: v => v, color: '#ff4757' },
-  prestige: { label: '⭐ Prestige', fmt: v => '★' + v, color: '#a29bfe' },
-  mmr:      { label: '🏆 Ranked MMR', fmt: v => v, color: '#d4af37' },
+  earnings: { label: 'ðŸ’° Earnings', fmt: v => '$' + fmt(v), color: '#ffd700' },
+  kills:    { label: 'âš”ï¸ Kills',    fmt: v => v, color: '#ff4757' },
+  prestige: { label: 'â­ Prestige', fmt: v => 'â˜…' + v, color: '#a29bfe' },
+  mmr:      { label: 'ðŸ† Ranked MMR', fmt: v => v, color: '#d4af37' },
 };
 function openLeaderboardModal() {
   window.SFX?.pop();
@@ -2885,7 +2885,7 @@ function renderGlobalLeaderboard(data) {
   _lbEntries = data.entries;
   const meta = LB_CAT_META[data.category] || LB_CAT_META.earnings;
   if (!data.entries.length) {
-    el.innerHTML = '<div style="text-align:center;color:#557755;padding:40px 0;">No players yet — be the first!</div>';
+    el.innerHTML = '<div style="text-align:center;color:#557755;padding:40px 0;">No players yet â€” be the first!</div>';
     return;
   }
   const myName = document.getElementById('heroUsername')?.textContent?.trim() || '';
@@ -2897,7 +2897,7 @@ function renderGlobalLeaderboard(data) {
     const badge = `<span class="lb-tier-badge" style="background:${tier.bg};color:${tier.color};border:1px solid ${tier.border};">${tier.label}</span>`;
     const safeU = encodeURIComponent(e.username);
     return `<div class="lb-row ${rowClass[i]||''} ${isMe?'lb-you':''}" style="cursor:pointer;" onclick="openLbProfile('${safeU}')">
-      <span class="lb-rank ${rankClass[i]||''}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</span>
+      <span class="lb-rank ${rankClass[i]||''}">${i===0?'ðŸ¥‡':i===1?'ðŸ¥ˆ':i===2?'ðŸ¥‰':`#${i+1}`}</span>
       <canvas class="lb-dino-canvas" data-user="${safeU}" width="44" height="44"
         style="border-radius:10px;flex-shrink:0;border:2px solid rgba(255,255,255,.1);"></canvas>
       <div class="lb-info">
@@ -2931,14 +2931,14 @@ function openLbProfile(encodedUser) {
   const kd = entry.deaths > 0 ? (entry.kills / entry.deaths).toFixed(2) : entry.kills.toFixed(2);
   const fmt = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n;
   document.getElementById('lbProfileStats').innerHTML = [
-    ['⚔️ Kills',    entry.kills],
-    ['💀 Deaths',   entry.deaths],
-    ['📊 K/D',      kd],
-    ['⭐ Prestige', entry.prestige],
-    ['💰 Earned',   '$' + fmt(entry.totalEarned)],
-    ['🏆 MMR',      entry.mmr],
-    ['🎮 Ranked',   entry.rankedMatchesPlayed + ' matches'],
-    ['📈 Level',    entry.level],
+    ['âš”ï¸ Kills',    entry.kills],
+    ['ðŸ’€ Deaths',   entry.deaths],
+    ['ðŸ“Š K/D',      kd],
+    ['â­ Prestige', entry.prestige],
+    ['ðŸ’° Earned',   '$' + fmt(entry.totalEarned)],
+    ['ðŸ† MMR',      entry.mmr],
+    ['ðŸŽ® Ranked',   entry.rankedMatchesPlayed + ' matches'],
+    ['ðŸ“ˆ Level',    entry.level],
   ].map(([label, val]) =>
     `<div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px;">
        <div style="color:#557755;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">${label}</div>
@@ -2956,14 +2956,14 @@ function openLbProfile(encodedUser) {
 }
 window.openLbProfile = openLbProfile;
 
-// ── Onboarding Tutorial ───────────────────────────────────────────────────────
+// â”€â”€ Onboarding Tutorial â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TUTORIAL_SLIDES = [
-  { title:'🦕 Welcome to Dino Tycoon!', body:'Build a prehistoric money empire, defend it from other dinos, and fight your way up the leaderboard. Here\'s the loop in a nutshell.' },
-  { title:'⛏️ Step 1 — Build Income', body:'Buy income buildings from the shop (Bone Pile, Fossil Mine, and beyond). They earn you money automatically every second, even while you\'re off fighting.' },
-  { title:'🪨 Step 2 — Defend Your Base', body:'Walls, turrets, and traps protect your buildings from rivals. Place them around your pad — losing a building costs you real income.' },
-  { title:'⚔️ Step 3 — Fight for Loot', body:'Attack other players and bots to steal a cut of their money and earn XP. Watch your own HP — defeated dinos respawn at their base after a few seconds.' },
-  { title:'⭐ Step 4 — Prestige', body:'Once you hit $100k, you can Prestige: your shop resets, but you keep permanent bonuses to income, damage, defense and HP — forever stronger on your next run.' },
-  { title:'🏆 You\'re Ready!', body:'Check My Stats and Achievements anytime from the lobby, or queue up for a Ranked Match once you\'re feeling confident. Good luck out there!' },
+  { title:'ðŸ¦• Welcome to Dino Tycoon!', body:'Build a prehistoric money empire, defend it from other dinos, and fight your way up the leaderboard. Here\'s the loop in a nutshell.' },
+  { title:'â›ï¸ Step 1 â€” Build Income', body:'Buy income buildings from the shop (Bone Pile, Fossil Mine, and beyond). They earn you money automatically every second, even while you\'re off fighting.' },
+  { title:'ðŸª¨ Step 2 â€” Defend Your Base', body:'Walls, turrets, and traps protect your buildings from rivals. Place them around your pad â€” losing a building costs you real income.' },
+  { title:'âš”ï¸ Step 3 â€” Fight for Loot', body:'Attack other players and bots to steal a cut of their money and earn XP. Watch your own HP â€” defeated dinos respawn at their base after a few seconds.' },
+  { title:'â­ Step 4 â€” Prestige', body:'Once you hit $100k, you can Prestige: your shop resets, but you keep permanent bonuses to income, damage, defense and HP â€” forever stronger on your next run.' },
+  { title:'ðŸ† You\'re Ready!', body:'Check My Stats and Achievements anytime from the lobby, or queue up for a Ranked Match once you\'re feeling confident. Good luck out there!' },
 ];
 let _tutorialIdx = 0;
 function openTutorialModal(isAuto) {
@@ -2980,7 +2980,7 @@ function renderTutorialSlide() {
   document.getElementById('tutorialDots').innerHTML = TUTORIAL_SLIDES.map((_,i) =>
     `<span style="width:8px;height:8px;border-radius:50%;background:${i===_tutorialIdx?'#7fff6a':'rgba(255,255,255,.2)'};"></span>`
   ).join('');
-  document.getElementById('tutorialNextBtn').textContent = _tutorialIdx === TUTORIAL_SLIDES.length-1 ? "Let's Go! 🦖" : 'Next ▶';
+  document.getElementById('tutorialNextBtn').textContent = _tutorialIdx === TUTORIAL_SLIDES.length-1 ? "Let's Go! ðŸ¦–" : 'Next â–¶';
 }
 function tutorialNext() {
   window.SFX?.click();
@@ -2995,8 +2995,8 @@ function skipTutorial() {
 window.tutorialNext = tutorialNext;
 window.skipTutorial = skipTutorial;
 
-// ── Ranked Matchmaking ────────────────────────────────────────────────────────
-// ── Play Now: Casual vs Ranked choice ──────────────────────────────────────────
+// â”€â”€ Ranked Matchmaking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ Play Now: Casual vs Ranked choice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openPlayModeModal() {
   window.SFX?.pop();
   document.getElementById('playModeModal').classList.remove('hidden');
@@ -3043,7 +3043,7 @@ function cancelRankedQueue() {
 }
 window.cancelRankedQueue = cancelRankedQueue;
 
-// ── Seasonal Event Banner ─────────────────────────────────────────────────────
+// â”€â”€ Seasonal Event Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function formatCountdown(ms) {
   if (ms <= 0) return '0s';
   const s = Math.floor(ms / 1000);
@@ -3070,8 +3070,8 @@ function showEventBanner(ev, next) {
     document.body.appendChild(el);
   }
   // Plain one-off banner (e.g. the hard-mode meteor shower notice) has no
-  // start/end timestamps — just show the static text, no countdown needed.
-  if (!ev.endsAt && !ev.startsAt) { el.textContent = `${ev.icon || '🎉'} ${ev.name}`; return; }
+  // start/end timestamps â€” just show the static text, no countdown needed.
+  if (!ev.endsAt && !ev.startsAt) { el.textContent = `${ev.icon || 'ðŸŽ‰'} ${ev.name}`; return; }
   _eventBannerData = ev;
   _eventBannerNext = next || null;
   _updateEventBannerText();
@@ -3084,15 +3084,15 @@ function _updateEventBannerText() {
   const now = Date.now();
   // The weekly rotation tiles with no gaps, so once the active event's window
   // ends, the "next" one (already holding its own startsAt/endsAt) just becomes
-  // the new active event — no server round-trip needed to keep the banner live.
+  // the new active event â€” no server round-trip needed to keep the banner live.
   if (d.endsAt && now >= d.endsAt && _eventBannerNext) {
     d = _eventBannerData = _eventBannerNext;
     _eventBannerNext = null;
   }
   if (d.endsAt && (!d.startsAt || now >= d.startsAt) && now < d.endsAt) {
-    el.textContent = `${d.icon || '💰'} ${d.name} is live! Ends in ${formatCountdown(d.endsAt - now)}`;
+    el.textContent = `${d.icon || 'ðŸ’°'} ${d.name} is live! Ends in ${formatCountdown(d.endsAt - now)}`;
   } else if (d.startsAt && now < d.startsAt) {
-    el.textContent = `${d.icon || '💰'} ${d.name} starts in ${formatCountdown(d.startsAt - now)}`;
+    el.textContent = `${d.icon || 'ðŸ’°'} ${d.name} starts in ${formatCountdown(d.startsAt - now)}`;
   } else {
     hideEventBanner();
   }
@@ -3120,7 +3120,7 @@ function submitCreateRoom() {
   const map        = document.getElementById('roomMap').value;
   const customCode = document.getElementById('customCode').value.trim().toUpperCase();
   if (customCode && (customCode.length < 4 || customCode.length > 8)) {
-    showToast('❌ Code must be 4–8 characters'); return;
+    showToast('âŒ Code must be 4â€“8 characters'); return;
   }
   // Snapshot bot counts before closing
   const bots = { ..._botCounts };
@@ -3142,28 +3142,28 @@ function submitCreateRoom() {
 
 function submitJoinCode() {
   const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-  if (code.length < 4) { showToast('❌ Enter the invite code'); return; }
+  if (code.length < 4) { showToast('âŒ Enter the invite code'); return; }
   closeModal('joinCodeModal');
   socketReady(() => {
     window.gameSocket.emit('joinRoom', { inviteCode: code });
   });
 }
 
-// Legacy — now just opens the play now modal
+// Legacy â€” now just opens the play now modal
 function createSoloRoom() { openPlayNowModal(); }
 
-// Socket readiness guard — waits until server confirms auth, then runs callback
+// Socket readiness guard â€” waits until server confirms auth, then runs callback
 function socketReady(cb) {
   if (_socketAuthed && window.gameSocket) {
     cb(); return true;
   }
-  // Not ready yet — retry every 400ms, up to 15 attempts (6s)
+  // Not ready yet â€” retry every 400ms, up to 15 attempts (6s)
   let attempts = 0;
   function retry() {
     attempts++;
     if (_socketAuthed && window.gameSocket) { cb(); return; }
-    if (attempts > 15) { showToast('❌ Connection failed — try refreshing the page'); return; }
-    if (attempts === 1) showToast('⌛ Connecting...');
+    if (attempts > 15) { showToast('âŒ Connection failed â€” try refreshing the page'); return; }
+    if (attempts === 1) showToast('âŒ› Connecting...');
     setTimeout(retry, 400);
   }
   retry();
@@ -3172,7 +3172,7 @@ function socketReady(cb) {
 
 function joinRoom(id){ socketReady(() => window.gameSocket.emit('joinRoom',{roomId:id})); }
 
-// ── Waiting room ──────────────────────────────────────────────────────────────
+// â”€â”€ Waiting room â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function enterWaitingRoom(data) {
   currentRoom=data.room; isHost=data.isHost;
   showScreen('waiting');
@@ -3223,7 +3223,7 @@ function addWaitBot(data) {
   const diffBadge=`badge-${data.difficulty}`;
   div.innerHTML=`<div class="player-slot-dot" style="background:${data.color}"></div>
     <span class="player-slot-name">${esc(data.username)}</span>
-    <span class="player-slot-badge badge-bot ${diffBadge}">🤖 ${data.difficulty}</span>
+    <span class="player-slot-badge badge-bot ${diffBadge}">ðŸ¤– ${data.difficulty}</span>
     ${isHost?`<button class="slot-kick" onclick="removeBot('${data.id}')">Remove</button>`:''}`;
   list.appendChild(div);
   updateWaitCount();
@@ -3240,7 +3240,7 @@ function startGame(){ window.gameSocket.emit('startGame'); }
 function leaveRoom(){ window.gameSocket.emit('leaveRoom'); showScreen('lobby'); currentRoom=null; document.getElementById('countdownOverlay')?.classList.add('hidden'); }
 
 function copyCode() {
-  if(currentRoom) { navigator.clipboard?.writeText(currentRoom.inviteCode); showToast('📋 Code copied: '+currentRoom.inviteCode); }
+  if(currentRoom) { navigator.clipboard?.writeText(currentRoom.inviteCode); showToast('ðŸ“‹ Code copied: '+currentRoom.inviteCode); }
 }
 
 function sendInvite() {
@@ -3275,20 +3275,20 @@ function addWaitChat(username, message, color) {
   while(log.children.length>30) log.removeChild(log.firstChild);
 }
 
-// ── Invite notifications ───────────────────────────────────────────────────────
+// â”€â”€ Invite notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showInvite(from, roomId, roomName) {
   const list=document.getElementById('inviteList');
   // Clear "no invites" message
   if(list.querySelector('div[style]')) list.innerHTML='';
   const div=document.createElement('div'); div.className='invite-card'; div.id='invite_'+roomId;
-  div.innerHTML=`<div class="invite-from">🦕 ${esc(from)} invited you!</div>
+  div.innerHTML=`<div class="invite-from">ðŸ¦• ${esc(from)} invited you!</div>
     <div class="invite-room">${esc(roomName)}</div>
     <div class="invite-btns">
       <button class="invite-accept" onclick="acceptInvite('${roomId}')">Accept</button>
       <button class="invite-decline" onclick="declineInvite('${roomId}')">Decline</button>
     </div>`;
   list.insertBefore(div, list.firstChild);
-  showToast(`📨 ${from} invited you to "${roomName}"!`, 4000);
+  showToast(`ðŸ“¨ ${from} invited you to "${roomName}"!`, 4000);
 }
 
 function acceptInvite(roomId) {
@@ -3300,7 +3300,7 @@ function declineInvite(roomId) {
   const el=document.getElementById('invite_'+roomId); if(el) el.remove();
 }
 
-// ── HUD helpers ───────────────────────────────────────────────────────────────
+// â”€â”€ HUD helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.updateHUD = function(player) {
   if(!player) return;
   const pct=Math.max(0,Math.min(100,(player.hp/player.maxHp)*100));
@@ -3310,7 +3310,7 @@ window.updateHUD = function(player) {
   document.getElementById('hudMPS').textContent='+$'+Math.round(player.mps)+'/s';
   document.getElementById('hudLevel').textContent=player.level;
   document.getElementById('hudKD').textContent=`${player.kills}/${player.deaths}`;
-  if(player.prestige>0){ document.getElementById('hudPrestige').style.display='block'; document.getElementById('hudPrestigeVal').textContent='★'+player.prestige; }
+  if(player.prestige>0){ document.getElementById('hudPrestige').style.display='block'; document.getElementById('hudPrestigeVal').textContent='â˜…'+player.prestige; }
 };
 
 window.updateXPBar = function(xp,level) {
@@ -3321,14 +3321,14 @@ window.updateXPBar = function(xp,level) {
 window.updateLeaderboard = function(lb) {
   document.getElementById('lbList').innerHTML=lb.map((p,i)=>`
     <div class="lb-row ${p.isBot?'lb-bot':''}">
-      <span class="lb-rank">${['🥇','🥈','🥉'][i]||i+1}</span>
+      <span class="lb-rank">${['ðŸ¥‡','ðŸ¥ˆ','ðŸ¥‰'][i]||i+1}</span>
       <div class="lb-dot" style="background:${p.color}"></div>
-      <span class="lb-name">${esc(p.username)}${p.prestige>0?` <span style="color:#ffd700;font-size:.68rem;">★${p.prestige}</span>`:''}${p.isBot?' 🤖':''}</span>
+      <span class="lb-name">${esc(p.username)}${p.prestige>0?` <span style="color:#ffd700;font-size:.68rem;">â˜…${p.prestige}</span>`:''}${p.isBot?' ðŸ¤–':''}</span>
       <span class="lb-money">$${fmt(p.money)}</span>
     </div>`).join('');
 };
 
-const SHOP_CATS = {income:'⛏️ Income',speed:'💨 Speed',attack:'⚔️ Attack',defense:'🛡️ Defense',health:'❤️ Health',build:'🏗️ Build'};
+const SHOP_CATS = {income:'â›ï¸ Income',speed:'ðŸ’¨ Speed',attack:'âš”ï¸ Attack',defense:'ðŸ›¡ï¸ Defense',health:'â¤ï¸ Health',build:'ðŸ—ï¸ Build'};
 let shopCatFilter='income';
 
 window.buildShop = function(upgrades, owned) {
@@ -3363,11 +3363,11 @@ function renderShopItems(upgrades, owned) {
         <div class="shop-name">${u.name}</div>
         <div class="shop-desc">${u.desc}</div>
         ${u.req&&!owned.includes(u.req)?`<div class="shop-req">Req: ${upgrades[u.req]?.name||u.req}</div>`:''}
-        <div class="shop-cost">${isOwned?'✅ Owned':'💰 $'+fmt(u.cost)}</div>
-        ${placesBuilding&&!isOwned&&!isLocked&&_loadedRenderMode!=='2d'?'<div style="color:#7fff6a;font-size:.68rem;">🖱️ Drag into your base to place</div>':''}
+        <div class="shop-cost">${isOwned?'âœ… Owned':'ðŸ’° $'+fmt(u.cost)}</div>
+        ${placesBuilding&&!isOwned&&!isLocked&&_loadedRenderMode!=='2d'?'<div style="color:#7fff6a;font-size:.68rem;">ðŸ–±ï¸ Drag into your base to place</div>':''}
       </div>
       ${!isOwned && (!placesBuilding || _loadedRenderMode==='2d') ? `<button class="buy-btn" ${isLocked?'disabled':''} onclick="window.buyUpgrade('${id}')">Buy</button>` : ''}
-      ${!isOwned && placesBuilding && isLocked ? `<button class="buy-btn" disabled>🔒 Locked</button>` : ''}`;
+      ${!isOwned && placesBuilding && isLocked ? `<button class="buy-btn" disabled>ðŸ”’ Locked</button>` : ''}`;
     if (placesBuilding && !isOwned && !isLocked && _loadedRenderMode !== '2d') {
       div.draggable = true;
       div.style.cursor = 'grab';
@@ -3385,8 +3385,8 @@ function renderShopItems(upgrades, owned) {
   }
 }
 
-// ── Visual effects ──────────────────────────────────────────────────────────
-/* ── LOBBY BACKGROUND CANVAS ── */
+// â”€â”€ Visual effects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* â”€â”€ LOBBY BACKGROUND CANVAS â”€â”€ */
 let _lobbyBgRunning = false;
 function initLobbyBgCanvas() {
   if (_lobbyBgRunning) return;
@@ -3436,7 +3436,7 @@ function initLobbyBgCanvas() {
 }
 
 function spawnLobbyParticles() {
-  // No longer spawns background floating emojis — click the lobby to spray them instead
+  // No longer spawns background floating emojis â€” click the lobby to spray them instead
 }
 
 function _lobbyClickSpray(e) {
@@ -3446,7 +3446,7 @@ function _lobbyClickSpray(e) {
   const lby = document.getElementById('lobbyScreen');
   if (!lby || lby.classList.contains('hidden')) return;
   const c = document.getElementById('lobbyParticles'); if (!c) return;
-  const emojis = ['🦖','🦕','🦴','💎','⚡','🌿','🔥','💰','👑','🌟','🥚','🌋'];
+  const emojis = ['ðŸ¦–','ðŸ¦•','ðŸ¦´','ðŸ’Ž','âš¡','ðŸŒ¿','ðŸ”¥','ðŸ’°','ðŸ‘‘','ðŸŒŸ','ðŸ¥š','ðŸŒ‹'];
   const count = 10 + Math.floor(Math.random() * 6);
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
@@ -3515,9 +3515,9 @@ window.buyUpgrade=function(id){
   }
 };
 
-// ── Drag a build/income item from the shop and drop it onto a spot in your base ──
+// â”€â”€ Drag a build/income item from the shop and drop it onto a spot in your base â”€â”€
 let _buildDragDropSetup = false;
-let _lastDragPos = null; // cache dragover position — drop event clientX/Y can be unreliable
+let _lastDragPos = null; // cache dragover position â€” drop event clientX/Y can be unreliable
 function setupBuildDragDrop() {
   if (_buildDragDropSetup) return; _buildDragDropSetup = true;
   const container = document.getElementById('gameContainer');
@@ -3534,19 +3534,19 @@ function setupBuildDragDrop() {
     window._draggingUpgradeId = null;
     const scene = window._gameScene;
     scene?.hideBuildGhost?.();
-    // Prefer last dragover position — drop event clientX/Y is unreliable in some browsers
+    // Prefer last dragover position â€” drop event clientX/Y is unreliable in some browsers
     const cx = (_lastDragPos?.x ?? e.clientX);
     const cy = (_lastDragPos?.y ?? e.clientY);
     _lastDragPos = null;
     const pos = scene?.screenToServerXY?.(cx, cy);
-    if (!pos) { showToast('❌ Cannot place there', 1500); return; }
+    if (!pos) { showToast('âŒ Cannot place there', 1500); return; }
     window.gameSocket.emit('buyUpgrade', { upgradeId, x: pos.x, y: pos.y });
     window.SFX?.upgrade();
   });
 }
 setupBuildDragDrop();
 
-// ── Chat (in-game) ─────────────────────────────────────────────────────────────
+// â”€â”€ Chat (in-game) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){sendChat();e.preventDefault();}e.stopPropagation();});
 let _paused = false;
 function togglePause() {
@@ -3563,7 +3563,7 @@ function saveCurrentGame() {
   const name = prompt('Name this save (or leave blank for auto-name):', '') ?? '';
   window.gameSocket.emit('saveGame', name);
   window.SFX?.upgrade();
-  showToast('💾 Saving...');
+  showToast('ðŸ’¾ Saving...');
 }
 
 function quitToLobby() {
@@ -3607,7 +3607,7 @@ function _leaveGame() {
   if (window._game3D?.dispose) window._game3D.dispose();
   window._game3D = null;
   window._gameScene = null;
-  // Back in the lobby — leave the fullscreen the match put us in
+  // Back in the lobby â€” leave the fullscreen the match put us in
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   window._gameInitialized = false;
   window._gameReady = false;
@@ -3644,14 +3644,14 @@ function addChatMessage(u,msg,color){
   while(log.children.length>50)log.removeChild(log.firstChild);
 }
 
-// ── Kill feed ─────────────────────────────────────────────────────────────────
+// â”€â”€ Kill feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function addKillFeed(html){
   const kf=document.getElementById('killfeed');
   const d=document.createElement('div');d.className='kf-item';d.innerHTML=html;kf.appendChild(d);
   setTimeout(()=>{d.style.transition='opacity .5s';d.style.opacity='0';setTimeout(()=>d.remove(),500);},3500);
 }
 
-// ── Lobby Tab Switcher ────────────────────────────────────────────────────────
+// â”€â”€ Lobby Tab Switcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchLbyTab(tab) {
   window.SFX?.pop?.();
   document.getElementById('lbyHomeView').style.display = 'none';
@@ -3683,7 +3683,7 @@ function switchLbyTab(tab) {
 }
 window.switchLbyTab = switchLbyTab;
 
-// ── Lobby Shop ────────────────────────────────────────────────────────────────
+// â”€â”€ Lobby Shop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _shopData = null;
 let _shopTab = 'skins';
 
@@ -3695,7 +3695,7 @@ function switchShopTab(tab) {
 }
 window.switchShopTab = switchShopTab;
 
-// ── 2D dino rendering — fast canvas-based drawing for homepage & shop previews ──
+// â”€â”€ 2D dino rendering â€” fast canvas-based drawing for homepage & shop previews â”€â”€
 function _hexToNum(h) { return parseInt(h.replace('#',''), 16); }
 function _numToRgba(n, a=1) { return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
 function _adjHex(n, amt) {
@@ -3770,7 +3770,7 @@ function drawDinoCanvas(canvas, colorHex, scaleXMult=1) {
 }
 window.drawDinoCanvas = drawDinoCanvas;
 
-// ── Hero dino smooth directional mirror tracking ──────────────────────────────
+// â”€â”€ Hero dino smooth directional mirror tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _heroCurrSX = 1, _heroTargetSX = 1, _heroAnimRafId = null;
 
 function _redrawHeroDino() {
@@ -3863,23 +3863,23 @@ function renderShopTab() {
       const csKey = 'custom_' + cs.id;
       const isEquipped = equippedSkin === csKey;
       return `<div class="skin-card ${isEquipped ? 'equipped' : 'owned'}" style="position:relative;">
-        <button onclick="deleteCustomSkin('${cs.id}')" title="Delete" style="position:absolute;top:6px;right:6px;background:rgba(255,60,60,.18);border:none;color:#ff6b6b;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;line-height:1;padding:0;">✕</button>
+        <button onclick="deleteCustomSkin('${cs.id}')" title="Delete" style="position:absolute;top:6px;right:6px;background:rgba(255,60,60,.18);border:none;color:#ff6b6b;border-radius:50%;width:22px;height:22px;font-size:13px;cursor:pointer;line-height:1;padding:0;">âœ•</button>
         <div class="skin-dino-wrap"><img src="${cs.base64}" style="width:70px;height:72px;object-fit:contain;image-rendering:pixelated;"></div>
         <div class="skin-name">${escHtml(cs.name)}</div>
         <div class="skin-desc" style="font-size:.72rem;color:#88aa88;">Custom import</div>
-        <div class="skin-cost" style="color:#2ed573;">🆓 Free</div>
+        <div class="skin-cost" style="color:#2ed573;">ðŸ†“ Free</div>
         ${isEquipped
-          ? `<div class="skin-equipped-label">✅ Equipped</div>`
+          ? `<div class="skin-equipped-label">âœ… Equipped</div>`
           : `<button class="skin-action-btn skin-equip-btn" onclick="equipLobbyItem('skin','${csKey}')">Equip</button>`}
       </div>`;
     }).join('');
 
     // "+ Add skin" card
     const addCard = myCustomSkins.length < 9 ? `<div class="skin-card" style="border:2px dashed #4caf5066;cursor:pointer;justify-content:center;align-items:center;min-height:190px;display:flex;flex-direction:column;gap:8px;" onclick="openCustomSkinModal()">
-      <div style="font-size:2.4rem;">🎨</div>
+      <div style="font-size:2.4rem;">ðŸŽ¨</div>
       <div class="skin-name" style="color:#4caf50;">+ Import Skin</div>
-      <div class="skin-desc">Paste a URL or upload — background auto-removed.</div>
-      <div class="skin-cost" style="color:#2ed573;">🆓 Free</div>
+      <div class="skin-desc">Paste a URL or upload â€” background auto-removed.</div>
+      <div class="skin-cost" style="color:#2ed573;">ðŸ†“ Free</div>
     </div>` : '';
 
     body.innerHTML = `<div class="skin-grid">${customCards}${addCard}${shop.skins.map(skin => {
@@ -3888,17 +3888,17 @@ function renderShopTab() {
       const canAfford = points >= skin.cost;
       let btn = '';
       if (isEquipped) {
-        btn = `<div class="skin-equipped-label">✅ Equipped</div>`;
+        btn = `<div class="skin-equipped-label">âœ… Equipped</div>`;
       } else if (isOwned) {
         btn = `<button class="skin-action-btn skin-equip-btn" onclick="equipLobbyItem('skin','${skin.id}')">Equip</button>`;
       } else {
-        btn = `<button class="skin-action-btn skin-buy-btn" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'} onclick="buyLobbyItem('skin','${skin.id}')">Buy — ⚡${skin.cost}</button>`;
+        btn = `<button class="skin-action-btn skin-buy-btn" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'} onclick="buyLobbyItem('skin','${skin.id}')">Buy â€” âš¡${skin.cost}</button>`;
       }
       return `<div class="skin-card ${isEquipped?'equipped':isOwned?'owned':''}">
         <div class="skin-dino-wrap">${dinoCanvasHtml(skin.color, 80)}</div>
         <div class="skin-name">${skin.name}</div>
         <div class="skin-desc">${skin.desc}</div>
-        <div class="skin-cost">${skin.cost===0?'🆓 Free':'⚡ '+skin.cost+' pts'}</div>
+        <div class="skin-cost">${skin.cost===0?'ðŸ†“ Free':'âš¡ '+skin.cost+' pts'}</div>
         ${btn}
       </div>`;
     }).join('')}</div>`;
@@ -3911,18 +3911,18 @@ function renderShopTab() {
       const canAfford = points >= tag.cost;
       let btn = '';
       if (isEquipped) {
-        btn = `<span class="tag-equipped-lbl">✅ On</span>`;
+        btn = `<span class="tag-equipped-lbl">âœ… On</span>`;
       } else if (isOwned) {
         btn = `<button class="tag-action-btn tag-equip-btn" onclick="equipLobbyItem('tag','${tag.id}')">Equip</button>`;
       } else {
-        btn = `<button class="tag-action-btn tag-buy-btn" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'} onclick="buyLobbyItem('tag','${tag.id}')">⚡${tag.cost}</button>`;
+        btn = `<button class="tag-action-btn tag-buy-btn" ${canAfford?'':'disabled style="opacity:.4;cursor:not-allowed;"'} onclick="buyLobbyItem('tag','${tag.id}')">âš¡${tag.cost}</button>`;
       }
       const preview = tag.prefix ? tag.prefix + (currentUser||'Player') : (currentUser||'Player');
       return `<div class="tag-card ${isEquipped?'equipped':''}">
         <div class="tag-preview">${escHtml(preview)}</div>
         <div class="tag-info">
           <div class="tag-name">${tag.name}</div>
-          <div class="tag-cost">${tag.cost===0?'🆓 Free':'⚡ '+tag.cost+' pts'}</div>
+          <div class="tag-cost">${tag.cost===0?'ðŸ†“ Free':'âš¡ '+tag.cost+' pts'}</div>
         </div>
         ${btn}
       </div>`;
@@ -3934,8 +3934,8 @@ function buyLobbyItem(type, itemId) {
   if (!window.gameSocket || !_shopData) return;
   const item = (type === 'skin' ? _shopData.shop?.skins : _shopData.shop?.tags)?.find(s => s.id === itemId);
   if (!item) return;
-  if ((_shopData.points || 0) < item.cost) { showToast('❌ Not enough Dino Points!'); return; }
-  // Optimistic update — reflect immediately, server will confirm
+  if ((_shopData.points || 0) < item.cost) { showToast('âŒ Not enough Dino Points!'); return; }
+  // Optimistic update â€” reflect immediately, server will confirm
   _shopData.points = (_shopData.points || 0) - item.cost;
   const key = type === 'skin' ? 'skins' : 'tags';
   if (!_shopData.lobbyItems) _shopData.lobbyItems = { skins:[], tags:[] };
@@ -3952,7 +3952,7 @@ window.buyLobbyItem = buyLobbyItem;
 
 function equipLobbyItem(type, itemId) {
   if (!window.gameSocket || !_shopData) return;
-  // Optimistic update — reflect immediately, server will confirm
+  // Optimistic update â€” reflect immediately, server will confirm
   if (type === 'skin') { _shopData.equippedSkin = itemId; applyDinoSkin(itemId); }
   else { _shopData.equippedTag = itemId; applyDinoTag(itemId); }
   renderShopTab();
@@ -3961,7 +3961,7 @@ function equipLobbyItem(type, itemId) {
 }
 window.equipLobbyItem = equipLobbyItem;
 
-// ── Lobby Chat ────────────────────────────────────────────────────────────────
+// â”€â”€ Lobby Chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function sendLobbyChat(){
   const inp = document.getElementById('lobbyChatInput');
@@ -3973,7 +3973,7 @@ function sendLobbyChat(){
 }
 window.sendLobbyChat = sendLobbyChat;
 
-// ── Custom Skin ───────────────────────────────────────────────────────────────
+// â”€â”€ Custom Skin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _csImageReady = false;
 
 function openCustomSkinModal() {
@@ -3998,8 +3998,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function csFetchUrl() {
   const url = document.getElementById('csUrlInput').value.trim();
-  if (!url) { showToast('❌ Paste an image URL first'); return; }
-  document.getElementById('csStatus').textContent = '⌛ Fetching image...';
+  if (!url) { showToast('âŒ Paste an image URL first'); return; }
+  document.getElementById('csStatus').textContent = 'âŒ› Fetching image...';
   document.getElementById('csPreviewSection').style.display = 'block';
   document.getElementById('csSetBtn').style.display = 'none';
   _csImageReady = false;
@@ -4007,7 +4007,7 @@ async function csFetchUrl() {
     const proxyUrl = '/api/proxy-image?url=' + encodeURIComponent(url);
     await csDrawImageFromSrc(proxyUrl);
   } catch(e) {
-    document.getElementById('csStatus').textContent = '❌ Could not load image — try a different URL';
+    document.getElementById('csStatus').textContent = 'âŒ Could not load image â€” try a different URL';
   }
 }
 window.csFetchUrl = csFetchUrl;
@@ -4016,11 +4016,11 @@ function csLoadFile(input) {
   const file = input.files[0]; if (!file) return;
   document.getElementById('csPreviewSection').style.display = 'block';
   document.getElementById('csSetBtn').style.display = 'none';
-  document.getElementById('csStatus').textContent = '⌛ Loading...';
+  document.getElementById('csStatus').textContent = 'âŒ› Loading...';
   _csImageReady = false;
   const reader = new FileReader();
   reader.onload = e => csDrawImageFromSrc(e.target.result).catch(() => {
-    document.getElementById('csStatus').textContent = '❌ Could not load image';
+    document.getElementById('csStatus').textContent = 'âŒ Could not load image';
   });
   reader.readAsDataURL(file);
 }
@@ -4039,7 +4039,7 @@ function csDrawImageFromSrc(src) {
       const w = img.width * scale, h = img.height * scale;
       ctx.drawImage(img, (SIZE-w)/2, (SIZE-h)/2, w, h);
       document.getElementById('csResultCanvas').getContext('2d').clearRect(0,0,SIZE,SIZE);
-      document.getElementById('csStatus').textContent = '⌛ Removing background...';
+      document.getElementById('csStatus').textContent = 'âŒ› Removing background...';
       document.getElementById('csSetBtn').style.display = 'none';
       _csImageReady = true;
       resolve();
@@ -4076,7 +4076,7 @@ function csRemoveBg() {
   const mid = Math.floor(rs.length/2);
   const bgR=rs[mid], bgG=gs[mid], bgB=bs[mid];
 
-  // Euclidean distance in RGB — more perceptually accurate than Manhattan
+  // Euclidean distance in RGB â€” more perceptually accurate than Manhattan
   function colorDist(i) {
     const dr=d[i]-bgR, dg=d[i+1]-bgG, db=d[i+2]-bgB;
     return Math.sqrt(dr*dr + dg*dg + db*db);
@@ -4116,7 +4116,7 @@ function csRemoveBg() {
   }
 
   rctx.putImageData(imageData, 0, 0);
-  document.getElementById('csStatus').textContent = '✅ Background removed — adjust tolerance if needed, then save.';
+  document.getElementById('csStatus').textContent = 'âœ… Background removed â€” adjust tolerance if needed, then save.';
   document.getElementById('csSetBtn').style.display = 'inline-block';
   window.SFX?.upgrade();
 }
@@ -4125,9 +4125,9 @@ window.csRemoveBg = csRemoveBg;
 function csSetSkin() {
   const canvas = document.getElementById('csResultCanvas');
   const base64 = canvas.toDataURL('image/png');
-  if (!window.gameSocket) { showToast('❌ Not connected'); return; }
+  if (!window.gameSocket) { showToast('âŒ Not connected'); return; }
   const name = (document.getElementById('csSkinName').value.trim()) || 'My Skin';
-  document.getElementById('csStatus').textContent = '⌛ Saving skin...';
+  document.getElementById('csStatus').textContent = 'âŒ› Saving skin...';
   window.gameSocket.emit('setCustomSkin', { name, base64 });
   window.SFX?.levelUp();
 }
@@ -4139,7 +4139,7 @@ function deleteCustomSkin(id) {
 }
 window.deleteCustomSkin = deleteCustomSkin;
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showToast(msg,dur=2500){
   const t=document.getElementById('toast');const d=document.createElement('div');
   d.className='toast-item';d.textContent=msg;t.appendChild(d);
@@ -4147,7 +4147,7 @@ function showToast(msg,dur=2500){
 }
 window.showToast=showToast;
 
-// ── Confetti burst — used for fossil drop claims, achievement unlocks, etc. ──
+// â”€â”€ Confetti burst â€” used for fossil drop claims, achievement unlocks, etc. â”€â”€
 function spawnConfetti(originEl, count = 70) {
   const colors = ['#ffd700','#ff6b6b','#4cd137','#54a0ff','#ff9ff3','#feca57','#7fff6a'];
   const rect = originEl?.getBoundingClientRect?.();
@@ -4183,27 +4183,27 @@ function spawnConfetti(originEl, count = 70) {
 }
 window.spawnConfetti = spawnConfetti;
 
-// ── Shop toggle ───────────────────────────────────────────────────────────────
+// â”€â”€ Shop toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let shopOpen=false;
 function toggleShop(){
   shopOpen=!shopOpen;
   document.getElementById('shopPanel').classList.toggle('open',shopOpen);
   document.getElementById('shopToggle').style.opacity = shopOpen ? '0' : '1';
   document.getElementById('shopToggle').style.pointerEvents = shopOpen ? 'none' : 'all';
-  // Opening the shop drops you into "esc mode" — pause movement and free the
+  // Opening the shop drops you into "esc mode" â€” pause movement and free the
   // mouse cursor so it's easy to drag/click items instead of fighting pointer-lock aim
   _paused = shopOpen;
   if (shopOpen && document.pointerLockElement) document.exitPointerLock();
 }
 
-// ── Prestige ──────────────────────────────────────────────────────────────────
+// â”€â”€ Prestige â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function doPrestige(){if(!window.gameSocket)return;if(!confirm('Prestige? Resets money & upgrades but grants permanent boosts!'))return;window.gameSocket.emit('prestige');}
 
-// ── Format ────────────────────────────────────────────────────────────────────
+// â”€â”€ Format â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function fmt(n){n=Math.floor(n);if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString();}
 window.fmt=fmt;
 
-// ── Socket init ───────────────────────────────────────────────────────────────
+// â”€â”€ Socket init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initSocket(token){
   const s=io(); window.gameSocket=s;
 
@@ -4247,16 +4247,16 @@ function initSocket(token){
     if (data.error) {
       const hrs = Math.ceil(data.msLeft / 3600000);
       if (sub) sub.textContent = `Come back in ${hrs}h`;
-      if (btn) { btn.textContent = '⏳ Already claimed'; btn.disabled = true; btn.style.opacity = '0.5'; }
+      if (btn) { btn.textContent = 'â³ Already claimed'; btn.disabled = true; btn.style.opacity = '0.5'; }
       if (card) card.style.cursor = 'default';
     } else {
       if (sub) sub.textContent = `+${data.pts} pts earned!`;
-      if (btn) { btn.textContent = '✅ Claimed!'; btn.disabled = true; btn.style.opacity = '0.5'; }
+      if (btn) { btn.textContent = 'âœ… Claimed!'; btn.disabled = true; btn.style.opacity = '0.5'; }
       if (card) card.style.cursor = 'default';
       document.getElementById('lobbyPoints').textContent = data.totalPoints;
       document.getElementById('shopPointsVal').textContent = data.totalPoints;
       if (_shopData) _shopData.points = data.totalPoints;
-      showToast(`🥚 Fossil Drop! +${data.pts} points!`, 3500);
+      showToast(`ðŸ¥š Fossil Drop! +${data.pts} points!`, 3500);
       spawnConfetti(card);
       window.SFX?.fanfare?.();
     }
@@ -4266,16 +4266,16 @@ function initSocket(token){
     if (window._myAchievements) window._myAchievements.push(data.id);
     window.SFX?.fanfare?.();
     showToast(`${data.icon} Achievement unlocked: ${data.name} (+${data.reward} pts)`, 4500);
-    window.addKillFeed?.(`<span style="color:#ffd700">🏆 ${data.name} unlocked!</span>`);
+    window.addKillFeed?.(`<span style="color:#ffd700">ðŸ† ${data.name} unlocked!</span>`);
     spawnConfetti(null, 50);
   });
 
   s.on('rankedQueueJoined', () => {}); // waiting screen already shown by chooseRanked()
   s.on('rankedQueueLeft',   () => { hideRankedWaitingScreen(); showToast('Left ranked queue.', 1500); });
-  s.on('rankedMatchFound',  data => { hideRankedWaitingScreen(); showToast(`🏆 Ranked match found vs ${data.opponent}!`, 3000); window.SFX?.roar(); });
+  s.on('rankedMatchFound',  data => { hideRankedWaitingScreen(); showToast(`ðŸ† Ranked match found vs ${data.opponent}!`, 3000); window.SFX?.roar(); });
   s.on('rankedResult', data => {
     window._myMmr = data.mmr;
-    showToast(data.won ? `🏆 Ranked Win! MMR +${data.delta} (now ${data.mmr})` : `Ranked Loss. MMR ${data.delta} (now ${data.mmr})`, 4500);
+    showToast(data.won ? `ðŸ† Ranked Win! MMR +${data.delta} (now ${data.mmr})` : `Ranked Loss. MMR ${data.delta} (now ${data.mmr})`, 4500);
     if (data.won) { window.SFX?.fanfare?.(); spawnConfetti(null, 90); }
   });
 
@@ -4287,8 +4287,8 @@ function initSocket(token){
   });
 
   s.on('gameSaved', ({entry, auto}) => {
-    if (auto) { showToast('🔄 Auto-saved!', 2000); }
-    else { showToast(`💾 "${entry.name}" saved!`, 3000); window.SFX?.levelUp(); }
+    if (auto) { showToast('ðŸ”„ Auto-saved!', 2000); }
+    else { showToast(`ðŸ’¾ "${entry.name}" saved!`, 3000); window.SFX?.levelUp(); }
 
     // Replace existing entry in all caches (auto-save overwrites same slot),
     // or prepend if it's a brand-new save.
@@ -4322,7 +4322,7 @@ function initSocket(token){
     renderRooms(data.rooms);
   });
 
-  // ── Lobby Chat ──
+  // â”€â”€ Lobby Chat â”€â”€
   s.on('lobbyChatMsg', ({username, text, system})=>{
     const box = document.getElementById('lobbyChatMessages');
     if (!box) return;
@@ -4339,7 +4339,7 @@ function initSocket(token){
     box.scrollTop = box.scrollHeight;
   });
 
-  // ── Lobby Shop events ──
+  // â”€â”€ Lobby Shop events â”€â”€
   s.on('lobbyShopData', data => {
     _shopData = { ...(_shopData||{}), ...data };
     window._lobbyShop = data.shop;
@@ -4351,7 +4351,7 @@ function initSocket(token){
     if (_shopData) { _shopData.points = points; _shopData.lobbyItems = lobbyItems; }
     document.getElementById('shopPointsVal').textContent = points;
     document.getElementById('lobbyPoints').textContent = points;
-    showToast(`✅ Purchased! ⚡${points} pts remaining`, 2500);
+    showToast(`âœ… Purchased! âš¡${points} pts remaining`, 2500);
     window.SFX?.levelUp();
     renderShopTab();
   });
@@ -4362,10 +4362,10 @@ function initSocket(token){
     }
     if (type === 'skin') applyDinoSkin(itemId);
     else applyDinoTag(itemId);
-    showToast('🦖 Equipped!', 1800);
+    showToast('ðŸ¦– Equipped!', 1800);
     renderShopTab();
   });
-  s.on('lobbyShopError', msg => { showToast('❌ ' + msg, 2500); window.SFX?.error(); });
+  s.on('lobbyShopError', msg => { showToast('âŒ ' + msg, 2500); window.SFX?.error(); });
   s.on('customSkinSet', ({ id, name, base64, equippedSkin, customSkins }) => {
     if (_shopData) {
       _shopData.customSkins = customSkins || [];
@@ -4374,20 +4374,20 @@ function initSocket(token){
     applyDinoSkin(equippedSkin);
     if (id) {
       // New skin added
-      document.getElementById('csStatus').textContent = '✅ Skin saved and equipped!';
+      document.getElementById('csStatus').textContent = 'âœ… Skin saved and equipped!';
       document.getElementById('csSetBtn').style.display = 'none';
-      showToast('🎨 Custom skin saved!', 2500);
+      showToast('ðŸŽ¨ Custom skin saved!', 2500);
       window.SFX?.levelUp();
       setTimeout(() => closeModal('customSkinModal'), 1000);
     } else {
       // Skin deleted
-      showToast('🗑️ Skin deleted', 1800);
+      showToast('ðŸ—‘ï¸ Skin deleted', 1800);
     }
     renderShopTab();
   });
 
-  s.on('roomError',msg=>showToast('❌ '+msg,3000));
-  s.on('inviteError',msg=>showToast('❌ '+msg,3000));
+  s.on('roomError',msg=>showToast('âŒ '+msg,3000));
+  s.on('inviteError',msg=>showToast('âŒ '+msg,3000));
 
   s.on('roomJoined', data=>{
     currentRoom = data.room;
@@ -4398,7 +4398,7 @@ function initSocket(token){
         s.emit('addBot', 'easy');
         s.emit('addBot', 'medium');
         s.emit('addBot', 'hard');
-        showToast('🤖 3 dino bots added! Hit START GAME when ready.');
+        showToast('ðŸ¤– 3 dino bots added! Hit START GAME when ready.');
       }, 300);
     }
   });
@@ -4415,14 +4415,14 @@ function initSocket(token){
     if (mt) { mt.style.display='none'; mt.classList.add('hidden'); }
     document.getElementById('countdownOverlay')?.classList.add('hidden');
     showScreen('lobby'); currentRoom=null;
-    // Refresh Dino Points (and shop data) immediately on returning to the lobby —
+    // Refresh Dino Points (and shop data) immediately on returning to the lobby â€”
     // points earned from kills during the match were previously only reflected in
     // the nav bar after manually opening the Shop tab.
     if (window.gameSocket) window.gameSocket.emit('getLobbyShop');
   });
-  s.on('kicked',msg=>{ showToast('👢 '+msg,4000); showScreen('lobby'); currentRoom=null; document.getElementById('countdownOverlay')?.classList.add('hidden'); });
+  s.on('kicked',msg=>{ showToast('ðŸ‘¢ '+msg,4000); showScreen('lobby'); currentRoom=null; document.getElementById('countdownOverlay')?.classList.add('hidden'); });
 
-  // ── Countdown ──
+  // â”€â”€ Countdown â”€â”€
   const cdColors = ['#ff4757','#ff6348','#ffa502','#2ed573','#7fff6a'];
   s.on('countdown', ({count, go}) => {
     const overlay = document.getElementById('countdownOverlay');
@@ -4451,18 +4451,18 @@ function initSocket(token){
     }
   });
 
-  // ── Match timer ──
+  // â”€â”€ Match timer â”€â”€
   s.on('matchTimer', ({remaining}) => {
     const el = document.getElementById('matchTimer');
     if (!el) return;
     el.classList.remove('hidden'); el.style.display = 'block';
     const m = Math.floor(remaining/60), sec = remaining%60;
-    el.textContent = `⏱ ${m}:${String(sec).padStart(2,'0')}`;
+    el.textContent = `â± ${m}:${String(sec).padStart(2,'0')}`;
     el.classList.toggle('urgent', remaining <= 30);
     if (remaining <= 10 && remaining > 0) window.SFX?.countdown();
   });
 
-  // ── Combo counter ──
+  // â”€â”€ Combo counter â”€â”€
   let _comboTimeout = null;
   s.on('comboUpdate', ({ count }) => {
     if ((window.GAME_SETTINGS?.comboCounter) === false) return;
@@ -4480,11 +4480,11 @@ function initSocket(token){
   });
 
 
-  // ── Match over ──
+  // â”€â”€ Match over â”€â”€
   s.on('matchOver', ({leaderboard}) => {
     window.SFX?.roar();
     document.getElementById('abilityHud').classList.add('hidden');
-    const medals = ['🥇','🥈','🥉'];
+    const medals = ['ðŸ¥‡','ðŸ¥ˆ','ðŸ¥‰'];
 
     const byWealth = [...leaderboard].sort((a,b) => b.money - a.money);
     const byKills  = [...leaderboard].sort((a,b) => b.kills - a.kills);
@@ -4494,7 +4494,7 @@ function initSocket(token){
       <div class="matchover-row" style="${i===0?'background:rgba(255,215,0,.07);border-color:rgba(255,215,0,.2);':''}">
         <span class="matchover-rank">${medals[i]||'#'+(i+1)}</span>
         <div class="matchover-dot" style="background:${p.color}"></div>
-        <span class="matchover-name">${esc(p.username)}${p.isBot?' 🤖':''}</span>
+        <span class="matchover-name">${esc(p.username)}${p.isBot?' ðŸ¤–':''}</span>
         <span class="matchover-stat">${statHtml}</span>
       </div>`;
 
@@ -4508,15 +4508,15 @@ function initSocket(token){
     const wealthWinner = byWealth[0], killsWinner = byKills[0];
     const sameWinner = wealthWinner?.username === killsWinner?.username;
     document.getElementById('matchoverWinner').innerHTML = sameWinner
-      ? `👑 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> dominated — richest AND most kills!`
-      : `💰 <span style="color:#ffd700">${esc(wealthWinner.username)}</span> richest &nbsp;|&nbsp; ⚔️ <span style="color:#ff6b6b">${esc(killsWinner.username)}</span> most kills`;
+      ? `ðŸ‘‘ <span style="color:#ffd700">${esc(wealthWinner.username)}</span> dominated â€” richest AND most kills!`
+      : `ðŸ’° <span style="color:#ffd700">${esc(wealthWinner.username)}</span> richest &nbsp;|&nbsp; âš”ï¸ <span style="color:#ff6b6b">${esc(killsWinner.username)}</span> most kills`;
 
     document.getElementById('matchoverQuestBanner').style.display = 'none';
     document.getElementById('matchOver').classList.remove('hidden');
     if (document.pointerLockElement) document.exitPointerLock();
   });
 
-  // ── Ability cooldown UI ──
+  // â”€â”€ Ability cooldown UI â”€â”€
   window._abilityCdTimers = window._abilityCdTimers || {};
   function startAbilityCd(ability, cooldownMs) {
     const isCharge = ability === 'charge';
@@ -4539,12 +4539,12 @@ function initSocket(token){
   }
   s.on('abilityCooldown', ({ ability, cooldown }) => startAbilityCd(ability, cooldown));
 
-  // ── Quest progress (after match or prestige) ──
+  // â”€â”€ Quest progress (after match or prestige) â”€â”€
   s.on('questProgress', ({ quests, progress, completed, newlyCompleted }) => {
     window._dailyQuestData = { quests, progress, completed };
     if (newlyCompleted && newlyCompleted.length) {
       for (const q of newlyCompleted) {
-        showToast(`${q.icon} Quest complete: ${q.desc} +${q.reward} pts! 🎉`, 5000);
+        showToast(`${q.icon} Quest complete: ${q.desc} +${q.reward} pts! ðŸŽ‰`, 5000);
         window.SFX?.fanfare?.();
         spawnConfetti(null, 40);
       }
@@ -4552,43 +4552,43 @@ function initSocket(token){
       const banner = document.getElementById('matchoverQuestBanner');
       if (banner && !document.getElementById('matchOver').classList.contains('hidden')) {
         banner.style.display = 'block';
-        banner.textContent = '🏅 Quest' + (newlyCompleted.length > 1 ? 's' : '') + ' completed: ' +
+        banner.textContent = 'ðŸ… Quest' + (newlyCompleted.length > 1 ? 's' : '') + ' completed: ' +
           newlyCompleted.map(q => q.desc).join(', ') + '!';
       }
     }
     renderDailyQuests(quests, progress, completed);
   });
 
-  // ── Daily quests response ──
+  // â”€â”€ Daily quests response â”€â”€
   s.on('dailyQuests', ({ quests, progress, completed, msUntilReset }) => {
     window._dailyQuestData = { quests, progress, completed, msUntilReset, receivedAt: Date.now() };
     renderDailyQuests(quests, progress, completed);
     startQuestResetTimer(msUntilReset);
   });
 
-  s.on('lobbyPlayerJoined',data=>{ addWaitPlayer(data.socketId,data); showToast(`🦕 ${data.username} joined!`); });
+  s.on('lobbyPlayerJoined',data=>{ addWaitPlayer(data.socketId,data); showToast(`ðŸ¦• ${data.username} joined!`); });
   s.on('roomPlayerLeft',data=>{ removeWaitPlayer(data.socketId); });
   s.on('botAdded',data=>{ addWaitBot(data); });
   s.on('botRemoved',data=>{ removeWaitPlayer(data.id); });
-  s.on('hostChanged',data=>{ if(data.newHostId===s.id){isHost=true;document.getElementById('hostControls').classList.remove('hidden');document.getElementById('startGameBtn').classList.remove('hidden');showToast('👑 You are now the host!');} });
+  s.on('hostChanged',data=>{ if(data.newHostId===s.id){isHost=true;document.getElementById('hostControls').classList.remove('hidden');document.getElementById('startGameBtn').classList.remove('hidden');showToast('ðŸ‘‘ You are now the host!');} });
   s.on('settingsUpdated',data=>{ if(currentRoom){Object.assign(currentRoom,data);document.getElementById('waitRoomName').textContent=data.name||currentRoom.name;} });
 
   s.on('inviteReceived',data=>{ showInvite(data.from,data.roomId,data.roomName); });
-  s.on('inviteSent',u=>showToast(`📨 Invite sent to ${u}`));
-  s.on('inviteDeclined',data=>showToast(`❌ ${data.username} declined your invite`));
+  s.on('inviteSent',u=>showToast(`ðŸ“¨ Invite sent to ${u}`));
+  s.on('inviteDeclined',data=>showToast(`âŒ ${data.username} declined your invite`));
 
-  // ── Game start → load appropriate engine, then start ──
+  // â”€â”€ Game start â†’ load appropriate engine, then start â”€â”€
   s.on('gameStarted', data => {
     if (window._currentSaveId) s.emit('markSavePlayed', window._currentSaveId);
     hideRankedWaitingScreen(); // safety net in case rankedMatchFound didn't fire first
     showScreen('game');
-    // Show ability HUD — abilities available from prestige 0, but cooldowns start fresh
+    // Show ability HUD â€” abilities available from prestige 0, but cooldowns start fresh
     document.getElementById('abilityHud').classList.remove('hidden');
     if (GAME_SETTINGS.musicEnabled !== false) window.SFX?.startMusic?.();
-    if (data.difficulty === 'hard') showEventBanner({ icon: '☄️', name: 'Meteor Shower — Hard Mode' });
+    if (data.difficulty === 'hard') showEventBanner({ icon: 'â˜„ï¸', name: 'Meteor Shower â€” Hard Mode' });
     else if (data.activeEvent) showEventBanner(data.activeEvent, data.nextEvent);
     else if (data.nextEvent) showEventBanner(data.nextEvent);
-    else hideEventBanner(); // ranked matches get no weekly-event banner — see server's isRanked gating
+    else hideEventBanner(); // ranked matches get no weekly-event banner â€” see server's isRanked gating
     const mode = data.renderMode || '3d';
     // Reset init flag when engine changes so startPhaserGame runs for the new engine
     if (_loadedRenderMode && _loadedRenderMode !== mode) {
@@ -4614,8 +4614,8 @@ function initSocket(token){
     if(document.getElementById('waitingRoom')&&!document.getElementById('waitingRoom').classList.contains('hidden')) addWaitChat(username,message,color);
     else addChatMessage(username,message,color);
   });
-  s.on('inviteSent',u=>showToast(`📨 Invite sent to ${u}`));
-  s.on('disconnect',()=>showToast('❌ Disconnected — reconnecting...',5000));
+  s.on('inviteSent',u=>showToast(`ðŸ“¨ Invite sent to ${u}`));
+  s.on('disconnect',()=>showToast('âŒ Disconnected â€” reconnecting...',5000));
 }
 
 // Expose for game3d.js
@@ -4623,11 +4623,11 @@ window.showToast=showToast;
 window.addChatMessage=addChatMessage;
 window.addKillFeed=addKillFeed;
 
-// ── RIPPLE + GLOBAL SOUND EFFECTS ON ALL BUTTONS ──
+// â”€â”€ RIPPLE + GLOBAL SOUND EFFECTS ON ALL BUTTONS â”€â”€
 (function(){
   const SELECTORS = 'button, .lby-play-btn, .lby-left-btn, .buy-btn, .prestige-btn, .shop-tab, .lb-cat-tab, .room-card, .modal-confirm, .modal-cancel, .lby-mode-box, .lby-nav-icon, .lby-drop-btn, .lb-row, .lby-drop-card, .lby-invite-slot';
 
-  // Hover sound — fires once per element entry, not repeatedly
+  // Hover sound â€” fires once per element entry, not repeatedly
   document.addEventListener('mouseover', e => {
     const btn = e.target.closest(SELECTORS);
     if (!btn || btn === e.relatedTarget || btn.contains(e.relatedTarget)) return;
