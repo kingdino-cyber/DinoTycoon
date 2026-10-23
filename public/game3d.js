@@ -1187,7 +1187,7 @@ class Game3D {
         window.SFX?.crunch();
         // A hit that is certain to kill plays out right now instead of one round-trip later
         const lethal = !onCooldown && this._isCertainKill(chosen.data, hitType);
-        if (hitType === 'sweep') { this.showSweepSlash(); window.SFX?.sweep?.(); }
+        if (hitType === 'sweep') { this.showSweepSlash(); this.showSweepArc(this.myPlayer.x, this.myPlayer.y, chosen.data.x, chosen.data.y); window.SFX?.sweep?.(); }
         else if (hitType === 'crit') { this.showCritBurst(chosen.data.x, chosen.data.y); window.SFX?.crit?.(); }
         // Instant client-side prediction — no waiting for server round-trip
         this.showLaser(this.myPlayer.x, this.myPlayer.y, chosen.data.x, chosen.data.y);
@@ -1585,6 +1585,33 @@ class Game3D {
     ], { duration: 260, easing: 'ease-out' });
   }
 
+  // Sweep hit seen from the world: a white crescent that whips around the near side of the
+  // target (Minecraft's sweep-attack particle). Shown for everyone's sweeps, not just yours.
+  showSweepArc(attX, attY, tgtX, tgtY) {
+    const SPAN = 2.4; // radians of crescent
+    const geo = new THREE.RingGeometry(1.15, 1.75, 28, 1, -SPAN / 2, SPAN);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xeaf8ff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
+    const arc = new THREE.Mesh(geo, mat);
+    arc.rotation.x = -Math.PI / 2; // lie flat; ring angle θ then points along world (cosθ, 0, -sinθ)
+    // Face the side of the target the attacker is on
+    const face = Math.atan2(-(sz(attY) - sz(tgtY)), sx(attX) - sx(tgtX));
+    const gy = volcanoHeightAt(sx(tgtX), sz(tgtY)) + 1.1;
+    arc.position.set(sx(tgtX), gy, sz(tgtY));
+    arc.rotation.z = face;
+    this.scene.add(arc);
+    const t0 = performance.now(), DUR = 260;
+    const step = () => {
+      const t = Math.min(1, (performance.now() - t0) / DUR);
+      arc.rotation.z = face + (t - 0.5) * 0.9;           // sweeps across as it fades
+      const s = 0.7 + 0.5 * (1 - Math.pow(1 - t, 3));
+      arc.scale.set(s, s, 1);
+      mat.opacity = 0.95 * (1 - t * t);
+      if (t < 1) requestAnimationFrame(step);
+      else { this.scene.remove(arc); geo.dispose(); mat.dispose(); }
+    };
+    requestAnimationFrame(step);
+  }
+
   // Crit hit: a burst of yellow-white sparks flying out of the target
   showCritBurst(x, y) {
     const geo = new THREE.OctahedronGeometry(0.09, 0);
@@ -1922,7 +1949,9 @@ class Game3D {
     // Ease the FOV toward the sprint widening (using last frame's sprint state), then
     // clear the flag — it's only set again below while actually moving with sprint on.
     const baseFov = window.GAME_SETTINGS?.fov ?? 70;
-    this._fovKick += ((this._sprinting ? SPRINT_FOV_KICK : 0) - this._fovKick) * Math.min(1, dt * 9);
+    // "FOV Effects" setting scales every FOV change (0% = the view never zooms)
+    const fovFx = Math.max(0, Math.min(100, window.GAME_SETTINGS?.fovEffects ?? 100)) / 100;
+    this._fovKick += ((this._sprinting ? SPRINT_FOV_KICK * fovFx : 0) - this._fovKick) * Math.min(1, dt * 9);
     const wantFov = baseFov + this._fovKick;
     if (Math.abs(this.camera.fov - wantFov) > 0.02) { this.camera.fov = wantFov; this.camera.updateProjectionMatrix(); }
     this._sprinting = false;
@@ -2475,7 +2504,20 @@ function setupGameSocketEvents() {
       scene.showBite(attackerId);
       const atk = scene.playerObjs[attackerId];
       if (atk) scene.showLaser(atk.data.x, atk.data.y, tgt.data.x, tgt.data.y);
+    }
+    // Everyone sees (and hears) sweeps and crits, whoever lands them. Your own swings
+    // already played theirs the instant you clicked.
+    if (!predicted) {
+      const atkObj = scene.playerObjs[attackerId];
+      if (hitType === 'sweep' && atkObj) scene.showSweepArc(atkObj.data.x, atkObj.data.y, tgt.data.x, tgt.data.y);
       if (hitType === 'crit') scene.showCritBurst(tgt.data.x, tgt.data.y);
+      // Only sounds from fights near you, so a distant brawl isn't a constant ping
+      const me = scene.myPlayer;
+      const near = !me || Math.hypot(me.x - tgt.data.x, me.y - tgt.data.y) < 1100;
+      if (near) {
+        if (hitType === 'sweep') window.SFX?.sweep?.();
+        else if (hitType === 'crit') window.SFX?.crit?.();
+      }
     }
     // You jumped just before this hit landed — it knocked you back far less
     if (jumpReset && targetId === scene.myId) window.showToast?.('Jump reset', 800);

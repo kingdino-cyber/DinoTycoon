@@ -125,8 +125,6 @@ const UPGRADES = {
   mossCloth:   { name:'Moss Cloth',       cost:100,   icon:'🍃', effect:{regen:2},   req:null,           desc:'+2 HP/s — starter regen',  cat:'health' },
   healingFern: { name:'Healing Ferns',    cost:600,   icon:'🌿', effect:{regen:5},   req:'mossCloth',    desc:'+5 HP/s',   cat:'health' },
   dinoVitality:{ name:'Dino Vitality',    cost:2500,  icon:'💚', effect:{regen:12},  req:'healingFern',  desc:'+12 HP/s',  cat:'health' },
-  // Defense (extended)
-  dinoShell:    { name:'Dino Shell',      cost:20000, icon:'🐢', effect:{defense:80}, req:'boneArmor',   desc:'+80 Def — nearly impenetrable', cat:'defense' },
   // ── Defense Buildings (placed on your base) ──
   stoneWall:     { name:'Stone Wall',      cost:120,   icon:'🪨', effect:{}, req:null, desc:'Blocks everyone including you (250 HP). Damages on contact.', cat:'build' },
   spikeTrap:     { name:'Spike Trap',      cost:300,   icon:'🔺', effect:{}, req:null, desc:'Damages enemies on your base (20 dmg)',    cat:'build' },
@@ -494,6 +492,80 @@ function placeBuilding(room, player, upgradeId, targetPos) {
   emitToRoom(room, 'buildingPlaced', building);
   player.buildingsPlaced = (player.buildingsPlaced || 0) + 1;
   checkAchievements(room, player);
+}
+
+// Buildings are stored relative to their owner's base so they land on the right pad
+// even if the owner is assigned a different pad next session
+function snapshotBuildings(room, owner) {
+  return Object.values(room.buildings)
+    .filter(b => b.ownerId === owner.id)
+    .map(b => ({ upgradeId: b.upgradeId, dx: b.x - owner.baseX, dy: b.y - owner.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
+}
+
+// Everything a save needs: the host's buildings, every other human's state (keyed by
+// username) and every bot's state, so no one's base disappears when the game is reloaded
+function snapshotRoom(room, hostId) {
+  const host = room.players[hostId];
+  const myBuildings = snapshotBuildings(room, host);
+  const guestStates = {};
+  for (const [sid, gp] of Object.entries(room.players)) {
+    if (sid === hostId) continue;
+    guestStates[gp.username.toLowerCase()] = {
+      money: Math.floor(gp.money), upgrades: [...gp.upgrades],
+      buildings: snapshotBuildings(room, gp), kills: gp.kills, level: gp.level,
+    };
+  }
+  const botStates = Object.values(room.bots).map(bot => ({
+    username: bot.username, color: bot.color, difficulty: bot.difficulty,
+    money: Math.floor(bot.money), upgrades: [...bot.upgrades],
+    kills: bot.kills, deaths: bot.deaths, level: bot.level,
+    buildings: snapshotBuildings(room, bot),
+  }));
+  return { myBuildings, guestStates, botStates };
+}
+
+// Put saved bots (their upgrades, money and bases) back onto the bots this lobby created.
+// Bots are matched by difficulty so changing the lobby's bot lineup still works.
+function restoreBotsFromSave(room, sg) {
+  if (!Array.isArray(sg?.botStates)) return;
+  const free = Object.values(room.bots);
+  for (const st of sg.botStates) {
+    let i = free.findIndex(b => b.difficulty === st.difficulty);
+    if (i === -1) i = free.length ? 0 : -1;
+    if (i === -1) break;
+    const bot = free.splice(i, 1)[0];
+    if (st.username) bot.username = st.username;
+    if (st.color) bot.color = st.color;
+    bot.money = st.money || 0; bot.totalEarned = Math.max(bot.totalEarned, bot.money);
+    bot.kills = st.kills || 0; bot.deaths = st.deaths || 0; bot.level = st.level || 1;
+    // Re-apply upgrade effects exactly as a bot purchase does in tickBot
+    for (const id of st.upgrades || []) {
+      const upg = UPGRADES[id]; if (!upg || bot.upgrades.includes(id)) continue;
+      bot.upgrades.push(id);
+      bot.speed   += upg.effect.speed   || 0;
+      bot.maxHp   += upg.effect.maxHp   || 0;
+      bot.defense += upg.effect.defense || 0;
+      bot.regen   += upg.effect.regen   || 0;
+      bot.mps     += upg.effect.mps     || 0;
+      bot.damage  += (upg.effect.damage || 0) * (bot.dmgMult || 1);
+    }
+    bot.hp = bot.maxHp;
+    for (const sb of st.buildings || []) {
+      const bd = BUILDING_DATA[sb.upgradeId]; if (!bd) continue;
+      const bid = 'b_' + (buildingIdCounter++);
+      room.buildings[bid] = {
+        id: bid, upgradeId: sb.upgradeId, ownerId: bot.id,
+        ownerColor: bot.color, ownerName: bot.username,
+        x: bot.baseX + sb.dx, y: bot.baseY + sb.dy,
+        hp: sb.hp, maxHp: sb.maxHp,
+        type: bd.type, defType: bd.defType || null,
+        orientation: sb.orientation || 'h',
+        damage: bd.damage || 0, range: bd.range || 0,
+        cooldown: bd.cooldown || 2000, lastFired: 0,
+        mps: bd.mps || 0, slow: bd.slow || false, slowAmt: bd.slowAmt || 0, healRate: bd.healRate || 0,
+      };
+    }
+  }
 }
 
 function destroyBuilding(room, buildingId, attacker, selfDemolish = false) {
@@ -1556,6 +1628,8 @@ async function startMatch(room) {
         };
       }
     }
+    // The host's bots come back too — their bases, upgrades and money
+    if (isHost && sg && !room.freshStart) restoreBotsFromSave(room, sg);
   }
 
   // Send gameStarted immediately so Phaser loads, but with countdown flag
@@ -1738,22 +1812,7 @@ io.on('connection', (socket) => {
     if (!authedUser) return;
     const room = rooms[socketRoom[socket.id]]; if (!room || room.status !== 'playing') return;
     const p = room.players[socket.id]; if (!p) return;
-    const myBuildings = Object.values(room.buildings)
-      .filter(b => b.ownerId === socket.id)
-      .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
-
-    // Snapshot every guest's state so they can be restored next session
-    const guestStates = {};
-    for (const [sid, gp] of Object.entries(room.players)) {
-      if (sid === socket.id) continue; // skip host, handled above
-      const gBuildings = Object.values(room.buildings)
-        .filter(b => b.ownerId === sid)
-        .map(b => ({ upgradeId: b.upgradeId, dx: b.x - gp.baseX, dy: b.y - gp.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
-      guestStates[gp.username.toLowerCase()] = {
-        money: Math.floor(gp.money), upgrades: [...gp.upgrades],
-        buildings: gBuildings, kills: gp.kills, level: gp.level,
-      };
-    }
+    const { myBuildings, guestStates, botStates } = snapshotRoom(room, socket.id);
 
     const save = await getSave(authedUser.id);
     if (!Array.isArray(save.savedGames)) save.savedGames = [];
@@ -1763,7 +1822,7 @@ io.on('connection', (socket) => {
       money: Math.floor(p.money), upgrades: [...p.upgrades],
       buildings: myBuildings, savedAt: new Date().toISOString(),
       difficulty: room.difficulty||'medium', kills: p.kills, level: p.level,
-      guestStates,
+      guestStates, botStates,
     };
     save.savedGames.unshift(entry);
     await putSave(authedUser.id, save);
@@ -1802,21 +1861,7 @@ io.on('connection', (socket) => {
     const p = room.players[socket.id]; if (!p) return;
     const saveSlotId = room.loadSavedGame; if (!saveSlotId) return;
 
-    const myBuildings = Object.values(room.buildings)
-      .filter(b => b.ownerId === socket.id)
-      .map(b => ({ upgradeId: b.upgradeId, dx: b.x - p.baseX, dy: b.y - p.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
-
-    const guestStates = {};
-    for (const [sid, gp] of Object.entries(room.players)) {
-      if (sid === socket.id) continue;
-      const gBuildings = Object.values(room.buildings)
-        .filter(b => b.ownerId === sid)
-        .map(b => ({ upgradeId: b.upgradeId, dx: b.x - gp.baseX, dy: b.y - gp.baseY, hp: b.hp, maxHp: b.maxHp, orientation: b.orientation || 'h' }));
-      guestStates[gp.username.toLowerCase()] = {
-        money: Math.floor(gp.money), upgrades: [...gp.upgrades],
-        buildings: gBuildings, kills: gp.kills, level: gp.level,
-      };
-    }
+    const { myBuildings, guestStates, botStates } = snapshotRoom(room, socket.id);
 
     const save = await getSave(authedUser.id);
     if (!Array.isArray(save.savedGames)) return;
@@ -1828,7 +1873,7 @@ io.on('connection', (socket) => {
       money: Math.floor(p.money), upgrades: [...p.upgrades],
       buildings: myBuildings, savedAt: new Date().toISOString(),
       kills: p.kills, level: p.level,
-      guestStates,
+      guestStates, botStates,
     };
     await putSave(authedUser.id, save);
     socket.emit('gameSaved', { entry: save.savedGames[idx], auto: true });

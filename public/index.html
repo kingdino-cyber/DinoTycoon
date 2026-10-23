@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Dino Tycoon</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d1f0d'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%234caf50'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='30' font-weight='700' text-anchor='middle' fill='%2308170a'%3ED%3C/text%3E%3C/svg%3E">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
 :root{
@@ -1979,6 +1980,13 @@ body.colorblind-hp #hpFill{background:linear-gradient(90deg,#0d47a1,#42a5f5);}
 // ── Sound Engine (Web Audio API — no files needed) ───────────────────────────
 window.SFX = (() => {
   let ctx = null;
+  // Browsers refuse to start audio before the page has been clicked/pressed; creating the
+  // context early only logs an "AudioContext was not allowed to start" warning, so every
+  // sound stays silent until the first user gesture
+  let gestureSeen = false;
+  for (const ev of ['pointerdown', 'keydown', 'touchstart'])
+    window.addEventListener(ev, () => { gestureSeen = true; }, { capture: true, once: true });
+  const canSound = () => navigator.userActivation ? navigator.userActivation.hasBeenActive : gestureSeen;
   const getCtx = () => {
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') ctx.resume();
@@ -2027,7 +2035,7 @@ window.SFX = (() => {
     src.connect(filt); filt.connect(g); g.connect(c.destination);
     src.start(); src.stop(c.currentTime+dur+0.01);
   };
-  const play = fn => { if (!(window.GAME_SETTINGS?.soundEnabled === false)) fn(); };
+  const play = fn => { if (!(window.GAME_SETTINGS?.soundEnabled === false) && canSound()) fn(); };
 
   // ── Ambient background music — a slow looping chord pad, fully procedural ──
   const MUSIC_CHORDS = [
@@ -2038,7 +2046,7 @@ window.SFX = (() => {
   ];
   let musicGain = null, musicInterval = null, chordIdx = 0;
   const startMusic = () => {
-    if (musicInterval || window.GAME_SETTINGS?.musicEnabled === false) return;
+    if (musicInterval || window.GAME_SETTINGS?.musicEnabled === false || !canSound()) return;
     const c = getCtx();
     musicGain = c.createGain();
     musicGain.gain.setValueAtTime(0, c.currentTime);
@@ -2182,7 +2190,7 @@ function loadGameScripts(mode, cb) {
     showToast('🌐 Loading 3D world...', 8000);
     appendScript('https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js', { crossOrigin: 'anonymous' }, () => {
       appendScript('dino3d.js?v=15', null, () => {
-        appendScript('game3d.js?v=38', null, () => {
+        appendScript('game3d.js?v=39', null, () => {
           _engineLoaded['3d'] = true; _engineLoading['3d'] = false;
           _engineFuncs['3d'] = { startGame: window.startPhaserGame, onGameReady: window.onGameReady };
           cb();
@@ -2413,6 +2421,7 @@ function loadSettings() {
   for (const d of SETTINGS_DEFS) if (GAME_SETTINGS[d.key] === undefined) GAME_SETTINGS[d.key] = d.default;
   if (GAME_SETTINGS.mouseSensitivity === undefined) GAME_SETTINGS.mouseSensitivity = 50; // 1-100 scale
   if (GAME_SETTINGS.fov === undefined) GAME_SETTINGS.fov = 70;
+  if (GAME_SETTINGS.fovEffects === undefined) GAME_SETTINGS.fovEffects = 100; // 0-100% strength of FOV changes (sprint zoom)
   delete GAME_SETTINGS.sensitivity3d; // old system, fully replaced
   applySettings();
 }
@@ -2497,6 +2506,21 @@ function openSettingsModal() {
         <span>Narrow</span><span>Default (70°)</span><span>Wide</span>
       </div>
     </div>
+    <div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:bold;color:#e8f5e9;font-size:.9rem;">FOV Effects</div>
+          <div style="color:#557755;font-size:.72rem;margin-top:2px;">How much the view widens when you sprint (0% = no zoom)</div>
+        </div>
+        <span id="fovFxDisplay" style="color:#7fff6a;font-weight:bold;font-size:.9rem;">${GAME_SETTINGS.fovEffects ?? 100}%</span>
+      </div>
+      <input type="range" id="setting_fovEffects" min="0" max="100" step="5" value="${GAME_SETTINGS.fovEffects ?? 100}"
+        style="width:100%;accent-color:#4caf50;"
+        oninput="document.getElementById('fovFxDisplay').textContent=this.value+'%'">
+      <div style="display:flex;justify-content:space-between;color:#334433;font-size:.68rem;margin-top:3px;">
+        <span>None</span><span>Default (100%)</span><span></span>
+      </div>
+    </div>
     <div style="font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4a7a4a;padding:14px 0 6px;">🎮 Camera</div>
     <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -2539,6 +2563,8 @@ function saveSettings() {
   if (sensSlider) GAME_SETTINGS.mouseSensitivity = parseInt(sensSlider.value);
   const fovSlider = document.getElementById('setting_fov');
   if (fovSlider) GAME_SETTINGS.fov = parseInt(fovSlider.value);
+  const fovFxSlider = document.getElementById('setting_fovEffects');
+  if (fovFxSlider) GAME_SETTINGS.fovEffects = parseInt(fovFxSlider.value);
   const camDistSlider = document.getElementById('setting_camDist');
   if (camDistSlider) GAME_SETTINGS.camDist = parseFloat(camDistSlider.value);
   const renderDistSlider = document.getElementById('setting_renderDist');
